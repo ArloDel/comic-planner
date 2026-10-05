@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+@theme {
+  /* Font */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Primary — indigo */
+  --color-primary-50:  #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+
+  /* Radius khusus */
+  --radius-glass: 1.25rem;   /* 20px — panel besar */
+  --radius-card: 0.75rem;    /* 12px — elemen kecil */
+
+  /* Shadow glass (lembut, rendah kontras) */
+  --shadow-glass:    0 8px 30px rgb(15 23 42 / 0.06);
+  --shadow-glass-lg: 0 16px 50px rgb(15 23 42 / 0.12);
+  --shadow-soft:     0 1px 3px rgb(15 23 42 / 0.06);
+}

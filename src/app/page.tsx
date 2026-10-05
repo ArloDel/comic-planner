@@ -1,153 +1,185 @@
+import React from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { logout } from '@/app/auth/actions';
+import { AppShell } from '@/components/layout/AppShell';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Button } from '@/components/ui/Button';
+import { BookOpen, Layers, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default async function HomePage() {
-  let user = null;
-  let supabaseConfigured = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+  let userEmail: string | null = null;
+  let totalItems = 0;
+  let totalSeries = 0;
 
-  if (supabaseConfigured) {
-    try {
-      const supabase = await createClient();
-      const { data } = await supabase.auth.getUser();
-      user = data.user;
-    } catch {
-      // Ignored if local dev without live Supabase credentials
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    userEmail = user?.email || null;
+
+    // Fetch brief summary for home
+    const { data: items } = await (supabase as any).from('items').select('id, seri');
+    if (items) {
+      totalItems = items.length;
+      const seriesSet = new Set(items.map((i: any) => i.seri).filter(Boolean));
+      totalSeries = seriesSet.size;
     }
+  } catch {
+    // Ignored in dev without live credentials
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-16">
-      {/* Top Header / App Bar */}
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur shadow-sm">
-        <div className="mx-auto flex max-w-md items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white text-sm">
-              CP
-            </div>
+    <AppShell
+      userEmail={userEmail}
+      pageTitle="Dashboard"
+      pageSubtitle="Ringkasan koleksi komik dan status pembelian"
+      headerAction={
+        <Link href="/katalog">
+          <Button variant="primary" size="sm">
+            <BookOpen className="h-4 w-4 mr-1.5" />
+            <span>Katalog Komik</span>
+          </Button>
+        </Link>
+      }
+    >
+      <div className="space-y-6">
+        {/* Welcome / Quick Banner */}
+        <GlassCard className="p-5 sm:p-6" solid>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-base font-bold leading-none text-slate-900">ComicPlan</h1>
-              <span className="text-[10px] text-emerald-600 font-medium">Single-User Active</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-primary-600 bg-primary-50 px-2 py-0.5 rounded-md">
+                Selamat Datang di ComicPlan
+              </span>
+              <h2 className="mt-2 text-xl sm:text-2xl font-bold text-slate-900">
+                Pusat Perencanaan Koleksi Komik & Manga
+              </h2>
+              <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-xl">
+                Kelola item komik, lacak volume bolong per seri, pantau rencana pembelian (PO/Wishlist), dan jaga batas anggaran belanja bulanan Anda.
+              </p>
+            </div>
+
+            <div className="shrink-0">
+              <Link href="/katalog">
+                <Button variant="primary">
+                  <span>Buka Katalog</span>
+                  <ArrowRight className="h-4 w-4 ml-1.5" />
+                </Button>
+              </Link>
             </div>
           </div>
 
-          {user ? (
-            <form action={logout}>
-              <button
-                type="submit"
-                className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-100">
+            <div className="p-3 rounded-xl bg-slate-50/80">
+              <span className="text-[11px] font-semibold text-slate-400 block uppercase">
+                Total Komik
+              </span>
+              <span className="text-xl font-bold text-slate-900 tabular-nums">
+                {totalItems}
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50/80">
+              <span className="text-[11px] font-semibold text-slate-400 block uppercase">
+                Seri Aktif
+              </span>
+              <span className="text-xl font-bold text-slate-900 tabular-nums">
+                {totalSeries}
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50/80">
+              <span className="text-[11px] font-semibold text-slate-400 block uppercase">
+                Sisa Aman
+              </span>
+              <span className="text-xl font-bold text-emerald-600 tabular-nums">
+                Rp 0
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50/80">
+              <span className="text-[11px] font-semibold text-slate-400 block uppercase">
+                Komitmen PO
+              </span>
+              <span className="text-xl font-bold text-slate-700 tabular-nums">
+                Rp 0
+              </span>
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* Feature quick cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <GlassCard className="p-5 flex flex-col justify-between">
+            <div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 text-primary-700 mb-3">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Katalog Item & Status Plan
+              </h3>
+              <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                Kelola koleksi komik dengan status perolehan lengkap (Belum Ada, Wishlist, PO, DP, Lunas, Punya), filter real-time, dan estimasi harga.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-slate-100">
+              <Link
+                href="/katalog"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700"
               >
-                Keluar
-              </button>
-            </form>
-          ) : (
-            <a
-              href="/login"
-              className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
-            >
-              Masuk
-            </a>
-          )}
-        </div>
-      </header>
-
-      {/* Main Content Area (Mobile-First max-w-md) */}
-      <main className="mx-auto max-w-md px-4 pt-4 space-y-4">
-        {/* User Card */}
-        {user && (
-          <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3.5">
-            <p className="text-xs text-indigo-700 font-medium">Pengguna Terautentikasi</p>
-            <p className="text-sm font-semibold text-slate-900 truncate">{user.email}</p>
-          </div>
-        )}
-
-        {/* Budget Overview Cards */}
-        <section className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Budget Bulan Ini
-            </h2>
-            <span className="text-xs text-indigo-600 font-medium cursor-pointer">Atur</span>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-xs text-slate-500">Sisa Aman Dibelanjakan</div>
-            <div className="mt-1 text-2xl font-extrabold text-emerald-600">Rp 0</div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 text-xs">
-              <div>
-                <span className="text-slate-400 block">Komitmen PO</span>
-                <span className="font-semibold text-slate-800">Rp 0</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Realisasi</span>
-                <span className="font-semibold text-slate-800">Rp 0</span>
-              </div>
+                <span>Kelola Katalog</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
-          </div>
-        </section>
+          </GlassCard>
 
-        {/* System & Architecture Status */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
-          <h2 className="text-sm font-bold text-slate-900">Fondasi Sistem Siap</h2>
-          <ul className="space-y-2 text-xs text-slate-600">
-            <li className="flex items-center space-x-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span>Next.js App Router (TypeScript + Tailwind CSS)</span>
+          <GlassCard className="p-5 flex flex-col justify-between">
+            <div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 mb-3">
+                <Layers className="h-5 w-5" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Tracker Volume Per Seri
+              </h3>
+              <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                Visual grid kotak nomor 1..N untuk setiap seri komik. Memudahkan melihat volume mana yang masih bolong dan quick-add volume berikutnya.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-slate-100">
+              <Link
+                href="/katalog"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700"
+              >
+                <span>Lihat Seri di Katalog</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </GlassCard>
+        </div>
+
+        {/* System Checklist */}
+        <GlassCard className="p-5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+            Status Integrasi Fondasi
+          </h3>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600">
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              <span>Tailwind v4 Glassmorphism Theme Tokens</span>
             </li>
-            <li className="flex items-center space-x-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span>Supabase SSR Client & Server-only Admin Client</span>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              <span>AppShell (Sidebar Desktop + BottomTabBar Mobile)</span>
             </li>
-            <li className="flex items-center space-x-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span>Skema 6 Tabel (budgets, items, listings, plans, tx, history)</span>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              <span>CRUD Server Actions & Real-Time Filter / Search</span>
             </li>
-            <li className="flex items-center space-x-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span>Listing Dedup Constraint: (marketplace, shop_id, item_id_shopee)</span>
-            </li>
-            <li className="flex items-center space-x-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span>RLS: Read-only untuk user login, mutasi strictly server route</span>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              <span>Visual Volume Tracker Grid (`/katalog/seri/[seri]`)</span>
             </li>
           </ul>
-        </section>
-
-        {/* Quick Database Checklist */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-2">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Skema Database (6 Tabel)
-          </h2>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="rounded-lg bg-slate-50 p-2 border border-slate-100">
-              <span className="font-semibold text-slate-800">budgets</span>
-              <p className="text-[11px] text-slate-500">Periode date unique</p>
-            </div>
-            <div className="rounded-lg bg-slate-50 p-2 border border-slate-100">
-              <span className="font-semibold text-slate-800">items</span>
-              <p className="text-[11px] text-slate-500">Koleksi manga/komik</p>
-            </div>
-            <div className="rounded-lg bg-slate-50 p-2 border border-slate-100">
-              <span className="font-semibold text-slate-800">listings</span>
-              <p className="text-[11px] text-slate-500">Unique (mp, shop, item)</p>
-            </div>
-            <div className="rounded-lg bg-slate-50 p-2 border border-slate-100">
-              <span className="font-semibold text-slate-800">plans</span>
-              <p className="text-[11px] text-slate-500">State: wishlist→diterima</p>
-            </div>
-            <div className="rounded-lg bg-slate-50 p-2 border border-slate-100">
-              <span className="font-semibold text-slate-800">transactions</span>
-              <p className="text-[11px] text-slate-500">dp, pelunasan, refund</p>
-            </div>
-            <div className="rounded-lg bg-slate-50 p-2 border border-slate-100">
-              <span className="font-semibold text-slate-800">status_history</span>
-              <p className="text-[11px] text-slate-500">Audit trail status</p>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
+        </GlassCard>
+      </div>
+    </AppShell>
   );
 }

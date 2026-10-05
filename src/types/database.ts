@@ -36,6 +36,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       items: {
         Row: {
@@ -71,6 +72,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       listings: {
         Row: {
@@ -115,6 +117,15 @@ export interface Database {
           tanggal_rilis?: string | null;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'listings_item_id_fkey';
+            columns: ['item_id'];
+            isOneToOne: false;
+            referencedRelation: 'items';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       plans: {
         Row: {
@@ -147,6 +158,22 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'plans_item_id_fkey';
+            columns: ['item_id'];
+            isOneToOne: false;
+            referencedRelation: 'items';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'plans_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'listings';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       transactions: {
         Row: {
@@ -176,6 +203,15 @@ export interface Database {
           catatan?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'transactions_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'plans';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       status_history: {
         Row: {
@@ -199,6 +235,15 @@ export interface Database {
           status_baru?: string;
           changed_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'status_history_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'plans';
+            referencedColumns: ['id'];
+          }
+        ];
       };
     };
     Views: {
@@ -212,6 +257,9 @@ export interface Database {
       listing_status: ListingStatus;
       plan_status: PlanStatus;
       transaction_type: TransactionType;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
     };
   };
 }
