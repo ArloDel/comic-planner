@@ -135,6 +135,7 @@ export interface Database {
           prioritas: number;
           estimasi_harga: number;
           status: PlanStatus;
+          deadline_po: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -145,6 +146,7 @@ export interface Database {
           prioritas?: number;
           estimasi_harga?: number;
           status: PlanStatus;
+          deadline_po?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -155,6 +157,7 @@ export interface Database {
           prioritas?: number;
           estimasi_harga?: number;
           status?: PlanStatus;
+          deadline_po?: string | null;
           created_at?: string;
           updated_at?: string;
         };

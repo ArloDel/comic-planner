@@ -1,0 +1,45 @@
+# Prasyarat: ada minimal satu plan berstatus PO atau DP (hold budget aktif),
+# dan kredensial Supabase tersedia lewat env EMAIL / PASSWORD / BASE_URL.
+#
+# Alur yang diuji (AC TASK-003):
+#   1. Halaman Rencana memuat ringkasan Hold Budget.
+#   2. Riwayat perubahan status bisa dibuka per plan (status_history).
+#   3. Pembatalan plan melepas hold budget reaktif: begitu status jadi batal,
+#      plan keluar dari filter "Hold Budget" karena komitmen hanya menghitung
+#      plan berstatus PO/DP.
+url: ${BASE_URL}
+name: Plans F3 — riwayat status & pembatalan plan
+tags:
+  - plans
+  - f3
+env:
+  EMAIL: ${EMAIL || ''}
+  PASSWORD: ${PASSWORD || ''}
+---
+- launchApp
+- openLink: /login
+- tapOn: "owner@example.com"
+- inputText: ${EMAIL}
+- tapOn: "••••••••"
+- inputText: ${PASSWORD}
+- tapOn: "Masuk ke Aplikasi"
+- openLink: /plans
+- assertVisible: "Rencana Belanja"
+- assertVisible: "Hold Budget (Komitmen)"
+- takeScreenshot:
+    path: plans-hold-budget.png
+- tapOn: "Hold Budget"
+- assertVisible: "Batalkan Rencana"
+- tapOn: "Riwayat"
+- assertVisible: "Riwayat Perubahan Status"
+- takeScreenshot:
+    path: plans-riwayat-status.png
+- tapOn: "Batalkan Rencana"
+- assertVisible: "Batalkan Rencana"
+- assertVisible: "Hold budget untuk plan ini dilepas otomatis"
+- takeScreenshot:
+    path: plans-konfirmasi-batal.png
+- tapOn: "Ya, Batalkan"
+- assertNotVisible: "Batalkan Rencana"
+- takeScreenshot:
+    path: plans-hold-dilepas.png
