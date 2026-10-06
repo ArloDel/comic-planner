@@ -29,15 +29,13 @@ import { StatusTimeline } from '@/components/plans/StatusTimeline';
 import {
   PLAN_STATUSES,
   STATUS_LABELS,
-  daysUntil,
-  formatDate,
-  formatRupiah,
   isHoldingBudget,
   nextStatuses,
   priorityLabel,
   type PlanHistoryEntry,
   type PlanStatus,
 } from '@/lib/plans';
+import { daysUntil, formatRupiah, formatTanggal } from '@/lib/format';
 import type { ListingStatus, ItemType } from '@/types/database';
 
 export interface PlanListingRef {
@@ -365,7 +363,7 @@ export function PlansClient({ initialPlans, items, commitment }: PlansClientProp
                       >
                         <CalendarClock className="h-3.5 w-3.5" />
                         <span>
-                          Deadline {formatDate(plan.deadline_po)}
+                          Deadline {formatTanggal(plan.deadline_po)}
                           {sisaDeadline !== null && (
                             <span className="font-bold">
                               {sisaDeadline < 0

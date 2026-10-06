@@ -16,7 +16,26 @@ export const metadata = {
     'Kelola rencana pembelian komik: alur status Wishlist, PO, DP, Lunas, Diterima, sampai Batal',
 };
 
-/** Bentuk baris hasil select relasional (PostgREST selalu balikin array). */
+interface PlanItemEmbed {
+  id: string;
+  judul: string;
+  seri: string | null;
+  volume: number | null;
+  cover_url: string | null;
+  tipe: string | null;
+}
+
+interface PlanListingEmbed {
+  id: string;
+  marketplace: string;
+  nama_toko: string | null;
+  url: string | null;
+  harga: number | null;
+  deadline_po: string | null;
+  status: string;
+}
+
+/** Bentuk baris hasil select relasional; embed ditulis `T | T[] | null` (lihat `oneOrNull`). */
 interface PlanRowWithRelations {
   id: string;
   item_id: string;
@@ -27,23 +46,8 @@ interface PlanRowWithRelations {
   deadline_po: string | null;
   created_at: string;
   updated_at: string;
-  items: {
-    id: string;
-    judul: string;
-    seri: string | null;
-    volume: number | null;
-    cover_url: string | null;
-    tipe: string | null;
-  }[] | null;
-  listings: {
-    id: string;
-    marketplace: string;
-    nama_toko: string | null;
-    url: string | null;
-    harga: number | null;
-    deadline_po: string | null;
-    status: string;
-  }[] | null;
+  items: PlanItemEmbed | PlanItemEmbed[] | null;
+  listings: PlanListingEmbed | PlanListingEmbed[] | null;
 }
 
 interface ItemRowWithListings {
@@ -51,15 +55,7 @@ interface ItemRowWithListings {
   judul: string;
   seri: string | null;
   volume: number | null;
-  listings: {
-    id: string;
-    marketplace: string;
-    nama_toko: string | null;
-    url: string | null;
-    harga: number | null;
-    deadline_po: string | null;
-    status: string;
-  }[] | null;
+  listings: PlanListingEmbed[] | null;
 }
 
 interface HistoryRow {
@@ -69,9 +65,15 @@ interface HistoryRow {
   changed_at: string;
 }
 
-/** Relasi dari select PostgREST selalu berupa array; ambil elemen pertama. */
-function firstOrNull<T>(value: T[] | null | undefined): T | null {
-  return value?.[0] ?? null;
+/**
+ * Relasi hasil select PostgREST punya dua bentuk: relasi many-to-one (`plans.item_id`
+ * → `items`) dibalas sebagai objek tunggal, sedangkan one-to-many (`items.listings`)
+ * sebagai array. Normalisasi keduanya supaya pemanggil tidak perlu tahu bedanya —
+ * pola yang sama dipakai `katalog/seri/[seri]/page.tsx`.
+ */
+function oneOrNull<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
 }
 
 export default async function PlansPage() {
@@ -139,8 +141,8 @@ export default async function PlansPage() {
     const dibayar = summarizePayments(transactionRows ?? []);
 
     plans = (planRows ?? []).map((row) => {
-      const item = firstOrNull(row.items);
-      const listing = firstOrNull(row.listings);
+      const item = oneOrNull(row.items);
+      const listing = oneOrNull(row.listings);
 
       return {
         id: row.id,

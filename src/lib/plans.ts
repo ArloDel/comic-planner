@@ -197,62 +197,32 @@ export function calculateCommitment(
   return total;
 }
 
-const RUPIAH_FORMAT = new Intl.NumberFormat('id-ID', {
-  style: 'currency',
-  currency: 'IDR',
-  maximumFractionDigits: 0,
-});
+/** Label jenis transaksi untuk UI. */
+export const TXN_TYPE_LABELS: Record<TransactionType, string> = {
+  dp: 'DP',
+  pelunasan: 'Pelunasan',
+  bayar_penuh: 'Bayar Penuh',
+  refund: 'Refund',
+};
 
-export function formatRupiah(amount: number | null | undefined): string {
-  const value = Number(amount ?? 0);
-
-  // `id-ID`_currency memakai non-breaking space ("Rp 0"), jadi semua keluaran
-  // harus lewat formatter yang sama supaya konsisten.
-  return RUPIAH_FORMAT.format(Number.isFinite(value) ? value : 0);
-}
-
-const DATE_TIME_FORMAT = new Intl.DateTimeFormat('id-ID', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-});
-
-export function formatDateTime(iso: string | null | undefined): string {
-  if (!iso) return '-';
-
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '-';
-
-  return DATE_TIME_FORMAT.format(date);
-}
-
-/** Tanggal saja, untuk deadline (deadline_po). */
-export function formatDate(value: string | null | undefined): string {
-  if (!value) return '-';
-
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return '-';
-
-  return new Intl.DateTimeFormat('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
-}
-
-/** Jumlah hari menuju deadline; negatif bila sudah lewat. */
-export function daysUntil(value: string | null | undefined): number | null {
-  if (!value) return null;
-
-  const target = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(target.getTime())) return null;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
+/**
+ * Jenis transaksi yang sah untuk status plan tertentu.
+ *
+ * DP hanya bisa dicatat saat plan sudah PO atau DP; pelunasan hanya dari DP;
+ * bayar penuh hanya dari PO (pembelian tanpa DP). Refund selalu boleh karena
+ * bisa terjadi kapan saja setelah ada pembayaran.
+ */
+export function txnAllowedForStatus(jenis: TransactionType, status: PlanStatus): boolean {
+  switch (jenis) {
+    case 'dp':
+      return status === 'po' || status === 'dp';
+    case 'pelunasan':
+      return status === 'dp';
+    case 'bayar_penuh':
+      return status === 'po';
+    case 'refund':
+      return true;
+  }
 }
 
 /** Label prioritas 1..5, 1 = paling tinggi. */
