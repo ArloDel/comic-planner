@@ -14,11 +14,15 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { StatusPill, type ExtendedStatus } from '@/components/ui/StatusPill';
+import { StatusPill, statusStyle } from '@/components/ui/StatusPill';
 import { CoverImage } from '@/components/ui/CoverImage';
 import { ItemModal } from '@/components/katalog/ItemModal';
 import { DeleteModal } from '@/components/katalog/DeleteModal';
-import type { KatalogItemWithDetails } from '@/app/katalog/KatalogClient';
+import { formatRupiahOrNull } from '@/lib/format';
+import type { KatalogItemWithDetails } from '@/lib/catalog';
+
+/** Grid minimal saat seri belum punya volume, supaya ada tempat quick-add. */
+const MIN_EMPTY_GRID = 12;
 
 interface SeriClientProps {
   seriName: string;
@@ -39,24 +43,23 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
   const volumeMap = new Map<number, KatalogItemWithDetails>();
   let maxVolumeFound = 0;
 
-  items.forEach((item) => {
+  for (const item of items) {
     if (item.volume !== null && item.volume !== undefined) {
       volumeMap.set(item.volume, item);
-      if (item.volume > maxVolumeFound) {
-        maxVolumeFound = item.volume;
-      }
+      maxVolumeFound = Math.max(maxVolumeFound, item.volume);
     }
-  });
+  }
 
-  // Calculate grid range: 1 up to maxVolumeFound (or minimum 10)
-  const maxRange = Math.max(maxVolumeFound, items.length > 0 ? maxVolumeFound : 12);
-  const gridVolumes: number[] = Array.from({ length: maxRange }, (_, i) => i + 1);
+  const maxRange = items.length > 0 ? maxVolumeFound : MIN_EMPTY_GRID;
+  const gridVolumes = Array.from({ length: maxRange }, (_, i) => i + 1);
 
   // Status stats
-  const punyaCount = items.filter((i) => i.plan_status === 'diterima').length;
-  const poCount = items.filter((i) => i.plan_status === 'po' || i.plan_status === 'dp').length;
-  const wishlistCount = items.filter((i) => i.plan_status === 'wishlist').length;
-  const lunasCount = items.filter((i) => i.plan_status === 'lunas').length;
+  const countByStatus = (statuses: string[]) =>
+    items.filter((item) => statuses.includes(item.plan_status)).length;
+  const punyaCount = countByStatus(['diterima']);
+  const poCount = countByStatus(['po', 'dp']);
+  const lunasCount = countByStatus(['lunas']);
+  const wishlistCount = countByStatus(['wishlist']);
   const belumPunyaCount = Math.max(0, maxRange - items.length);
 
   function handleVolumeBoxClick(volNumber: number) {
@@ -83,7 +86,6 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
 
   return (
     <div className="space-y-6">
-      {/* Back button link */}
       <div>
         <Link
           href="/katalog"
@@ -103,9 +105,7 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
                 Koleksi Seri
               </span>
               {penerbit && (
-                <span className="text-xs font-medium text-slate-500">
-                  • Penerbit {penerbit}
-                </span>
+                <span className="text-xs font-medium text-slate-500">• Penerbit {penerbit}</span>
               )}
             </div>
             <h1 className="mt-1.5 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
@@ -153,65 +153,39 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
 
       {/* Volume Visual Tracker Grid */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary-500" />
-              Tracker Volume Visual
-            </h2>
-            <p className="text-xs text-slate-500">
-              Klik nomor untuk mengedit atau mengisi volume yang bolong.
-            </p>
-          </div>
+        <div>
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary-500" />
+            Tracker Volume Visual
+          </h2>
+          <p className="text-xs text-slate-500">
+            Klik nomor untuk mengedit atau mengisi volume yang bolong.
+          </p>
         </div>
 
         <GlassCard className="p-4 sm:p-5">
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 sm:gap-2.5">
             {gridVolumes.map((volNum) => {
               const existingItem = volumeMap.get(volNum);
+              const style = existingItem && statusStyle(existingItem.plan_status);
 
-              if (existingItem) {
-                // Determine color styles based on status
-                const st = existingItem.plan_status;
-                let bgStyle = 'bg-slate-100 text-slate-700 border-slate-200';
-                if (st === 'diterima') {
-                  bgStyle =
-                    'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20';
-                } else if (st === 'po') {
-                  bgStyle =
-                    'bg-amber-50 text-amber-800 border-amber-300 ring-1 ring-amber-500/20';
-                } else if (st === 'dp') {
-                  bgStyle =
-                    'bg-violet-50 text-violet-800 border-violet-300 ring-1 ring-violet-500/20';
-                } else if (st === 'lunas') {
-                  bgStyle =
-                    'bg-sky-50 text-sky-800 border-sky-300 ring-1 ring-sky-500/20';
-                } else if (st === 'wishlist') {
-                  bgStyle =
-                    'bg-primary-50 text-primary-800 border-primary-200 ring-1 ring-primary-500/20';
-                }
-
-                return (
-                  <button
-                    key={volNum}
-                    type="button"
-                    onClick={() => handleVolumeBoxClick(volNum)}
-                    title={`Vol. ${volNum}: ${existingItem.judul} (${existingItem.plan_status})`}
-                    className={`relative aspect-square rounded-xl border flex flex-col items-center justify-center font-bold text-sm transition-all duration-150 hover:scale-105 hover:shadow-md cursor-pointer select-none ${bgStyle}`}
-                  >
-                    <span>{volNum}</span>
-                    {st === 'diterima' && (
-                      <Check className="h-3 w-3 text-emerald-600 mt-0.5" />
-                    )}
-                    <span className="text-[9px] uppercase font-semibold tracking-tighter opacity-80 mt-0.5">
-                      {st === 'diterima' ? 'Punya' : st}
-                    </span>
-                  </button>
-                );
-              }
-
-              // Missing volume (gap)
-              return (
+              return existingItem && style ? (
+                <button
+                  key={volNum}
+                  type="button"
+                  onClick={() => handleVolumeBoxClick(volNum)}
+                  title={`Vol. ${volNum}: ${existingItem.judul} (${style.label})`}
+                  className={`relative aspect-square rounded-xl border flex flex-col items-center justify-center font-bold text-sm transition-all duration-150 hover:scale-105 hover:shadow-md cursor-pointer select-none ${style.boxClasses}`}
+                >
+                  <span>{volNum}</span>
+                  {existingItem.plan_status === 'diterima' && (
+                    <Check className="h-3 w-3 text-emerald-600 mt-0.5" />
+                  )}
+                  <span className="text-[9px] uppercase font-semibold tracking-tighter opacity-80 mt-0.5">
+                    {style.label}
+                  </span>
+                </button>
+              ) : (
                 <button
                   key={volNum}
                   type="button"
@@ -265,26 +239,20 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
                   {item.judul}
                 </h3>
 
-                {item.estimasi_harga ? (
-                  <p className="mt-0.5 text-xs font-semibold text-slate-700 tabular-nums">
-                    {new Intl.NumberFormat('id-ID', {
-                      style: 'currency',
-                      currency: 'IDR',
-                      maximumFractionDigits: 0,
-                    }).format(item.estimasi_harga)}
-                  </p>
-                ) : (
-                  <p className="mt-0.5 text-[11px] text-slate-400">
-                    Belum ada estimasi
-                  </p>
-                )}
+                <p className="mt-0.5 text-xs font-semibold text-slate-700 tabular-nums">
+                  {formatRupiahOrNull(item.estimasi_harga) ?? (
+                    <span className="text-[11px] font-normal text-slate-400">
+                      Belum ada estimasi
+                    </span>
+                  )}
+                </p>
 
                 <div className="mt-2 flex items-center gap-1">
                   <Button
                     variant="secondary"
                     size="sm"
                     onClick={() => setEditingItem(item)}
-                    className="h-7 px-2 text-[11px]"
+                    className="h-9 px-2.5 text-[11px]"
                   >
                     <Edit2 className="h-3 w-3 mr-1" />
                     Edit
@@ -293,7 +261,8 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
                     type="button"
                     onClick={() => setDeletingItem(item)}
                     aria-label={`Hapus ${item.judul}`}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                    title={`Hapus ${item.judul}`}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -304,22 +273,24 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
         </div>
       </div>
 
-      {/* Item Modal (Create with Prefilled Volume or General) */}
-      <ItemModal
-        isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setPrefilledVolume(undefined);
-        }}
-        onSuccess={handleRefresh}
-        defaultSeri={seriName}
-        defaultVolume={prefilledVolume}
-      />
+      {modalOpen && (
+        <ItemModal
+          key={`new-${prefilledVolume ?? 'x'}`}
+          isOpen
+          onClose={() => {
+            setModalOpen(false);
+            setPrefilledVolume(undefined);
+          }}
+          onSuccess={handleRefresh}
+          defaultSeri={seriName}
+          defaultVolume={prefilledVolume}
+        />
+      )}
 
-      {/* Item Modal (Edit) */}
       {editingItem && (
         <ItemModal
-          isOpen={Boolean(editingItem)}
+          key={editingItem.id}
+          isOpen
           onClose={() => setEditingItem(null)}
           onSuccess={handleRefresh}
           initialData={{
@@ -336,10 +307,9 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
       {deletingItem && (
         <DeleteModal
-          isOpen={Boolean(deletingItem)}
+          isOpen
           onClose={() => setDeletingItem(null)}
           onSuccess={handleRefresh}
           item={{

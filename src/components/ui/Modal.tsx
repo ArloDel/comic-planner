@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -12,6 +12,9 @@ interface ModalProps {
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export function Modal({
   isOpen,
   onClose,
@@ -20,23 +23,56 @@ export function Modal({
   children,
   maxWidth = 'md',
 }: ModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  // `onClose` sering inline arrow di pemanggil; disimpan di ref supaya effect
+  // utama tidak re-run (dan fokus tidak pindah-pindah) tiap render.
+  const onCloseRef = useRef(onClose);
+
   useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const focusables = () =>
+      Array.from(panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
+
+    focusables()[0]?.focus();
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const items = focusables();
+      if (items.length === 0) return;
+
+      const first = items[0];
+      const last = items[items.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     }
 
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    }
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -55,14 +91,15 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
+        className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm"
+        onClick={() => onCloseRef.current()}
         aria-hidden="true"
       />
 
       {/* Modal Card */}
       <div
-        className={`relative w-full ${maxWidthClasses} bg-white/90 backdrop-blur-xl border border-white/80 shadow-glass-lg rounded-glass p-5 sm:p-6 transition-all animate-in zoom-in-95 duration-150 z-10 my-auto`}
+        ref={panelRef}
+        className={`relative w-full ${maxWidthClasses} bg-white/90 backdrop-blur-xl border border-white/80 shadow-glass-lg rounded-glass p-5 sm:p-6 z-10 my-auto`}
       >
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
@@ -72,16 +109,14 @@ export function Modal({
               </h2>
             )}
             {description && (
-              <p className="mt-1 text-xs text-slate-500 leading-normal">
-                {description}
-              </p>
+              <p className="mt-1 text-xs text-slate-500 leading-normal">{description}</p>
             )}
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => onCloseRef.current()}
             aria-label="Tutup"
-            className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
           >
             <X className="h-5 w-5" />
           </button>

@@ -5,7 +5,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { WarningBanner } from '@/components/ui/WarningBanner';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Button } from '@/components/ui/Button';
+import { Button, buttonClasses } from '@/components/ui/Button';
 import { Pencil, Wallet, TrendingUp, ShieldCheck, Plus, Receipt } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { upsertBudget } from './actions';
@@ -83,21 +83,21 @@ export default async function BudgetPage({
         supabase
           .from('transactions')
           .select('id, plan_id, jenis, jumlah, tanggal, catatan, plans(id, items(judul))')
-          .order('tanggal', { ascending: false }),
+          .order('tanggal', { ascending: false })
+          .returns<TxnRowWithRelations[]>(),
         supabase
           .from('plans')
           .select('id, status, prioritas, estimasi_harga, items(judul)')
-          .in('status', ['po', 'dp'] as PlanStatus[]),
-        supabase.from('transactions').select('plan_id, jumlah, jenis'),
+          .in('status', ['po', 'dp'] as PlanStatus[])
+          .returns<HoldingPlanRow[]>(),
+        supabase.from('transactions').select('plan_id, jumlah, jenis').returns<PaymentRow[]>(),
       ]);
 
     // Realisasi hanya menghitung transaksi pada periode terpilih; transaksi
     // bulan lain tetap dipakai untuk menghitung "sudah dibayar" per plan.
-    txnRows = ((txnData ?? []) as unknown as TxnRowWithRelations[]).filter((t) =>
-      t.tanggal.startsWith(periode)
-    );
+    txnRows = (txnData ?? []).filter((t) => t.tanggal.startsWith(periode));
 
-    const dibayar = summarizePayments((allTxns ?? []) as PaymentRow[]);
+    const dibayar = summarizePayments(allTxns ?? []);
     const mapPlan = (row: HoldingPlanRow): ActivePlanOption => ({
       id: row.id,
       label: row.items?.judul ?? 'Plan tanpa item',
@@ -107,7 +107,7 @@ export default async function BudgetPage({
       sudah_dibayar: dibayar[row.id] ?? 0,
     });
 
-    holdingPlans = ((holdingRows ?? []) as unknown as HoldingPlanRow[]).map(mapPlan);
+    holdingPlans = (holdingRows ?? []).map(mapPlan);
     // Plan yang bisa ditransaksi: sudah ada pembayaran (untuk refund) atau
     // masih punya sisa tagihan.
     activePlans = holdingPlans.filter(
@@ -284,20 +284,22 @@ export default async function BudgetPage({
 
 function PeriodeNav({ periode }: { periode: string }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <Link href={`/budget?periode=${shiftPeriode(periode, -1)}`}>
-        <Button variant="secondary" size="sm">
-          Bulan sebelumnya
-        </Button>
+    <nav className="flex items-center justify-between gap-3">
+      <Link
+        href={`/budget?periode=${shiftPeriode(periode, -1)}`}
+        className={buttonClasses('secondary', 'sm')}
+      >
+        Bulan sebelumnya
       </Link>
 
       <p className="text-sm font-semibold text-slate-700 tabular-nums">Periode {periode}</p>
 
-      <Link href={`/budget?periode=${shiftPeriode(periode, 1)}`}>
-        <Button variant="secondary" size="sm">
-          Bulan berikutnya
-        </Button>
+      <Link
+        href={`/budget?periode=${shiftPeriode(periode, 1)}`}
+        className={buttonClasses('secondary', 'sm')}
+      >
+        Bulan berikutnya
       </Link>
-    </div>
+    </nav>
   );
 }

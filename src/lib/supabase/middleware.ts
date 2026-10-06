@@ -43,25 +43,29 @@ export async function updateSession(request: NextRequest) {
   const allowedEmail = process.env.ALLOWED_USER_EMAIL;
   if (user && allowedEmail && user.email?.toLowerCase() !== allowedEmail.toLowerCase()) {
     await supabase.auth.signOut();
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    url.searchParams.set('error', 'unauthorized_email');
-    return NextResponse.redirect(url);
+    return redirectTo(request, '/login', { error: 'unauthorized_email' });
   }
 
   // Redirect unauthenticated requests to /login (allow API routes to handle their own tokens/auth)
   if (!user && !isAuthPage && !isApiRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+    return redirectTo(request, '/login');
   }
 
   // Redirect authenticated user away from /login
   if (user && isAuthPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/';
-    return NextResponse.redirect(url);
+    return redirectTo(request, '/');
   }
 
   return supabaseResponse;
+}
+
+function redirectTo(request: NextRequest, pathname: string, params?: Record<string, string>) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+
+  for (const [key, value] of Object.entries(params ?? {})) {
+    url.searchParams.set(key, value);
+  }
+
+  return NextResponse.redirect(url);
 }

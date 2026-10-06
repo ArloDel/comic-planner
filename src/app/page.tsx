@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { AppShell } from '@/components/layout/AppShell';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Button } from '@/components/ui/Button';
+import { buttonClasses } from '@/components/ui/Button';
 import { BookOpen, Layers, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default async function HomePage() {
@@ -20,11 +20,14 @@ export default async function HomePage() {
     userEmail = user?.email || null;
 
     // Fetch brief summary for home
-    const { data: items } = await (supabase as any).from('items').select('id, seri');
+    const { data: items } = await supabase
+      .from('items')
+      .select('id, seri')
+      .returns<{ id: string; seri: string | null }[]>();
+
     if (items) {
       totalItems = items.length;
-      const seriesSet = new Set(items.map((i: any) => i.seri).filter(Boolean));
-      totalSeries = seriesSet.size;
+      totalSeries = new Set(items.map((item) => item.seri).filter(Boolean)).size;
     }
   } catch {
     // Ignored in dev without live credentials
@@ -36,11 +39,9 @@ export default async function HomePage() {
       pageTitle="Dashboard"
       pageSubtitle="Ringkasan koleksi komik dan status pembelian"
       headerAction={
-        <Link href="/katalog">
-          <Button variant="primary" size="sm">
-            <BookOpen className="h-4 w-4 mr-1.5" />
-            <span>Katalog Komik</span>
-          </Button>
+        <Link href="/katalog" className={buttonClasses('primary', 'sm')}>
+          <BookOpen className="h-4 w-4 mr-1.5" />
+          <span>Katalog Komik</span>
         </Link>
       }
     >
@@ -61,11 +62,9 @@ export default async function HomePage() {
             </div>
 
             <div className="shrink-0">
-              <Link href="/katalog">
-                <Button variant="primary">
-                  <span>Buka Katalog</span>
-                  <ArrowRight className="h-4 w-4 ml-1.5" />
-                </Button>
+              <Link href="/katalog" className={buttonClasses('primary')}>
+                <span>Buka Katalog</span>
+                <ArrowRight className="h-4 w-4 ml-1.5" />
               </Link>
             </div>
           </div>

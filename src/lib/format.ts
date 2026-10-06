@@ -6,6 +6,13 @@ export const formatRupiah = (n: number | string | null | undefined): string =>
   }).format(toNum(n));
 
 /** Tanggal `YYYY-MM-DD` tanpa jam — dipakai untuk deadline PO. */
+/** Sama seperti `formatRupiah`, tapi `null` untuk nominal kosong — supaya UI bisa
+ *  merender placeholder ("Belum ada harga") alih-alih "Rp 0". */
+export const formatRupiahOrNull = (n: number | string | null | undefined): string | null => {
+  const value = toNum(n);
+  return value > 0 ? formatRupiah(value) : null;
+};
+
 export const formatTanggal = (d: string | Date | null | undefined): string => {
   if (!d) return '-';
 

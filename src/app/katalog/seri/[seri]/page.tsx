@@ -1,10 +1,8 @@
 import React from 'react';
-import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { AppShell } from '@/components/layout/AppShell';
 import { SeriClient } from './SeriClient';
-import type { ExtendedStatus } from '@/components/ui/StatusPill';
-import type { KatalogItemWithDetails } from '@/app/katalog/KatalogClient';
+import { mapItemsWithDetails, type ItemRowWithRelations } from '@/lib/catalog';
 
 interface SeriPageProps {
   params: Promise<{
@@ -26,7 +24,7 @@ export default async function SeriPage({ params }: SeriPageProps) {
   const decodedSeri = decodeURIComponent(seri);
 
   let userEmail: string | null = null;
-  let items: KatalogItemWithDetails[] = [];
+  let items: ReturnType<typeof mapItemsWithDetails> = [];
   let publisher: string | null = null;
 
   try {
@@ -37,44 +35,20 @@ export default async function SeriPage({ params }: SeriPageProps) {
 
     userEmail = user?.email || null;
 
-    // Fetch items matching this series
-    const { data: dbItems, error } = await (supabase as any)
+    const { data: dbItems, error } = await supabase
       .from('items')
-      .select('*, plans(id, status, estimasi_harga)')
+      .select(
+        'id, judul, seri, volume, penerbit, tipe, cover_url, created_at, updated_at, plans(id, status, estimasi_harga)'
+      )
       .eq('seri', decodedSeri)
-      .order('volume', { ascending: true, nullsFirst: false });
+      .order('volume', { ascending: true, nullsFirst: false })
+      .returns<ItemRowWithRelations[]>();
 
     if (error) {
       console.error('Error fetching series items:', error);
     } else if (dbItems) {
-      items = dbItems.map((item: any) => {
-        const plans = Array.isArray(item.plans) ? item.plans : item.plans ? [item.plans] : [];
-        const activePlan = plans.find((p: any) => p.status !== 'batal') || plans[0];
-
-        const plan_status: ExtendedStatus = (activePlan?.status as ExtendedStatus) || 'belum ada';
-        const estimasi_harga =
-          activePlan?.estimasi_harga !== undefined && activePlan?.estimasi_harga !== null
-            ? Number(activePlan.estimasi_harga)
-            : undefined;
-
-        if (!publisher && item.penerbit) {
-          publisher = item.penerbit;
-        }
-
-        return {
-          id: item.id,
-          judul: item.judul,
-          seri: item.seri,
-          volume: item.volume,
-          penerbit: item.penerbit,
-          tipe: item.tipe,
-          cover_url: item.cover_url,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          plan_status,
-          estimasi_harga,
-        };
-      });
+      items = mapItemsWithDetails(dbItems);
+      publisher = items.find((item) => item.penerbit)?.penerbit ?? null;
     }
   } catch (err) {
     console.error('Database connection error in SeriPage:', err);

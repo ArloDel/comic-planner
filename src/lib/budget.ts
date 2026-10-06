@@ -107,11 +107,7 @@ export function periodeDate(periode: Periode): string {
 }
 
 export function periodeRange(periode: Periode): { start: string; endExclusive: string } {
-  const [y, m] = periode.split('-').map(Number);
-  const start = `${periode}-01`;
-  const nextY = m === 12 ? y + 1 : y;
-  const nextM = m === 12 ? 1 : m + 1;
-  return { start, endExclusive: `${nextY}-${String(nextM).padStart(2, '0')}-01` };
+  return { start: periodeDate(periode), endExclusive: periodeDate(shiftPeriode(periode, 1)) };
 }
 
 export function shiftPeriode(periode: Periode, delta: number): Periode {

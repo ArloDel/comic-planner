@@ -10,6 +10,7 @@ import {
   requiresDeadline,
   transitionError,
 } from '@/lib/plans';
+import { asArray } from '@/lib/supabase/embed';
 
 export interface PlanFormData {
   item_id: string;
@@ -182,9 +183,7 @@ export async function transitionPlanStatus(
       return { success: false, error: 'Format deadline tidak valid (harus YYYY-MM-DD).' };
     }
 
-    const listingDeadline = Array.isArray(plan.listings)
-      ? (plan.listings[0]?.deadline_po ?? null)
-      : (plan.listings?.deadline_po ?? null);
+    const listingDeadline = asArray(plan.listings)[0]?.deadline_po ?? null;
 
     const deadline = override || (requiresDeadline(to) ? listingDeadline : null);
 

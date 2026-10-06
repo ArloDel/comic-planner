@@ -9,6 +9,7 @@ import {
   type PlanWithDetails,
 } from './PlansClient';
 import { calculateCommitment, summarizePayments, type PaymentRow } from '@/lib/plans';
+import { asArray } from '@/lib/supabase/embed';
 
 export const metadata = {
   title: 'Rencana Belanja — ComicPlan',
@@ -35,7 +36,7 @@ interface PlanListingEmbed {
   status: string;
 }
 
-/** Bentuk baris hasil select relasional; embed ditulis `T | T[] | null` (lihat `oneOrNull`). */
+/** Bentuk baris hasil select relasional; embed ditulis `T | T[] | null` (lihat `asArray`). */
 interface PlanRowWithRelations {
   id: string;
   item_id: string;
@@ -69,13 +70,8 @@ interface HistoryRow {
  * Relasi hasil select PostgREST punya dua bentuk: relasi many-to-one (`plans.item_id`
  * → `items`) dibalas sebagai objek tunggal, sedangkan one-to-many (`items.listings`)
  * sebagai array. Normalisasi keduanya supaya pemanggil tidak perlu tahu bedanya —
- * pola yang sama dipakai `katalog/seri/[seri]/page.tsx`.
+ * pola yang sama dipakai `lib/catalog.ts` untuk halaman katalog.
  */
-function oneOrNull<T>(value: T | T[] | null | undefined): T | null {
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value ?? null;
-}
-
 export default async function PlansPage() {
   let userEmail: string | null = null;
   let plans: PlanWithDetails[] = [];
@@ -141,8 +137,8 @@ export default async function PlansPage() {
     const dibayar = summarizePayments(transactionRows ?? []);
 
     plans = (planRows ?? []).map((row) => {
-      const item = oneOrNull(row.items);
-      const listing = oneOrNull(row.listings);
+      const item = asArray(row.items)[0];
+      const listing = asArray(row.listings)[0];
 
       return {
         id: row.id,
