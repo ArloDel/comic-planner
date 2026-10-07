@@ -139,6 +139,30 @@ origin Shopee dan tidak punya cookie aplikasi.
 
 ---
 
+## Userscript Tampermonkey Shopee (F5 Client)
+
+Skrip Tampermonkey [`userscript/comicplan-import.user.js`](userscript/comicplan-import.user.js) mengekstrak produk komik dari etalase toko dan halaman detail produk Shopee, lalu menyinkronkannya ke ComicPlan via endpoint `POST /api/import`.
+
+### Yang Dibutuhkan
+
+1. **Browser Extension**: Pasang ekstensi [Tampermonkey](https://www.tampermonkey.net/) (atau Violentmonkey) pada browser Chrome, Edge, Firefox, atau Kiwi Browser (Android).
+2. **Server ComicPlan**: Pastikan web app ComicPlan dapat diakses dari browser (misal `http://localhost:3000` untuk development lokal, atau URL staging/production Anda).
+3. **Import Token**: Token rahasia yang sama dengan yang dikonfigurasi di file `.env.local` server (`IMPORT_TOKEN=...`).
+
+### Cara Instalasi & Penggunaan
+
+1. Buka dashboard ekstensi **Tampermonkey** → klik menu **Add a new script (+)**.
+2. Salin seluruh isi file [`userscript/comicplan-import.user.js`](userscript/comicplan-import.user.js), lalu simpan (`Ctrl+S`).
+3. Buka halaman toko Shopee (misal `https://shopee.co.id/shop/<shopid>`) atau halaman produk komik.
+4. Panel mengambang bergaya glassmorphism **ComicPlan Sync** akan otomatis muncul di sudut kanan bawah:
+   - Klik ikon gerigi (⚙️) untuk mengatur **Endpoint URL** (default: `http://localhost:3000/api/import`) dan memasukkan **Import Token**. Konfigurasi tersimpan secara persisten di storage Tampermonkey.
+   - Sambil Anda menjelajahi etalase atau kategori toko, produk yang terdeteksi otomatis masuk ke dalam daftar panel.
+   - Pilih/centang produk yang ingin diimpor, gunakan filter **Hanya PO** jika diinginkan, lalu klik tombol **Sync ke ComicPlan**.
+   - Pada halaman detail produk tunggal, gunakan tombol **⚡ Impor Satuan** untuk mengimpor satu komik secara instan.
+   - Panel dapat diminimalkan menjadi FAB bulat kecil (`CP`) dengan mengklik tombol minimize (`─`).
+
+---
+
 ## Skrip yang Tersedia
 
 - `npm run dev`: Menjalankan Next.js development server
@@ -146,3 +170,4 @@ origin Shopee dan tidak punya cookie aplikasi.
 - `npm run start`: Menjalankan production server
 - `npm run lint`: Menjalankan ESLint
 - `npm test`: Menjalankan unit test (`node --test`, tanpa dependency baru)
+

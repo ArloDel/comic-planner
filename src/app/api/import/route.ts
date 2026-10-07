@@ -91,30 +91,53 @@ async function findExistingListings(
   return existing;
 }
 
+const CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Import-Token',
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: CORS_HEADERS,
+  });
+}
+
+function jsonResponse(data: unknown, init: ResponseInit = {}) {
+  return NextResponse.json(data, {
+    ...init,
+    headers: {
+      ...CORS_HEADERS,
+      ...(init.headers ?? {}),
+    },
+  });
+}
+
 export async function POST(request: Request) {
   const expectedToken = process.env.IMPORT_TOKEN;
 
   if (!expectedToken) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'IMPORT_TOKEN belum dikonfigurasi di server.' },
       { status: 500 }
     );
   }
 
   if (!isImportTokenValid(request.headers.get('x-import-token'), expectedToken)) {
-    return NextResponse.json({ error: 'Token import tidak valid.' }, { status: 403 });
+    return jsonResponse({ error: 'Token import tidak valid.' }, { status: 403 });
   }
 
   let payload: unknown;
   try {
     payload = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Body harus berupa JSON yang valid.' }, { status: 400 });
+    return jsonResponse({ error: 'Body harus berupa JSON yang valid.' }, { status: 400 });
   }
 
   const parsed = parseImportPayload(payload);
   if (!parsed.ok) {
-    return NextResponse.json({ error: parsed.error }, { status: 400 });
+    return jsonResponse({ error: parsed.error }, { status: 400 });
   }
 
   try {
@@ -157,7 +180,7 @@ export async function POST(request: Request) {
     revalidatePath('/katalog');
     revalidatePath('/plans');
 
-    return NextResponse.json({
+    return jsonResponse({
       created: plan.created,
       updated: plan.updated,
       skipped: parsed.errors.length,
@@ -169,6 +192,6 @@ export async function POST(request: Request) {
         ? err.message
         : 'Terjadi kesalahan sistem saat menyimpan hasil impor.';
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return jsonResponse({ error: message }, { status: 500 });
   }
 }
