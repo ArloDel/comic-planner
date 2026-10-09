@@ -1,6 +1,6 @@
 import type { PlanStatus, TransactionType } from '@/types/database';
-import { calculateCommitment } from './plans';
-import { toNum } from './format';
+import { calculateCommitment } from './plans.ts';
+import { toNum } from './format.ts';
 
 /** Periode disimpan sebagai 'YYYY-MM' (di DB: date 'YYYY-MM-01'). */
 export type Periode = string;

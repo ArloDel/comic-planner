@@ -1,13 +1,18 @@
 import React from 'react';
+import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
-import { Button } from './Button';
+import { Button, buttonClasses } from './Button';
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
   title: string;
   description?: string;
+  /** CTA sebagai tombol dengan handler `onAction`. */
   actionLabel?: string;
   onAction?: () => void;
+  /** CTA sebagai `<Link>` ke route internal — dipakai bila aksinya pindah halaman. */
+  href?: string;
+  hrefLabel?: string;
   className?: string;
 }
 
@@ -17,6 +22,8 @@ export function EmptyState({
   description,
   actionLabel,
   onAction,
+  href,
+  hrefLabel,
   className = '',
 }: EmptyStateProps) {
   return (
@@ -31,6 +38,13 @@ export function EmptyState({
         <p className="mt-1 text-xs text-slate-500 max-w-sm leading-relaxed">
           {description}
         </p>
+      )}
+      {href && hrefLabel && (
+        <div className="mt-4">
+          <Link href={href} className={buttonClasses('secondary', 'sm')}>
+            {hrefLabel}
+          </Link>
+        </div>
       )}
       {actionLabel && onAction && (
         <div className="mt-4">
