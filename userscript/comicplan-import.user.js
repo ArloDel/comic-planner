@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         ComicPlan Shopee Importer
 // @namespace    https://github.com/comicplan
-// @version      1.0.0
+// @version      1.0.1
 // @description  Ekstrak dan sinkronisasi produk komik/manga dari toko Shopee ke ComicPlan (/api/import)
 // @author       ComicPlan
-// @match        https://shopee.co.id/*
+// @match        *://shopee.co.id/*
+// @match        *://*.shopee.co.id/*
 // @icon         https://shopee.co.id/favicon.ico
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
@@ -417,7 +418,7 @@
         position: fixed;
         bottom: 16px;
         right: 16px;
-        z-index: 9999999;
+        z-index: 2147483647;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         font-size: 13px;
         line-height: 1.4;
@@ -730,7 +731,10 @@
         box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
       }
     `;
-    document.head.appendChild(style);
+    const target = document.head || document.documentElement;
+    if (target) {
+      target.appendChild(style);
+    }
   }
 
   function getVisibleProducts() {
@@ -742,11 +746,21 @@
   }
 
   function renderPanel() {
+    if (!document.body) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => renderPanel(), { once: true });
+      }
+      return;
+    }
+
     createStyleSheet();
 
     if (!rootContainer) {
       rootContainer = document.createElement('div');
       rootContainer.id = 'cp-panel-root';
+    }
+
+    if (!document.body.contains(rootContainer)) {
       document.body.appendChild(rootContainer);
     }
 
@@ -1088,15 +1102,27 @@
   // 7. INISIALISASI & OBSERVER
   // =========================================================================
   function init() {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        renderPanel();
-        checkPdpOnLoad();
-      });
-    } else {
+    console.log('[ComicPlan] Userscript diinisialisasi pada:', window.location.href);
+
+    const safeMount = () => {
       renderPanel();
       checkPdpOnLoad();
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', safeMount);
+    } else {
+      safeMount();
     }
+
+    window.addEventListener('load', safeMount);
+
+    // Pastikan panel tetap terpasang bila SPA Shopee melakukan hydrate / re-render
+    setInterval(() => {
+      if (document.body && rootContainer && !document.body.contains(rootContainer)) {
+        document.body.appendChild(rootContainer);
+      }
+    }, 2000);
 
     // Pantau perubahan URL pada Single Page Application (SPA)
     let lastUrl = window.location.href;
@@ -1107,7 +1133,7 @@
         renderPanel();
       }
     });
-    urlObserver.observe(document.body || document.documentElement, {
+    urlObserver.observe(document.documentElement, {
       childList: true,
       subtree: true,
     });
