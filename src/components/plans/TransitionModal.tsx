@@ -9,12 +9,11 @@ import { transitionPlanStatus } from '@/app/plans/actions';
 import {
   STATUS_HINTS,
   STATUS_LABELS,
-  formatDate,
-  formatRupiah,
   isValidDateInput,
   requiresDeadline,
   type PlanStatus,
 } from '@/lib/plans';
+import { formatRupiah, formatTanggal } from '@/lib/format';
 
 export interface TransitionModalProps {
   isOpen: boolean;
@@ -132,7 +131,7 @@ export function TransitionModal({
               onChange={(e) => setDeadline(e.target.value)}
               hint={
                 defaultDeadline
-                  ? `Diisi otomatis dari deadline listing (${formatDate(defaultDeadline)}), boleh diubah.`
+                  ? `Diisi otomatis dari deadline listing (${formatTanggal(defaultDeadline)}), boleh diubah.`
                   : 'Listing tidak punya deadline, isi manual.'
               }
             />

@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import type { ItemType, PlanStatus } from '@/types/database';
 
 export interface ItemFormData {
@@ -16,72 +15,94 @@ export interface ItemFormData {
   estimasi_harga?: number | null;
 }
 
-async function getClients() {
+export type ItemActionResult = { success: boolean; error?: string; id?: string };
+
+/**
+ * Mutasi lewat client sesi user (bukan service role) supaya RLS tetap berlaku —
+ * konsisten dengan `plans/actions.ts` dan `budget/actions.ts`. Policy
+ * INSERT/UPDATE/DELETE untuk `items` & `plans` ada di
+ * `20261005000000_items_crud_policies.sql`.
+ */
+async function requireUser() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // In production or configured Supabase, use adminClient for mutations if service role key is present
-  // to ensure smooth server operations alongside user authentication checks.
-  let mutationClient: any = supabase;
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    try {
-      mutationClient = createAdminClient();
-    } catch {
-      mutationClient = supabase;
-    }
-  }
-
-  return { supabase, mutationClient, user };
+  return user
+    ? { supabase, error: null }
+    : { supabase: null, error: 'Sesi tidak valid. Silakan masuk kembali.' };
 }
 
-export async function createItem(data: ItemFormData) {
-  try {
-    const { mutationClient } = await getClients();
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
 
-    const judul = data.judul?.trim();
-    if (!judul) {
+interface SanitizedItem {
+  judul: string;
+  seri: string | null;
+  volume: number | null;
+  penerbit: string | null;
+  tipe: ItemType | null;
+  cover_url: string | null;
+}
+
+/** Normalisasi input form: trim string kosong jadi `null`, volume jadi integer. */
+function sanitizeItemInput(data: ItemFormData): SanitizedItem {
+  const volume =
+    typeof data.volume === 'number'
+      ? data.volume
+      : data.volume
+        ? parseInt(String(data.volume), 10) || null
+        : null;
+
+  return {
+    judul: data.judul?.trim() ?? '',
+    seri: data.seri?.trim() || null,
+    volume: Number.isFinite(volume) ? volume : null,
+    penerbit: data.penerbit?.trim() || null,
+    tipe: data.tipe ?? null,
+    cover_url: data.cover_url?.trim() || null,
+  };
+}
+
+function revalidateCatalogViews(seri: string | null) {
+  revalidatePath('/katalog');
+  if (seri) {
+    revalidatePath(`/katalog/seri/${encodeURIComponent(seri)}`);
+  }
+  revalidatePath('/');
+}
+
+export async function createItem(data: ItemFormData): Promise<ItemActionResult> {
+  try {
+    const { supabase, error: authError } = await requireUser();
+    if (!supabase) {
+      return { success: false, error: authError };
+    }
+
+    const item = sanitizeItemInput(data);
+    if (!item.judul) {
       return { success: false, error: 'Judul item wajib diisi' };
     }
 
-    const seri = data.seri?.trim() || null;
-    const volume =
-      typeof data.volume === 'number' && !isNaN(data.volume)
-        ? data.volume
-        : data.volume
-        ? parseInt(String(data.volume), 10) || null
-        : null;
-    const penerbit = data.penerbit?.trim() || null;
-    const tipe = (data.tipe as ItemType) || null;
-    const cover_url = data.cover_url?.trim() || null;
-
-    // 1. Insert into items table
-    const { data: itemData, error: itemError } = await mutationClient
+    const { data: itemData, error: itemError } = await supabase
       .from('items')
-      .insert({
-        judul,
-        seri,
-        volume,
-        penerbit,
-        tipe,
-        cover_url,
-      })
-      .select()
+      .insert(item)
+      .select('id')
       .single();
 
     if (itemError) {
       return { success: false, error: `Gagal menambahkan item: ${itemError.message}` };
     }
 
-    // 2. If initial status is specified and not 'belum ada', create plan
+    // Status selain "belum ada" berarti item langsung punya plan.
     if (data.status && data.status !== 'belum ada') {
-      const estimasi = Number(data.estimasi_harga) || 0;
-      const { error: planError } = await mutationClient.from('plans').insert({
+      const { error: planError } = await supabase.from('plans').insert({
         item_id: itemData.id,
         status: data.status,
         prioritas: 3,
-        estimasi_harga: estimasi,
+        estimasi_harga: Number(data.estimasi_harga) || 0,
       });
 
       if (planError) {
@@ -89,133 +110,112 @@ export async function createItem(data: ItemFormData) {
       }
     }
 
-    revalidatePath('/katalog');
-    if (seri) {
-      revalidatePath(`/katalog/seri/${encodeURIComponent(seri)}`);
-    }
-    revalidatePath('/');
+    revalidateCatalogViews(item.seri);
 
-    return { success: true, item: itemData };
-  } catch (err: any) {
+    return { success: true, id: itemData.id };
+  } catch (err) {
     return {
       success: false,
-      error: err?.message || 'Terjadi kesalahan sistem saat membuat item',
+      error: errorMessage(err, 'Terjadi kesalahan sistem saat membuat item'),
     };
   }
 }
 
-export async function updateItem(id: string, data: ItemFormData) {
+export async function updateItem(id: string, data: ItemFormData): Promise<ItemActionResult> {
   try {
-    const { mutationClient } = await getClients();
+    const { supabase, error: authError } = await requireUser();
+    if (!supabase) {
+      return { success: false, error: authError };
+    }
 
-    const judul = data.judul?.trim();
-    if (!judul) {
+    const item = sanitizeItemInput(data);
+    if (!item.judul) {
       return { success: false, error: 'Judul item wajib diisi' };
     }
 
-    const seri = data.seri?.trim() || null;
-    const volume =
-      typeof data.volume === 'number' && !isNaN(data.volume)
-        ? data.volume
-        : data.volume
-        ? parseInt(String(data.volume), 10) || null
-        : null;
-    const penerbit = data.penerbit?.trim() || null;
-    const tipe = (data.tipe as ItemType) || null;
-    const cover_url = data.cover_url?.trim() || null;
-
-    // 1. Update items table
-    const { error: itemError } = await mutationClient
+    const { error: itemError } = await supabase
       .from('items')
-      .update({
-        judul,
-        seri,
-        volume,
-        penerbit,
-        tipe,
-        cover_url,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ ...item, updated_at: new Date().toISOString() })
       .eq('id', id);
 
     if (itemError) {
       return { success: false, error: `Gagal mengupdate item: ${itemError.message}` };
     }
 
-    // 2. Handle Plan status if provided
     if (data.status !== undefined) {
-      // Check existing plan
-      const { data: existingPlan } = await mutationClient
-        .from('plans')
-        .select('id, status')
-        .eq('item_id', id)
-        .maybeSingle();
-
-      const estimasi = Number(data.estimasi_harga) || 0;
-
-      if (data.status === 'belum ada') {
-        if (existingPlan) {
-          // Delete plan if set back to 'belum ada'
-          await mutationClient.from('plans').delete().eq('id', existingPlan.id);
-        }
-      } else {
-        if (existingPlan) {
-          await mutationClient
-            .from('plans')
-            .update({
-              status: data.status,
-              estimasi_harga: estimasi,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', existingPlan.id);
-        } else {
-          await mutationClient.from('plans').insert({
-            item_id: id,
-            status: data.status,
-            prioritas: 3,
-            estimasi_harga: estimasi,
-          });
-        }
-      }
+      await syncPlanStatus(supabase, id, data.status, Number(data.estimasi_harga) || 0);
     }
 
-    revalidatePath('/katalog');
-    if (seri) {
-      revalidatePath(`/katalog/seri/${encodeURIComponent(seri)}`);
-    }
-    revalidatePath('/');
+    revalidateCatalogViews(item.seri);
 
-    return { success: true };
-  } catch (err: any) {
+    return { success: true, id };
+  } catch (err) {
     return {
       success: false,
-      error: err?.message || 'Terjadi kesalahan sistem saat memperbarui item',
+      error: errorMessage(err, 'Terjadi kesalahan sistem saat memperbarui item'),
     };
   }
 }
 
-export async function deleteItem(id: string, seriName?: string | null) {
-  try {
-    const { mutationClient } = await getClients();
+/** `belum ada` berarti tanpa plan; status lain di-create / di-update sesuai apa adanya. */
+async function syncPlanStatus(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  itemId: string,
+  status: PlanStatus | 'belum ada',
+  estimasi_harga: number
+) {
+  const { data: existingPlan } = await supabase
+    .from('plans')
+    .select('id')
+    .eq('item_id', itemId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-    // Cascading in Postgres will delete plans and listings, but explicitly ensure safe cleanup
-    const { error } = await mutationClient.from('items').delete().eq('id', id);
+  if (status === 'belum ada') {
+    if (existingPlan) {
+      await supabase.from('plans').delete().eq('id', existingPlan.id);
+    }
+    return;
+  }
+
+  if (existingPlan) {
+    await supabase
+      .from('plans')
+      .update({ status, estimasi_harga, updated_at: new Date().toISOString() })
+      .eq('id', existingPlan.id);
+    return;
+  }
+
+  await supabase.from('plans').insert({
+    item_id: itemId,
+    status,
+    prioritas: 3,
+    estimasi_harga,
+  });
+}
+
+export async function deleteItem(id: string, seriName?: string | null): Promise<ItemActionResult> {
+  try {
+    const { supabase, error: authError } = await requireUser();
+    if (!supabase) {
+      return { success: false, error: authError };
+    }
+
+    // Relasi plans & listings ikut terhapus lewat cascade FK di Postgres.
+    const { error } = await supabase.from('items').delete().eq('id', id);
 
     if (error) {
       return { success: false, error: `Gagal menghapus item: ${error.message}` };
     }
 
-    revalidatePath('/katalog');
-    if (seriName) {
-      revalidatePath(`/katalog/seri/${encodeURIComponent(seriName)}`);
-    }
-    revalidatePath('/');
+    revalidateCatalogViews(seriName ?? null);
 
-    return { success: true };
-  } catch (err: any) {
+    return { success: true, id };
+  } catch (err) {
     return {
       success: false,
-      error: err?.message || 'Terjadi kesalahan sistem saat menghapus item',
+      error: errorMessage(err, 'Terjadi kesalahan sistem saat menghapus item'),
     };
   }
 }

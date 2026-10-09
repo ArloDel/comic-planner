@@ -6,8 +6,6 @@ import {
   TRANSITIONS,
   calculateCommitment,
   canTransition,
-  daysUntil,
-  formatRupiah,
   isPlanStatus,
   isValidDateInput,
   isValidPriority,
@@ -16,6 +14,7 @@ import {
   summarizePayments,
   transitionError,
 } from '../src/lib/plans.ts';
+import { daysUntil, formatRupiah } from '../src/lib/format.ts';
 import type { PlanStatus } from '../src/types/database.ts';
 
 /** Jalur utama PRD: wishlist → po → dp → lunas → diterima. */

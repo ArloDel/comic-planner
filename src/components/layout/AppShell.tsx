@@ -198,13 +198,14 @@ export function AppShell({
             className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="relative bg-white/95 backdrop-blur-xl rounded-t-3xl border-t border-white/80 p-5 shadow-glass-lg z-10 animate-in slide-in-from-bottom duration-200">
+          <div className="relative bg-white/95 backdrop-blur-xl rounded-t-3xl border-t border-white/80 p-5 shadow-glass-lg z-10">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <span className="text-sm font-bold text-slate-900">Menu Lainnya</span>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+                aria-label="Tutup menu"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700"
               >
                 <X className="h-5 w-5" />
               </button>

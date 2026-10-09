@@ -6,11 +6,8 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { createPlan } from '@/app/plans/actions';
-import {
-  PRIORITIES,
-  formatRupiah,
-  priorityLabel,
-} from '@/lib/plans';
+import { PRIORITIES, priorityLabel } from '@/lib/plans';
+import { formatRupiah } from '@/lib/format';
 import type { PlanItemOption } from '@/app/plans/PlansClient';
 
 export interface PlanModalProps {

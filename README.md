@@ -76,9 +76,98 @@ Aplikasi dapat diakses di [http://localhost:3000](http://localhost:3000).
 
 ---
 
+## Endpoint Impor (F5)
+
+`POST /api/import` menerima produk Shopee dari userscript Tampermonkey (TASK-006).
+Endpoint ini memakai **token**, bukan sesi Supabase, karena userscript berjalan di
+origin Shopee dan tidak punya cookie aplikasi.
+
+**Header**
+
+| Header | Nilai |
+|---|---|
+| `X-Import-Token` | Harus sama persis dengan env `IMPORT_TOKEN` |
+
+**Body** — array polos atau `{ "items": [...] }`:
+
+```json
+{
+  "items": [
+    {
+      "itemid": "987654321",
+      "shopid": "555000111",
+      "nama": "One Piece Vol. 101 (Edisi Indonesia)",
+      "harga_raw": 4500000000,
+      "label_po": true,
+      "deadline_po": "2026-12-01",
+      "tanggal_rilis": "2026-11-20",
+      "thumbnail": "https://down-...jpg",
+      "url": "https://shopee.co.id/product/987654321",
+      "nama_toko": "Manga Store ID",
+      "seri": "One Piece",
+      "volume": "101"
+    }
+  ]
+}
+```
+
+- `itemid`, `shopid`, `nama` wajib. Selain itu semua opsional.
+- `harga_raw` dalam satuan mentah Shopee: **÷ 100.000 → rupiah** (contoh di atas = Rp 45.000).
+- `label_po` boleh `true`/`1`/`"true"`/`"po"` — bila terisi maka `listings.status = 'po'` + `deadline_po`.
+- Maks. 200 produk per request.
+
+**Respons**
+
+```json
+{ "created": 3, "updated": 12, "skipped": 1, "errors": [{ "index": 7, "itemid": null, "nama": null, "message": "harga tidak bisa dibaca (harga_raw bukan angka)" }] }
+```
+
+`errors` berisi produk yang **dilewati**; produk lain tetap diproses
+(parsing defensif, PRD F5).
+
+**Perilaku dedup**
+
+- Produk baru → `items` + `listings` + `plans` berstatus `wishlist`.
+- Produk lama (kunci `(marketplace, shop_id, item_id_shopee)` sudah ada) → hanya
+  `listings` yang di-refresh: harga, status, deadline. `plans` tidak disentuh.
+- Harga & deadline yang tidak dibawa payload dipertahankan; listing yang turun
+  dari PO ke ready=deadline-nya dibersihkan.
+- Semua penulisan berupa 4 statement batch, bukan satu per item (50 produk < 3 detik).
+
+**Status codes:** `400` payload tidak valid · `403` token salah/tak ada ·
+`500` `IMPORT_TOKEN` belum dikonfigurasi di server.
+
+---
+
+## Userscript Tampermonkey Shopee (F5 Client)
+
+Skrip Tampermonkey [`userscript/comicplan-import.user.js`](userscript/comicplan-import.user.js) mengekstrak produk komik dari etalase toko dan halaman detail produk Shopee, lalu menyinkronkannya ke ComicPlan via endpoint `POST /api/import`.
+
+### Yang Dibutuhkan
+
+1. **Browser Extension**: Pasang ekstensi [Tampermonkey](https://www.tampermonkey.net/) (atau Violentmonkey) pada browser Chrome, Edge, Firefox, atau Kiwi Browser (Android).
+2. **Server ComicPlan**: Pastikan web app ComicPlan dapat diakses dari browser (misal `http://localhost:3000` untuk development lokal, atau URL staging/production Anda).
+3. **Import Token**: Token rahasia yang sama dengan yang dikonfigurasi di file `.env.local` server (`IMPORT_TOKEN=...`).
+
+### Cara Instalasi & Penggunaan
+
+1. Buka dashboard ekstensi **Tampermonkey** → klik menu **Add a new script (+)**.
+2. Salin seluruh isi file [`userscript/comicplan-import.user.js`](userscript/comicplan-import.user.js), lalu simpan (`Ctrl+S`).
+3. Buka halaman toko Shopee (misal `https://shopee.co.id/shop/<shopid>`) atau halaman produk komik.
+4. Panel mengambang bergaya glassmorphism **ComicPlan Sync** akan otomatis muncul di sudut kanan bawah:
+   - Klik ikon gerigi (⚙️) untuk mengatur **Endpoint URL** (default: `http://localhost:3000/api/import`) dan memasukkan **Import Token**. Konfigurasi tersimpan secara persisten di storage Tampermonkey.
+   - Sambil Anda menjelajahi etalase atau kategori toko, produk yang terdeteksi otomatis masuk ke dalam daftar panel.
+   - Pilih/centang produk yang ingin diimpor, gunakan filter **Hanya PO** jika diinginkan, lalu klik tombol **Sync ke ComicPlan**.
+   - Pada halaman detail produk tunggal, gunakan tombol **⚡ Impor Satuan** untuk mengimpor satu komik secara instan.
+   - Panel dapat diminimalkan menjadi FAB bulat kecil (`CP`) dengan mengklik tombol minimize (`─`).
+
+---
+
 ## Skrip yang Tersedia
 
 - `npm run dev`: Menjalankan Next.js development server
 - `npm run build`: Memeriksa type safety dan membuat production build
 - `npm run start`: Menjalankan production server
 - `npm run lint`: Menjalankan ESLint
+- `npm test`: Menjalankan unit test (`node --test`, tanpa dependency baru)
+

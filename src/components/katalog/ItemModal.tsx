@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -28,6 +28,11 @@ export interface ItemModalProps {
   defaultVolume?: number;
 }
 
+/**
+ * State form diinisialisasi sekali dari props — pemanggil wajib meng-remount
+ * lewat `key` kalau target yang diedit berubah, jadi tidak perlu effect yang
+ * menyalin props ke state (dan memicu render berlapis).
+ */
 export function ItemModal({
   isOpen,
   onClose,
@@ -37,41 +42,32 @@ export function ItemModal({
   defaultVolume,
 }: ItemModalProps) {
   const isEditing = Boolean(initialData?.id);
+  const seed = {
+    judul:
+      initialData?.judul ??
+      (defaultSeri && defaultVolume ? `${defaultSeri} Vol. ${defaultVolume}` : ''),
+    seri: initialData?.seri ?? defaultSeri ?? null,
+    volume: initialData?.volume ?? defaultVolume ?? null,
+    penerbit: initialData?.penerbit ?? null,
+    tipe: initialData?.tipe ?? null,
+    cover_url: initialData?.cover_url ?? null,
+    status: initialData?.status ?? ('belum ada' as const),
+    estimasi_harga: initialData?.estimasi_harga ?? null,
+  };
 
-  const [judul, setJudul] = useState('');
-  const [seri, setSeri] = useState('');
-  const [volume, setVolume] = useState<string>('');
-  const [penerbit, setPenerbit] = useState('');
-  const [tipe, setTipe] = useState<ItemType | ''>('manga');
-  const [coverUrl, setCoverUrl] = useState('');
-  const [status, setStatus] = useState<PlanStatus | 'belum ada'>('belum ada');
-  const [estimasiHarga, setEstimasiHarga] = useState<string>('');
+  const [judul, setJudul] = useState(seed.judul);
+  const [seri, setSeri] = useState(seed.seri ?? '');
+  const [volume, setVolume] = useState(seed.volume != null ? String(seed.volume) : '');
+  const [penerbit, setPenerbit] = useState(seed.penerbit ?? '');
+  const [tipe, setTipe] = useState<ItemType>(seed.tipe ?? 'manga');
+  const [coverUrl, setCoverUrl] = useState(seed.cover_url ?? '');
+  const [status, setStatus] = useState<PlanStatus | 'belum ada'>(seed.status);
+  const [estimasiHarga, setEstimasiHarga] = useState(
+    seed.estimasi_harga ? String(seed.estimasi_harga) : ''
+  );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (initialData) {
-      setJudul(initialData.judul || '');
-      setSeri(initialData.seri || '');
-      setVolume(initialData.volume !== null && initialData.volume !== undefined ? String(initialData.volume) : '');
-      setPenerbit(initialData.penerbit || '');
-      setTipe(initialData.tipe || 'manga');
-      setCoverUrl(initialData.cover_url || '');
-      setStatus(initialData.status || 'belum ada');
-      setEstimasiHarga(initialData.estimasi_harga ? String(initialData.estimasi_harga) : '');
-    } else {
-      setJudul(defaultSeri && defaultVolume ? `${defaultSeri} Vol. ${defaultVolume}` : '');
-      setSeri(defaultSeri || '');
-      setVolume(defaultVolume ? String(defaultVolume) : '');
-      setPenerbit('');
-      setTipe('manga');
-      setCoverUrl('');
-      setStatus('belum ada');
-      setEstimasiHarga('');
-    }
-    setError(null);
-  }, [initialData, defaultSeri, defaultVolume, isOpen]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,7 +84,7 @@ export function ItemModal({
       seri: seri.trim() || null,
       volume: volume ? parseInt(volume, 10) : null,
       penerbit: penerbit.trim() || null,
-      tipe: tipe ? (tipe as ItemType) : null,
+      tipe: tipe || null,
       cover_url: coverUrl.trim() || null,
       status,
       estimasi_harga: estimasiHarga ? parseFloat(estimasiHarga) : null,

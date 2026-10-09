@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { History, CornerDownRight } from 'lucide-react';
-import { STATUS_LABELS, formatDateTime, isPlanStatus, type PlanHistoryEntry } from '@/lib/plans';
+import { STATUS_LABELS, isPlanStatus, type PlanHistoryEntry } from '@/lib/plans';
+import { formatTanggalJam } from '@/lib/format';
 
 interface StatusTimelineProps {
   entries: PlanHistoryEntry[];
@@ -62,7 +63,7 @@ export function StatusTimeline({ entries }: StatusTimelineProps) {
               dateTime={entry.changed_at}
               className="text-[10px] font-medium text-slate-400 tabular-nums"
             >
-              {formatDateTime(entry.changed_at)}
+              {formatTanggalJam(entry.changed_at)}
             </time>
           </div>
         </li>
