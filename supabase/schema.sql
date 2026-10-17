@@ -181,27 +181,45 @@ alter table public.status_history enable row level security;
 -- Drop existing policies if any
 drop policy if exists "Allow authenticated users to read budgets" on public.budgets;
 drop policy if exists "Allow authenticated users to read items" on public.items;
+drop policy if exists "Allow authenticated users to insert items" on public.items;
+drop policy if exists "Allow authenticated users to update items" on public.items;
+drop policy if exists "Allow authenticated users to delete items" on public.items;
 drop policy if exists "Allow authenticated users to read listings" on public.listings;
 drop policy if exists "Allow authenticated users to read plans" on public.plans;
+drop policy if exists "Allow authenticated users to insert plans" on public.plans;
+drop policy if exists "Allow authenticated users to update plans" on public.plans;
+drop policy if exists "Allow authenticated users to delete plans" on public.plans;
 drop policy if exists "Allow authenticated users to read transactions" on public.transactions;
 drop policy if exists "Allow authenticated users to read status_history" on public.status_history;
 
--- RLS: Authenticated user read-only access
--- All mutations (INSERT, UPDATE, DELETE) must pass through server routes using service_role key
+-- RLS: Authenticated user access
 create policy "Allow authenticated users to read budgets" on public.budgets
   for select to authenticated using (true);
 
 create policy "Allow authenticated users to read items" on public.items
   for select to authenticated using (true);
+create policy "Allow authenticated users to insert items" on public.items
+  for insert to authenticated with check (true);
+create policy "Allow authenticated users to update items" on public.items
+  for update to authenticated using (true) with check (true);
+create policy "Allow authenticated users to delete items" on public.items
+  for delete to authenticated using (true);
 
 create policy "Allow authenticated users to read listings" on public.listings
   for select to authenticated using (true);
 
 create policy "Allow authenticated users to read plans" on public.plans
   for select to authenticated using (true);
+create policy "Allow authenticated users to insert plans" on public.plans
+  for insert to authenticated with check (true);
+create policy "Allow authenticated users to update plans" on public.plans
+  for update to authenticated using (true) with check (true);
+create policy "Allow authenticated users to delete plans" on public.plans
+  for delete to authenticated using (true);
 
 create policy "Allow authenticated users to read transactions" on public.transactions
   for select to authenticated using (true);
 
 create policy "Allow authenticated users to read status_history" on public.status_history
   for select to authenticated using (true);
+
