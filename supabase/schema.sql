@@ -180,6 +180,8 @@ alter table public.status_history enable row level security;
 
 -- Drop existing policies if any
 drop policy if exists "Allow authenticated users to read budgets" on public.budgets;
+drop policy if exists "Allow authenticated users to insert budgets" on public.budgets;
+drop policy if exists "Allow authenticated users to update budgets" on public.budgets;
 drop policy if exists "Allow authenticated users to read items" on public.items;
 drop policy if exists "Allow authenticated users to insert items" on public.items;
 drop policy if exists "Allow authenticated users to update items" on public.items;
@@ -190,11 +192,18 @@ drop policy if exists "Allow authenticated users to insert plans" on public.plan
 drop policy if exists "Allow authenticated users to update plans" on public.plans;
 drop policy if exists "Allow authenticated users to delete plans" on public.plans;
 drop policy if exists "Allow authenticated users to read transactions" on public.transactions;
+drop policy if exists "Allow authenticated users to insert transactions" on public.transactions;
+drop policy if exists "Allow authenticated users to update transactions" on public.transactions;
+drop policy if exists "Allow authenticated users to delete transactions" on public.transactions;
 drop policy if exists "Allow authenticated users to read status_history" on public.status_history;
 
 -- RLS: Authenticated user access
 create policy "Allow authenticated users to read budgets" on public.budgets
   for select to authenticated using (true);
+create policy "Allow authenticated users to insert budgets" on public.budgets
+  for insert to authenticated with check (true);
+create policy "Allow authenticated users to update budgets" on public.budgets
+  for update to authenticated using (true) with check (true);
 
 create policy "Allow authenticated users to read items" on public.items
   for select to authenticated using (true);
@@ -219,6 +228,12 @@ create policy "Allow authenticated users to delete plans" on public.plans
 
 create policy "Allow authenticated users to read transactions" on public.transactions
   for select to authenticated using (true);
+create policy "Allow authenticated users to insert transactions" on public.transactions
+  for insert to authenticated with check (true);
+create policy "Allow authenticated users to update transactions" on public.transactions
+  for update to authenticated using (true) with check (true);
+create policy "Allow authenticated users to delete transactions" on public.transactions
+  for delete to authenticated using (true);
 
 create policy "Allow authenticated users to read status_history" on public.status_history
   for select to authenticated using (true);
