@@ -21,7 +21,7 @@ export default async function KatalogPage() {
 
     userEmail = user?.email || null;
 
-    const { data: items, error } = await supabase
+    const { data: items } = await supabase
       .from('items')
       .select(
         'id, judul, seri, volume, penerbit, tipe, cover_url, created_at, updated_at, plans(id, status, estimasi_harga), listings(harga)'
@@ -29,11 +29,7 @@ export default async function KatalogPage() {
       .order('created_at', { ascending: false })
       .returns<ItemRowWithRelations[]>();
 
-    if (error) {
-      console.error('Error loading katalog items:', error);
-    } else if (items) {
-      formattedItems = mapItemsWithDetails(items);
-    }
+    formattedItems = mapItemsWithDetails(items ?? []);
   } catch (err) {
     console.error('Error loading katalog items:', err);
   }
