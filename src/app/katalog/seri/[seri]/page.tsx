@@ -35,7 +35,7 @@ export default async function SeriPage({ params }: SeriPageProps) {
 
     userEmail = user?.email || null;
 
-    const { data: dbItems, error } = await supabase
+    const { data: dbItems } = await supabase
       .from('items')
       .select(
         'id, judul, seri, volume, penerbit, tipe, cover_url, created_at, updated_at, plans(id, status, estimasi_harga)'
@@ -44,12 +44,8 @@ export default async function SeriPage({ params }: SeriPageProps) {
       .order('volume', { ascending: true, nullsFirst: false })
       .returns<ItemRowWithRelations[]>();
 
-    if (error) {
-      console.error('Error fetching series items:', error);
-    } else if (dbItems) {
-      items = mapItemsWithDetails(dbItems);
-      publisher = items.find((item) => item.penerbit)?.penerbit ?? null;
-    }
+    items = mapItemsWithDetails(dbItems ?? []);
+    publisher = items.find((item) => item.penerbit)?.penerbit ?? null;
   } catch (err) {
     console.error('Database connection error in SeriPage:', err);
   }
