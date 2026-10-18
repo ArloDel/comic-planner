@@ -13,6 +13,7 @@ interface CoverImageProps {
 export function CoverImage({ src, alt, title, className = '' }: CoverImageProps) {
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const widthClass = /\bw-\S+/.test(className) ? '' : 'w-full';
 
   // If no source or error occurred, render styled fallback
   if (!src || error) {
@@ -27,7 +28,7 @@ export function CoverImage({ src, alt, title, className = '' }: CoverImageProps)
 
     return (
       <div
-        className={`aspect-[2/3] w-full rounded-xl bg-gradient-to-br from-slate-100 to-indigo-100/60 border border-slate-200/60 flex flex-col items-center justify-center p-3 text-center select-none overflow-hidden ${className}`}
+        className={`aspect-[2/3] ${widthClass} rounded-xl bg-gradient-to-br from-slate-100 to-indigo-100/60 border border-slate-200/60 flex flex-col items-center justify-center p-3 text-center select-none overflow-hidden ${className}`}
       >
         <BookOpen className="h-8 w-8 text-primary-400 mb-1 opacity-70" />
         {initials ? (
@@ -46,7 +47,7 @@ export function CoverImage({ src, alt, title, className = '' }: CoverImageProps)
 
   return (
     <div
-      className={`relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-slate-100 border border-slate-200/60 ${className}`}
+      className={`relative aspect-[2/3] ${widthClass} overflow-hidden rounded-xl bg-slate-100 border border-slate-200/60 ${className}`}
     >
       {!loaded && <div className="absolute inset-0 animate-pulse bg-slate-200/70" />}
       {/* Using standard img for external marketplace images without requiring domain whitelist in next.config.ts */}
