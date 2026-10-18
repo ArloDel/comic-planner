@@ -7,6 +7,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { asArray } from '@/lib/supabase/embed';
 import { createClient } from '@/lib/supabase/server';
 import { formatTanggalJam } from '@/lib/format';
+import { maskSecretToken } from '@/lib/settings';
 import type { ListingStatus } from '@/types/database';
 import { ImportClient, type ImportedListingItem } from './ImportClient';
 
@@ -35,12 +36,6 @@ interface ListingRowWithItem {
   deadline_po: string | null;
   updated_at: string;
   items: ListingItemEmbed | ListingItemEmbed[] | null;
-}
-
-function maskSecretToken(token: string | null): string | null {
-  if (!token) return null;
-  if (token.length <= 4) return '••••';
-  return `••••••••${token.slice(-4)}`;
 }
 
 async function readUserscriptFile(): Promise<string | null> {
