@@ -11,7 +11,7 @@ export interface ItemFormData {
   penerbit?: string | null;
   tipe?: ItemType | null;
   cover_url?: string | null;
-  status?: PlanStatus | 'belum ada';
+  masuk_wishlist?: boolean;
   estimasi_harga?: number | null;
 }
 
@@ -71,6 +71,7 @@ function revalidateCatalogViews(seri: string | null) {
   if (seri) {
     revalidatePath(`/katalog/seri/${encodeURIComponent(seri)}`);
   }
+  revalidatePath('/plans');
   revalidatePath('/');
 }
 
@@ -96,18 +97,15 @@ export async function createItem(data: ItemFormData): Promise<ItemActionResult> 
       return { success: false, error: `Gagal menambahkan item: ${itemError.message}` };
     }
 
-    // Status selain "belum ada" berarti item langsung punya plan.
-    if (data.status && data.status !== 'belum ada') {
-      const { error: planError } = await supabase.from('plans').insert({
+    // Katalog hanya membuat plan awal berstatus `wishlist`; progres status
+    // berikutnya berjalan satu pintu lewat state machine di `/plans`.
+    if (data.masuk_wishlist) {
+      await supabase.from('plans').insert({
         item_id: itemData.id,
-        status: data.status,
+        status: 'wishlist',
         prioritas: 3,
-        estimasi_harga: Number(data.estimasi_harga) || 0,
+        estimasi_harga: Math.max(0, Number(data.estimasi_harga) || 0),
       });
-
-      if (planError) {
-        console.error('Warning: Failed to create initial plan for item', planError);
-      }
     }
 
     revalidateCatalogViews(item.seri);
@@ -142,9 +140,12 @@ export async function updateItem(id: string, data: ItemFormData): Promise<ItemAc
       return { success: false, error: `Gagal mengupdate item: ${itemError.message}` };
     }
 
-    if (data.status !== undefined) {
-      await syncPlanStatus(supabase, id, data.status, Number(data.estimasi_harga) || 0);
-    }
+    await syncWishlistAndPrice(
+      supabase,
+      id,
+      Boolean(data.masuk_wishlist),
+      Math.max(0, Number(data.estimasi_harga) || 0)
+    );
 
     revalidateCatalogViews(item.seri);
 
@@ -157,42 +158,48 @@ export async function updateItem(id: string, data: ItemFormData): Promise<ItemAc
   }
 }
 
-/** `belum ada` berarti tanpa plan; status lain di-create / di-update sesuai apa adanya. */
-async function syncPlanStatus(
+/**
+ * Sinkronisasi plan dari form Katalog tanpa melanggar state machine:
+ * - Bila sudah ada plan aktif (status != `batal`), cukup update `estimasi_harga`
+ *   (atau hapus bila masih `wishlist` dan toggle dimatikan).
+ * - Bila belum ada plan aktif dan `masukWishlist` dicentang, buat plan `wishlist`.
+ */
+async function syncWishlistAndPrice(
   supabase: Awaited<ReturnType<typeof createClient>>,
   itemId: string,
-  status: PlanStatus | 'belum ada',
+  masukWishlist: boolean,
   estimasi_harga: number
 ) {
   const { data: existingPlan } = await supabase
     .from('plans')
-    .select('id')
+    .select('id, status')
     .eq('item_id', itemId)
+    .neq('status', 'batal')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  if (status === 'belum ada') {
-    if (existingPlan) {
-      await supabase.from('plans').delete().eq('id', existingPlan.id);
-    }
-    return;
-  }
-
   if (existingPlan) {
+    if (existingPlan.status === 'wishlist' && !masukWishlist) {
+      await supabase.from('plans').delete().eq('id', existingPlan.id);
+      return;
+    }
+
     await supabase
       .from('plans')
-      .update({ status, estimasi_harga, updated_at: new Date().toISOString() })
+      .update({ estimasi_harga, updated_at: new Date().toISOString() })
       .eq('id', existingPlan.id);
     return;
   }
 
-  await supabase.from('plans').insert({
-    item_id: itemId,
-    status,
-    prioritas: 3,
-    estimasi_harga,
-  });
+  if (masukWishlist) {
+    await supabase.from('plans').insert({
+      item_id: itemId,
+      status: 'wishlist',
+      prioritas: 3,
+      estimasi_harga,
+    });
+  }
 }
 
 export async function deleteItem(id: string, seriName?: string | null): Promise<ItemActionResult> {
