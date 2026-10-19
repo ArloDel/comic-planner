@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { CoverImage } from '@/components/ui/CoverImage';
+import { StatusPill } from '@/components/ui/StatusPill';
 import type { ItemType, PlanStatus } from '@/types/database';
 import { createItem, updateItem, type ItemFormData } from '@/app/katalog/actions';
 
@@ -42,6 +44,12 @@ export function ItemModal({
   defaultVolume,
 }: ItemModalProps) {
   const isEditing = Boolean(initialData?.id);
+  const currentStatus = initialData?.status ?? 'belum ada';
+  const hasAdvancedPlan =
+    currentStatus !== 'belum ada' &&
+    currentStatus !== 'batal' &&
+    currentStatus !== 'wishlist';
+
   const seed = {
     judul:
       initialData?.judul ??
@@ -51,7 +59,9 @@ export function ItemModal({
     penerbit: initialData?.penerbit ?? null,
     tipe: initialData?.tipe ?? null,
     cover_url: initialData?.cover_url ?? null,
-    status: initialData?.status ?? ('belum ada' as const),
+    masuk_wishlist: isEditing
+      ? currentStatus !== 'belum ada' && currentStatus !== 'batal'
+      : true,
     estimasi_harga: initialData?.estimasi_harga ?? null,
   };
 
@@ -61,7 +71,7 @@ export function ItemModal({
   const [penerbit, setPenerbit] = useState(seed.penerbit ?? '');
   const [tipe, setTipe] = useState<ItemType>(seed.tipe ?? 'manga');
   const [coverUrl, setCoverUrl] = useState(seed.cover_url ?? '');
-  const [status, setStatus] = useState<PlanStatus | 'belum ada'>(seed.status);
+  const [masukWishlist, setMasukWishlist] = useState(seed.masuk_wishlist);
   const [estimasiHarga, setEstimasiHarga] = useState(
     seed.estimasi_harga ? String(seed.estimasi_harga) : ''
   );
@@ -86,7 +96,7 @@ export function ItemModal({
       penerbit: penerbit.trim() || null,
       tipe: tipe || null,
       cover_url: coverUrl.trim() || null,
-      status,
+      masuk_wishlist: hasAdvancedPlan ? true : masukWishlist,
       estimasi_harga: estimasiHarga ? parseFloat(estimasiHarga) : null,
     };
 
@@ -139,7 +149,7 @@ export function ItemModal({
           <div className="sm:col-span-3 space-y-3">
             <Input
               label="URL Gambar Cover (Opsional)"
-              placeholder="https://... (link gambar shopee / web)"
+              placeholder="https://… (link gambar Shopee / web)"
               value={coverUrl}
               onChange={(e) => setCoverUrl(e.target.value)}
               hint="Masukkan link gambar langsung. Otomatis tampil di pratinjau."
@@ -147,7 +157,7 @@ export function ItemModal({
 
             <Input
               label="Judul Item *"
-              placeholder="Contoh: Chainsaw Man Vol. 12"
+              placeholder="Contoh: Chainsaw Man Vol. 12…"
               value={judul}
               onChange={(e) => setJudul(e.target.value)}
               required
@@ -160,7 +170,7 @@ export function ItemModal({
           <div className="sm:col-span-2">
             <Input
               label="Nama Seri (Opsional)"
-              placeholder="Contoh: Chainsaw Man, One Piece"
+              placeholder="Contoh: Chainsaw Man, One Piece…"
               value={seri}
               onChange={(e) => setSeri(e.target.value)}
               hint="Dikelompokkan bersama dalam view per seri."
@@ -171,7 +181,7 @@ export function ItemModal({
               label="Nomor Volume"
               type="number"
               min="0"
-              placeholder="12"
+              placeholder="12…"
               value={volume}
               onChange={(e) => setVolume(e.target.value)}
             />
@@ -182,7 +192,7 @@ export function ItemModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label="Penerbit (Opsional)"
-            placeholder="Contoh: Elex Media, m&c!, Akasha"
+            placeholder="Contoh: Elex Media, m&c!, Akasha…"
             value={penerbit}
             onChange={(e) => setPenerbit(e.target.value)}
           />
@@ -200,34 +210,55 @@ export function ItemModal({
           />
         </div>
 
-        {/* Status Perolehan & Estimasi Harga */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-          <Select
-            label="Status Perolehan (Plan)"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as PlanStatus | 'belum ada')}
-            options={[
-              { value: 'belum ada', label: 'Belum Ada (Belum masuk plan)' },
-              { value: 'wishlist', label: 'Wishlist (Direncanakan)' },
-              { value: 'po', label: 'Pre-Order (PO Aktif)' },
-              { value: 'dp', label: 'DP Dibayar' },
-              { value: 'lunas', label: 'Lunas (Menunggu Barang)' },
-              { value: 'diterima', label: 'Punya / Diterima' },
-              { value: 'batal', label: 'Dibatalkan' },
-            ]}
-          />
+        {/* Wishlist Toggle & Estimasi Harga (Progres Status Satu Pintu di /plans) */}
+        <div className="space-y-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+          {hasAdvancedPlan ? (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-700">Status Rencana:</span>
+                <StatusPill status={currentStatus} size="sm" />
+              </div>
+              <Link
+                href="/plans"
+                onClick={onClose}
+                className="text-xs font-semibold text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded"
+              >
+                Ubah progres status di Rencana →
+              </Link>
+            </div>
+          ) : (
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={masukWishlist}
+                onChange={(e) => setMasukWishlist(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span className="text-xs text-slate-700">
+                <strong className="font-semibold text-slate-900">
+                  Masukkan ke Wishlist Rencana Belanja
+                </strong>
+                <span className="block text-[11px] text-slate-500 mt-0.5">
+                  Progres ke Pre-Order, DP, Lunas, dan Diterima dilanjutkan satu pintu di menu
+                  Rencana.
+                </span>
+              </span>
+            </label>
+          )}
 
-          <Input
-            label="Estimasi Harga (Rp)"
-            type="number"
-            min="0"
-            step="1000"
-            placeholder="Contoh: 45000"
-            value={estimasiHarga}
-            onChange={(e) => setEstimasiHarga(e.target.value)}
-            disabled={status === 'belum ada'}
-            hint={status === 'belum ada' ? 'Pilih status plan untuk set harga' : 'Digunakan untuk kalkulasi anggaran'}
-          />
+          {(masukWishlist || hasAdvancedPlan) && (
+            <Input
+              label="Estimasi Harga (Rp)"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              step="1000"
+              placeholder="Contoh: 45000…"
+              value={estimasiHarga}
+              onChange={(e) => setEstimasiHarga(e.target.value)}
+              hint="Digunakan untuk estimasi dan kalkulasi komitmen anggaran."
+            />
+          )}
         </div>
 
         {/* Form Actions */}
