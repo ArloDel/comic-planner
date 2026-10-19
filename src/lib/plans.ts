@@ -225,6 +225,22 @@ export function txnAllowedForStatus(jenis: TransactionType, status: PlanStatus):
   }
 }
 
+/**
+ * Jenis transaksi pembayaran otomatis saat plan maju ke `dp` atau `lunas`:
+ * - `po -> dp`    = `'dp'`
+ * - `dp -> lunas` = `'pelunasan'`
+ * - `po -> lunas` = `'bayar_penuh'`
+ */
+export function transitionTransactionType(
+  from: PlanStatus,
+  to: PlanStatus
+): TransactionType | null {
+  if (from === 'po' && to === 'dp') return 'dp';
+  if (from === 'dp' && to === 'lunas') return 'pelunasan';
+  if (from === 'po' && to === 'lunas') return 'bayar_penuh';
+  return null;
+}
+
 /** Label prioritas 1..5, 1 = paling tinggi. */
 export function priorityLabel(prioritas: number): string {
   const map: Record<number, string> = {
