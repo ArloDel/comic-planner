@@ -21,6 +21,14 @@ export interface PlanFormData {
   estimasi_harga?: number | null;
 }
 
+export interface UpdatePlanInput {
+  id: string;
+  prioritas: number;
+  estimasi_harga: number;
+  listing_id?: string | null;
+  deadline_po?: string | null;
+}
+
 export interface TransitionInput {
   planId: string;
   to: PlanStatus;
@@ -272,6 +280,74 @@ export async function transitionPlanStatus(
     return {
       success: false,
       error: errorMessage(err, 'Terjadi kesalahan sistem saat mengubah status'),
+    };
+  }
+}
+
+/**
+ * Perbarui prioritas (#1–#5), estimasi harga, listing referensi, atau deadline PO
+ * pada plan yang sudah ada tanpa mengubah statusnya.
+ */
+export async function updatePlanDetails(
+  input: UpdatePlanInput
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const { supabase, user } = await getClients();
+
+    if (!user) {
+      return { success: false, error: 'Sesi tidak valid. Silakan masuk kembali.' };
+    }
+
+    const planId = input.id?.trim();
+    if (!planId) {
+      return { success: false, error: 'Plan tidak ditemukan.' };
+    }
+
+    const prioritas = Number(input.prioritas);
+    if (!isValidPriority(prioritas)) {
+      return { success: false, error: 'Prioritas harus berupa angka bulat 1 (tertinggi) sampai 5.' };
+    }
+
+    const estimasiHarga = Number(input.estimasi_harga ?? 0);
+    if (!Number.isFinite(estimasiHarga) || estimasiHarga < 0) {
+      return { success: false, error: 'Estimasi harga harus angka nol atau lebih.' };
+    }
+
+    const deadline = input.deadline_po?.trim() || null;
+    if (deadline && !isValidDateInput(deadline)) {
+      return { success: false, error: 'Format deadline tidak valid (harus YYYY-MM-DD).' };
+    }
+
+    const updatePayload: Database['public']['Tables']['plans']['Update'] = {
+      prioritas,
+      estimasi_harga: estimasiHarga,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (input.listing_id !== undefined) {
+      updatePayload.listing_id = input.listing_id?.trim() || null;
+    }
+
+    if (input.deadline_po !== undefined) {
+      updatePayload.deadline_po = deadline;
+    }
+
+    const { error } = await supabase
+      .from('plans')
+      .update(updatePayload)
+      .eq('id', planId);
+
+    if (error) {
+      return { success: false, error: `Gagal memperbarui rencana: ${error.message}` };
+    }
+
+    revalidatePlanViews();
+
+    return { success: true, id: planId };
+  } catch (err) {
+    return {
+      success: false,
+      error: errorMessage(err, 'Terjadi kesalahan sistem saat memperbarui rencana'),
     };
   }
 }
