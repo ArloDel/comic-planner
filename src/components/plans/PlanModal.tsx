@@ -5,10 +5,10 @@ import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { createPlan } from '@/app/plans/actions';
-import { PRIORITIES, priorityLabel } from '@/lib/plans';
+import { createPlan, updatePlanDetails } from '@/app/plans/actions';
+import { PRIORITIES, priorityLabel, requiresDeadline } from '@/lib/plans';
 import { formatRupiah } from '@/lib/format';
-import type { PlanItemOption } from '@/app/plans/PlansClient';
+import type { PlanItemOption, PlanWithDetails } from '@/app/plans/PlansClient';
 
 export interface PlanModalProps {
   isOpen: boolean;
@@ -16,17 +16,32 @@ export interface PlanModalProps {
   onSuccess?: () => void;
   items: PlanItemOption[];
   defaultItemId?: string;
+  /** Bila diisi, modal beralih ke mode Edit Prioritas & Estimasi untuk plan tersebut. */
+  initialPlan?: PlanWithDetails | null;
 }
 
 /**
  * Remount komponen ini tiap kali dibuka (pemanggil me-render secara
- * kondisional), jadi form selalu mulai kosong tanpa perlu effect untuk mereset.
+ * kondisional), jadi form selalu mulai kosong / terisi sesuai initialPlan
+ * tanpa perlu effect untuk mereset.
  */
-export function PlanModal({ isOpen, onClose, onSuccess, items, defaultItemId }: PlanModalProps) {
-  const [itemId, setItemId] = useState(defaultItemId ?? '');
-  const [listingId, setListingId] = useState('');
-  const [prioritas, setPrioritas] = useState('3');
-  const [estimasiHarga, setEstimasiHarga] = useState('');
+export function PlanModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  items,
+  defaultItemId,
+  initialPlan,
+}: PlanModalProps) {
+  const isEditing = Boolean(initialPlan?.id);
+
+  const [itemId, setItemId] = useState(initialPlan?.item_id ?? defaultItemId ?? '');
+  const [listingId, setListingId] = useState(initialPlan?.listing_id ?? '');
+  const [prioritas, setPrioritas] = useState(String(initialPlan?.prioritas ?? 3));
+  const [estimasiHarga, setEstimasiHarga] = useState(
+    initialPlan && initialPlan.estimasi_harga > 0 ? String(initialPlan.estimasi_harga) : ''
+  );
+  const [deadlinePo, setDeadlinePo] = useState(initialPlan?.deadline_po ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +64,16 @@ export function PlanModal({ isOpen, onClose, onSuccess, items, defaultItemId }: 
     }
   }
 
+  function handleListingChange(value: string) {
+    setListingId(value);
+    if (!value) return;
+
+    const chosen = selectedItem?.listings.find((l) => l.id === value);
+    if (chosen && chosen.harga > 0 && (!estimasiHarga || Number(estimasiHarga) === 0)) {
+      setEstimasiHarga(String(Math.round(chosen.harga)));
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -57,20 +82,37 @@ export function PlanModal({ isOpen, onClose, onSuccess, items, defaultItemId }: 
       return;
     }
 
+    const canEditDeadline = isEditing && initialPlan && requiresDeadline(initialPlan.status);
+    if (canEditDeadline && !deadlinePo.trim()) {
+      setError('Deadline PO wajib diisi untuk plan berstatus Pre-Order.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
-    const result = await createPlan({
-      item_id: itemId,
-      listing_id: listingId || null,
-      prioritas: Number(prioritas),
-      estimasi_harga: estimasiHarga ? Number(estimasiHarga) : 0,
-    });
+    const result =
+      isEditing && initialPlan
+        ? await updatePlanDetails({
+            id: initialPlan.id,
+            prioritas: Number(prioritas),
+            estimasi_harga: estimasiHarga ? Number(estimasiHarga) : 0,
+            listing_id: listingId || null,
+            deadline_po: canEditDeadline ? deadlinePo.trim() : undefined,
+          })
+        : await createPlan({
+            item_id: itemId,
+            listing_id: listingId || null,
+            prioritas: Number(prioritas),
+            estimasi_harga: estimasiHarga ? Number(estimasiHarga) : 0,
+          });
 
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error || 'Gagal membuat rencana');
+      setError(
+        result.error || (isEditing ? 'Gagal memperbarui rencana' : 'Gagal membuat rencana')
+      );
       return;
     }
 
@@ -79,13 +121,20 @@ export function PlanModal({ isOpen, onClose, onSuccess, items, defaultItemId }: 
   }
 
   const listingOptions = selectedItem?.listings ?? [];
+  const showDeadlineEdit = Boolean(
+    isEditing && initialPlan && requiresDeadline(initialPlan.status)
+  );
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Tambah Rencana Belanja"
-      description="Rencana baru selalu dimulai dari status Wishlist, lalu dimejutkan lewat status."
+      title={isEditing ? 'Edit Prioritas & Estimasi Rencana' : 'Tambah Rencana Belanja'}
+      description={
+        isEditing
+          ? initialPlan?.item?.judul ?? 'Atur ulang prioritas dan estimasi harga plan ini.'
+          : 'Rencana baru selalu dimulai dari status Wishlist, lalu dimajukan lewat status.'
+      }
       maxWidth="lg"
     >
       {error && (
@@ -97,7 +146,7 @@ export function PlanModal({ isOpen, onClose, onSuccess, items, defaultItemId }: 
         </div>
       )}
 
-      {items.length === 0 ? (
+      {!isEditing && items.length === 0 ? (
         <p className="mb-4 rounded-xl bg-amber-50 p-3 text-xs text-amber-800 border border-amber-200">
           Belum ada item di katalog. Tambahkan komik dulu di halaman Katalog sebelum membuat
           rencana.
@@ -105,31 +154,33 @@ export function PlanModal({ isOpen, onClose, onSuccess, items, defaultItemId }: 
       ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Select
-          label="Item Komik *"
-          value={itemId}
-          onChange={(e) => handleItemChange(e.target.value)}
-          hint={selectedItem ? selectedItem.judul : undefined}
-          options={[
-            { value: '', label: '— Pilih item —' },
-            ...items.map((item) => ({
-              value: item.id,
-              label: item.seri ? `${item.judul} (${item.seri})` : item.judul,
-            })),
-          ]}
-        />
+        {!isEditing && (
+          <Select
+            label="Item Komik *"
+            value={itemId}
+            onChange={(e) => handleItemChange(e.target.value)}
+            hint={selectedItem ? selectedItem.judul : undefined}
+            options={[
+              { value: '', label: '— Pilih item —' },
+              ...items.map((item) => ({
+                value: item.id,
+                label: item.seri ? `${item.judul} (${item.seri})` : item.judul,
+              })),
+            ]}
+          />
+        )}
 
         <Select
-          label="Listing (Opsional)"
+          label="Listing Referensi (Opsional)"
           value={listingId}
-          onChange={(e) => setListingId(e.target.value)}
+          onChange={(e) => handleListingChange(e.target.value)}
           disabled={!itemId}
           hint={
             listingOptions.length === 0
               ? itemId
                 ? 'Item ini belum punya listing. Deadline PO nanti diisi manual saat masuk status PO.'
                 : 'Pilih item dulu untuk melihat listing yang tersedia.'
-              : 'Menautkan listing mengisi deadline PO otomatis saat status jadi PO.'
+              : 'Menautkan listing mengisi harga & deadline PO otomatis.'
           }
           options={[
             { value: '', label: '— Tanpa listing —' },
@@ -142,34 +193,50 @@ export function PlanModal({ isOpen, onClose, onSuccess, items, defaultItemId }: 
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
           <Select
-            label="Prioritas"
+            label="Prioritas (#1–#5)"
             value={prioritas}
             onChange={(e) => setPrioritas(e.target.value)}
             hint="1 = paling diutamakan saat budget mepet."
             options={PRIORITIES.map((value) => ({
               value: String(value),
-              label: `${value} — ${priorityLabel(value)}`,
+              label: `#${value} — ${priorityLabel(value)}`,
             }))}
           />
 
           <Input
             label="Estimasi Harga (Rp)"
             type="number"
+            inputMode="numeric"
             min="0"
             step="1000"
-            placeholder="Contoh: 45000"
+            placeholder="Contoh: 45000…"
             value={estimasiHarga}
             onChange={(e) => setEstimasiHarga(e.target.value)}
             hint="Dipakai rumus komitmen begitu plan masuk PO/DP."
           />
         </div>
 
+        {showDeadlineEdit && (
+          <Input
+            label="Deadline PO *"
+            type="date"
+            value={deadlinePo}
+            onChange={(e) => setDeadlinePo(e.target.value)}
+            hint="Ubah tanggal penutupan PO untuk plan ini."
+          />
+        )}
+
         <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
           <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
             Batal
           </Button>
-          <Button type="submit" variant="primary" isLoading={loading} disabled={items.length === 0}>
-            Simpan Rencana
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={loading}
+            disabled={!isEditing && items.length === 0}
+          >
+            {isEditing ? 'Simpan Perubahan' : 'Simpan Rencana'}
           </Button>
         </div>
       </form>
