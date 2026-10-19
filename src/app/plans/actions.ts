@@ -9,7 +9,9 @@ import {
   isValidPriority,
   requiresDeadline,
   transitionError,
+  transitionTransactionType,
 } from '@/lib/plans';
+import { todayISO } from '@/lib/budget';
 import { asArray } from '@/lib/supabase/embed';
 
 export interface PlanFormData {
@@ -24,6 +26,12 @@ export interface TransitionInput {
   to: PlanStatus;
   /** Deadline PO `YYYY-MM-DD`. Kosongkan untuk memakai deadline listing. */
   deadline_po?: string | null;
+  /** Nominal pembayaran opsional saat transisi ke `dp` atau `lunas`. */
+  jumlah_bayar?: number | null;
+  /** Tanggal pembayaran `YYYY-MM-DD` (default hari ini). */
+  tanggal_bayar?: string | null;
+  /** Catatan pembayaran opsional. */
+  catatan_bayar?: string | null;
 }
 
 export type ActionResult<T = Record<string, never>> = {
@@ -193,6 +201,17 @@ export async function transitionPlanStatus(
       return { success: false, error: invalid };
     }
 
+    const txnType = transitionTransactionType(from, to);
+    const jumlahBayar = Number(input.jumlah_bayar ?? 0);
+    if (!Number.isFinite(jumlahBayar) || jumlahBayar < 0) {
+      return { success: false, error: 'Nominal pembayaran tidak valid.' };
+    }
+
+    const tanggalBayar = input.tanggal_bayar?.trim() || todayISO();
+    if (jumlahBayar > 0 && !isValidDateInput(tanggalBayar)) {
+      return { success: false, error: 'Format tanggal pembayaran tidak valid (harus YYYY-MM-DD).' };
+    }
+
     if (from === to) {
       // Sudah di status tujuan: tidak ada perubahan, tidak ada riwayat baru.
       return { success: true, status: to, deadline_po: deadline ?? null };
@@ -226,6 +245,24 @@ export async function transitionPlanStatus(
         success: false,
         error: 'Status plan sudah berubah di sesi lain. Muat ulang halaman lalu coba lagi.',
       };
+    }
+
+    // Catat transaksi pembayaran dalam satu langkah bila diisi saat transisi ke dp/lunas.
+    if (txnType && jumlahBayar > 0) {
+      const { error: txnError } = await supabase.from('transactions').insert({
+        plan_id: planId,
+        jenis: txnType,
+        jumlah: jumlahBayar,
+        tanggal: tanggalBayar,
+        catatan: input.catatan_bayar?.trim() || null,
+      });
+
+      if (txnError) {
+        return {
+          success: false,
+          error: `Status berhasil diubah ke ${to.toUpperCase()}, tetapi gagal mencatat transaksi: ${txnError.message}`,
+        };
+      }
     }
 
     revalidatePlanViews();
