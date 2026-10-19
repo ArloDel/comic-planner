@@ -13,6 +13,7 @@ import {
   requiresDeadline,
   summarizePayments,
   transitionError,
+  transitionTransactionType,
 } from '../src/lib/plans.ts';
 import { daysUntil, formatRupiah } from '../src/lib/format.ts';
 import type { PlanStatus } from '../src/types/database.ts';
@@ -214,5 +215,14 @@ describe('helper', () => {
 
     assert.equal(daysUntil(iso), 3);
     assert.equal(daysUntil(null), null);
+  });
+
+  it('memetakan transisi ke jenis transaksi pembayaran yang tepat', () => {
+    assert.equal(transitionTransactionType('po', 'dp'), 'dp');
+    assert.equal(transitionTransactionType('dp', 'lunas'), 'pelunasan');
+    assert.equal(transitionTransactionType('po', 'lunas'), 'bayar_penuh');
+    assert.equal(transitionTransactionType('wishlist', 'po'), null);
+    assert.equal(transitionTransactionType('lunas', 'diterima'), null);
+    assert.equal(transitionTransactionType('dp', 'batal'), null);
   });
 });
