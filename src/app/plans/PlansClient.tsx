@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   ListChecks,
+  Pencil,
   Plus,
   ShoppingCart,
   Wallet,
@@ -129,6 +130,7 @@ export function PlansClient({ initialPlans, items, commitment }: PlansClientProp
   const [statusFilter, setStatusFilter] = useState<PlanStatus | 'semua' | 'hold'>('semua');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<PlanWithDetails | null>(null);
   const [transition, setTransition] = useState<{ plan: PlanWithDetails; to: PlanStatus } | null>(
     null
   );
@@ -307,17 +309,19 @@ export function PlansClient({ initialPlans, items, commitment }: PlansClientProp
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusPill status={plan.status} size="sm" />
 
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${priorityTone(
+                      <button
+                        type="button"
+                        onClick={() => setEditingPlan(plan)}
+                        title={`Ubah prioritas (${priorityLabel(plan.prioritas)}) & estimasi harga`}
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-colors hover:border-primary-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${priorityTone(
                           plan.prioritas
                         )}`}
-                        title={`Prioritas: ${priorityLabel(plan.prioritas)}`}
                       >
                         <span>P{plan.prioritas}</span>
                         <span className="font-medium opacity-75">
                           {priorityLabel(plan.prioritas)}
                         </span>
-                      </span>
+                      </button>
 
                       {isHoldingBudget(plan.status) && (
                         <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">
@@ -419,6 +423,17 @@ export function PlansClient({ initialPlans, items, commitment }: PlansClientProp
 
                       <button
                         type="button"
+                        onClick={() => setEditingPlan(plan)}
+                        aria-label={`Edit prioritas dan estimasi ${plan.item?.judul ?? 'rencana'}`}
+                        title="Edit prioritas & estimasi harga"
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white/70 px-2.5 py-1 min-h-[36px] text-[11px] font-semibold text-slate-600 hover:bg-white hover:text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                      >
+                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Edit</span>
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => setExpandedId(expanded ? null : plan.id)}
                         aria-expanded={expanded}
                         aria-label={expanded ? 'Sembunyikan riwayat' : 'Lihat riwayat status'}
@@ -465,10 +480,22 @@ export function PlansClient({ initialPlans, items, commitment }: PlansClientProp
       {/* Dirender hanya saat terbuka supaya form me-remount dengan state baru. */}
       {isCreateOpen && (
         <PlanModal
+          key="create-plan"
           isOpen
           onClose={() => setIsCreateOpen(false)}
           onSuccess={handleRefresh}
           items={items}
+        />
+      )}
+
+      {editingPlan && (
+        <PlanModal
+          key={editingPlan.id}
+          isOpen
+          onClose={() => setEditingPlan(null)}
+          onSuccess={handleRefresh}
+          items={items}
+          initialPlan={editingPlan}
         />
       )}
 
