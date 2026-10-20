@@ -6,9 +6,9 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { WarningBanner } from '@/components/ui/WarningBanner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button, buttonClasses } from '@/components/ui/Button';
-import { Pencil, Wallet, TrendingUp, ShieldCheck, Plus, Receipt } from 'lucide-react';
+import { Wallet, TrendingUp, ShieldCheck, Plus, Receipt } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
-import { upsertBudget } from './actions';
+import { BudgetFormCard } from './BudgetFormCard';
 import { TransactionModal } from './TransactionModal';
 import {
   computeBudgetSummary,
@@ -130,11 +130,6 @@ export default async function BudgetPage({
 
   const saranLepas = sortReleaseSuggestions(holdingPlans).slice(0, 3);
 
-  async function setBudgetAction(formData: FormData) {
-    'use server';
-    await upsertBudget(periode, Number(formData.get('total_budget') ?? 0));
-  }
-
   return (
     <AppShell
       userEmail={userEmail}
@@ -169,30 +164,11 @@ export default async function BudgetPage({
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <form action={setBudgetAction}>
-            <input type="hidden" name="periode" value={periode} />
-            <StatCard
-              label="Total Budget"
-              value={formatRupiah(summary.totalBudget)}
-              icon={<Pencil className="h-4 w-4" />}
-              iconTone="primary"
-            >
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="number"
-                  name="total_budget"
-                  defaultValue={summary.totalBudget}
-                  min="0"
-                  step="10000"
-                  aria-label="Total budget periode ini"
-                  className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white/80 px-2.5 py-2 text-xs tabular-nums focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                />
-                <Button type="submit" size="sm" variant="secondary">
-                  Simpan
-                </Button>
-              </div>
-            </StatCard>
-          </form>
+          <BudgetFormCard
+            key={periode}
+            periode={periode}
+            initialBudget={summary.totalBudget}
+          />
 
           <StatCard
             label="Realisasi"
