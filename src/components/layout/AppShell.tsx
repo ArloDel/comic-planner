@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { BackdropDecor } from '@/components/ui/BackdropDecor';
+import { BrandMark } from '@/components/ui/BrandMark';
 import { logout } from '@/app/auth/actions';
 
 interface AppShellProps {
@@ -60,9 +61,7 @@ export function AppShell({
         <aside className="hidden lg:flex lg:flex-col w-64 sticky top-0 h-screen bg-white/80 backdrop-blur-xl border-r border-white/60 shadow-glass z-40 select-none">
           {/* Logo & Brand */}
           <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100/60">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white font-bold text-base shadow-soft">
-              CP
-            </div>
+            <BrandMark size="md" />
             <div>
               <h1 className="text-sm font-bold text-slate-900 leading-none">
                 ComicPlan
