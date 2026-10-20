@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" fill="none">
+  <defs>
+    <linearGradient id="bg-plan" x1="0" y1="0" x2="960" y2="540" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="50%" stop-color="#eef2ff" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <filter id="card-plan" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.06" />
+    </filter>
+  </defs>
+
+  <rect width="960" height="540" rx="18" fill="url(#bg-plan)" />
+
+  <!-- Header -->
+  <rect x="0" y="0" width="960" height="68" fill="#ffffff" fill-opacity="0.82" />
+  <line x1="0" y1="68" x2="960" y2="68" stroke="#e2e8f0" />
+  <text x="36" y="34" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Rencana Belanja (State Machine &amp; Hold Budget)</text>
+  <text x="36" y="52" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">Alur 1-pintu Wishlist → PO → DP → Lunas → Diterima, terintegrasi langsung dengan pencatatan transaksi</text>
+
+  <!-- Hold Budget Banner -->
+  <g filter="url(#card-plan)">
+    <rect x="36" y="86" width="888" height="74" rx="16" fill="#ffffff" fill-opacity="0.95" />
+    <rect x="54" y="105" width="36" height="36" rx="10" fill="#fef3c7" />
+    <text x="104" y="114" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748b">HOLD BUDGET (KOMITMEN AKTIF)</text>
+    <text x="104" y="138" font-family="Inter, system-ui, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Rp 140.000</text>
+    <text x="610" y="128" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">Urutkan: Prioritas Tertinggi (P1–P5) ▾</text>
+  </g>
+
+  <!-- Plan Card 1 -->
+  <g filter="url(#card-plan)">
+    <rect x="36" y="178" width="888" height="148" rx="18" fill="#ffffff" fill-opacity="0.95" />
+    <rect x="56" y="198" width="60" height="88" rx="8" fill="#e0e7ff" />
+
+    <!-- Badges -->
+    <rect x="132" y="198" width="76" height="22" rx="11" fill="#fffbeb" stroke="#fde68a" />
+    <text x="146" y="213" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="700" fill="#92400e">Pre-Order</text>
+
+    <rect x="216" y="198" width="118" height="22" rx="11" fill="#fff1f2" stroke="#fecdd3" />
+    <text x="228" y="213" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="700" fill="#be123c">P1 Sangat Tinggi</text>
+
+    <rect x="342" y="198" width="54" height="22" rx="11" fill="#fffbeb" stroke="#fde68a" />
+    <text x="356" y="213" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="700" fill="#92400e">Hold</text>
+
+    <!-- Title & Meta -->
+    <text x="132" y="242" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#0f172a">One Piece Vol. 108 (Edisi Reguler)</text>
+    <text x="132" y="262" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#475569">One Piece · Vol 108 · Manga Store ID (Shopee)</text>
+
+    <!-- Deadline Chip -->
+    <rect x="132" y="274" width="218" height="24" rx="8" fill="#fff1f2" stroke="#fecdd3" />
+    <text x="144" y="290" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#be123c">Deadline 22 Okt 2026 · 2 hari lagi</text>
+
+    <text x="132" y="314" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">Sisa komitmen: Rp 45.000 (estimasi Rp 45.000 − dibayar Rp 0)</text>
+
+    <!-- Price & Action Buttons -->
+    <text x="820" y="216" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#0f172a">Rp 45.000</text>
+
+    <rect x="520" y="236" width="84" height="32" rx="8" fill="#eef2ff" stroke="#c7d2fe" />
+    <text x="536" y="256" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#4338ca">Bayar DP</text>
+
+    <rect x="612" y="236" width="98" height="32" rx="8" fill="#eef2ff" stroke="#c7d2fe" />
+    <text x="626" y="256" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#4338ca">Tandai Lunas</text>
+
+    <rect x="718" y="236" width="112" height="32" rx="8" fill="#fff1f2" stroke="#fecdd3" />
+    <text x="730" y="256" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#be123c">Batalkan Rencana</text>
+
+    <rect x="838" y="236" width="64" height="32" rx="8" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="858" y="256" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#475569">Edit</text>
+  </g>
+
+  <!-- Plan Card 2 -->
+  <g filter="url(#card-plan)">
+    <rect x="36" y="344" width="888" height="148" rx="18" fill="#ffffff" fill-opacity="0.95" />
+    <rect x="56" y="364" width="60" height="88" rx="8" fill="#fef3c7" />
+
+    <rect x="132" y="364" width="48" height="22" rx="11" fill="#fffbeb" stroke="#fde68a" />
+    <text x="148" y="379" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="700" fill="#92400e">DP</text>
+
+    <rect x="188" y="364" width="86" height="22" rx="11" fill="#fffbeb" stroke="#fde68a" />
+    <text x="200" y="379" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="700" fill="#92400e">P2 Tinggi</text>
+
+    <rect x="282" y="364" width="54" height="22" rx="11" fill="#fffbeb" stroke="#fde68a" />
+    <text x="296" y="379" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="700" fill="#92400e">Hold</text>
+
+    <text x="132" y="408" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#0f172a">Chainsaw Man Vol. 16</text>
+    <text x="132" y="428" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#475569">Chainsaw Man · Vol 16 · Komik Kita Official</text>
+    <text x="132" y="454" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">Sisa komitmen: Rp 30.000 (estimasi Rp 50.000 − dibayar Rp 20.000)</text>
+
+    <text x="820" y="382" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700" fill="#0f172a">Rp 50.000</text>
+
+    <rect x="612" y="402" width="98" height="32" rx="8" fill="#eef2ff" stroke="#c7d2fe" />
+    <text x="626" y="422" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#4338ca">Tandai Lunas</text>
+
+    <rect x="718" y="402" width="112" height="32" rx="8" fill="#fff1f2" stroke="#fecdd3" />
+    <text x="730" y="422" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#be123c">Batalkan Rencana</text>
+
+    <rect x="838" y="402" width="64" height="32" rx="8" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="858" y="422" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#475569">Edit</text>
+  </g>
+</svg>
