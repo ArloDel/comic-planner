@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  ArrowUpDown,
   CalendarClock,
   Check,
   ChevronDown,
@@ -22,6 +23,7 @@ import { Button } from '@/components/ui/Button';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { FilterChip } from '@/components/ui/FilterChip';
+import { Select } from '@/components/ui/Select';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PlanModal } from '@/components/plans/PlanModal';
@@ -30,10 +32,12 @@ import { StatusTimeline } from '@/components/plans/StatusTimeline';
 import {
   PLAN_STATUSES,
   STATUS_LABELS,
+  comparePlans,
   isHoldingBudget,
   nextStatuses,
   priorityLabel,
   type PlanHistoryEntry,
+  type PlanSortBy,
   type PlanStatus,
 } from '@/lib/plans';
 import { countdownTone, formatCountdown, formatRupiah, formatTanggal } from '@/lib/format';
@@ -87,12 +91,20 @@ export interface PlanItemOption {
 
 export type PlanStatusFilter = PlanStatus | 'semua' | 'hold';
 
+const PLAN_SORT_OPTIONS: { value: PlanSortBy; label: string }[] = [
+  { value: 'prioritas', label: 'Prioritas Tertinggi (P1–P5)' },
+  { value: 'deadline', label: 'Deadline PO Terdekat' },
+  { value: 'sisa_tagihan', label: 'Sisa Tagihan Terbesar' },
+  { value: 'terbaru', label: 'Terbaru Ditambahkan' },
+];
+
 interface PlansClientProps {
   initialPlans: PlanWithDetails[];
   items: PlanItemOption[];
   commitment: number;
   initialSearch?: string;
   initialStatus?: PlanStatusFilter;
+  initialSort?: PlanSortBy;
 }
 
 const ACTION_LABELS: Record<PlanStatus, string> = {
@@ -134,11 +146,13 @@ export function PlansClient({
   commitment,
   initialSearch = '',
   initialStatus = 'semua',
+  initialSort = 'prioritas',
 }: PlansClientProps) {
   const router = useRouter();
 
   const [search, setSearch] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<PlanStatusFilter>(initialStatus);
+  const [sortBy, setSortBy] = useState<PlanSortBy>(initialSort);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<PlanWithDetails | null>(null);
@@ -146,10 +160,19 @@ export function PlansClient({
     null
   );
 
-  function updateFilters(nextSearch: string, nextStatus: PlanStatusFilter) {
-    setSearch(nextSearch);
-    setStatusFilter(nextStatus);
-    replaceQueryParams({ q: nextSearch, status: nextStatus });
+  function updateFilters(next: {
+    q?: string;
+    status?: PlanStatusFilter;
+    sort?: PlanSortBy;
+  }) {
+    const qVal = next.q !== undefined ? next.q : search;
+    const statusVal = next.status !== undefined ? next.status : statusFilter;
+    const sortVal = next.sort !== undefined ? next.sort : sortBy;
+
+    setSearch(qVal);
+    setStatusFilter(statusVal);
+    setSortBy(sortVal);
+    replaceQueryParams({ q: qVal, status: statusVal, sort: sortVal });
   }
 
   const counts = useMemo(() => {
@@ -184,8 +207,8 @@ export function PlansClient({
       result = result.filter((plan) => plan.status === statusFilter);
     }
 
-    return result;
-  }, [initialPlans, search, statusFilter]);
+    return result.sort(comparePlans(sortBy));
+  }, [initialPlans, search, statusFilter, sortBy]);
 
   function handleRefresh() {
     router.refresh();
@@ -198,8 +221,8 @@ export function PlansClient({
         <div className="flex-1 max-w-md">
           <SearchBar
             value={search}
-            onChange={(e) => updateFilters(e.target.value, statusFilter)}
-            onClear={() => updateFilters('', statusFilter)}
+            onChange={(e) => updateFilters({ q: e.target.value })}
+            onClear={() => updateFilters({ q: '' })}
             placeholder="Cari judul, seri, atau toko…"
           />
         </div>
@@ -241,29 +264,45 @@ export function PlansClient({
         </div>
       </GlassCard>
 
-      {/* Filter chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <FilterChip
-          label="Semua"
-          active={statusFilter === 'semua'}
-          onClick={() => updateFilters(search, 'semua')}
-          count={counts.semua}
-        />
-        <FilterChip
-          label="Hold Budget"
-          active={statusFilter === 'hold'}
-          onClick={() => updateFilters(search, 'hold')}
-          count={counts.hold}
-        />
-        {PLAN_STATUSES.map((status) => (
+      {/* Filter chips & Sorting */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           <FilterChip
-            key={status}
-            label={STATUS_LABELS[status]}
-            active={statusFilter === status}
-            onClick={() => updateFilters(search, status)}
-            count={counts[status]}
+            label="Semua"
+            active={statusFilter === 'semua'}
+            onClick={() => updateFilters({ status: 'semua' })}
+            count={counts.semua}
           />
-        ))}
+          <FilterChip
+            label="Hold Budget"
+            active={statusFilter === 'hold'}
+            onClick={() => updateFilters({ status: 'hold' })}
+            count={counts.hold}
+          />
+          {PLAN_STATUSES.map((status) => (
+            <FilterChip
+              key={status}
+              label={STATUS_LABELS[status]}
+              active={statusFilter === status}
+              onClick={() => updateFilters({ status })}
+              count={counts[status]}
+            />
+          ))}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-1 text-xs text-slate-500">
+          <span className="flex items-center gap-1 font-semibold text-slate-700">
+            <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            Urutkan:
+          </span>
+          <Select
+            compact
+            aria-label="Urutkan rencana"
+            value={sortBy}
+            onChange={(e) => updateFilters({ sort: e.target.value as PlanSortBy })}
+            options={PLAN_SORT_OPTIONS}
+          />
+        </div>
       </div>
 
       {/* Daftar plan */}
@@ -287,7 +326,7 @@ export function PlansClient({
             if (initialPlans.length === 0) {
               setIsCreateOpen(true);
             } else {
-              updateFilters('', 'semua');
+              updateFilters({ q: '', status: 'semua' });
             }
           }}
         />
