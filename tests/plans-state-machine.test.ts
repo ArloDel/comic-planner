@@ -6,6 +6,7 @@ import {
   TRANSITIONS,
   calculateCommitment,
   canTransition,
+  comparePlans,
   isPlanStatus,
   isValidDateInput,
   isValidPriority,
@@ -224,5 +225,47 @@ describe('helper', () => {
     assert.equal(transitionTransactionType('wishlist', 'po'), null);
     assert.equal(transitionTransactionType('lunas', 'diterima'), null);
     assert.equal(transitionTransactionType('dp', 'batal'), null);
+  });
+
+  it('comparePlans mengurutkan berdasarkan deadline terdekat, sisa tagihan, dan prioritas', () => {
+    const list = [
+      {
+        id: 'p1',
+        prioritas: 3,
+        deadline_po: null,
+        estimasi_harga: 50_000,
+        sudah_dibayar: 0,
+        created_at: '2026-10-01T00:00:00Z',
+      },
+      {
+        id: 'p2',
+        prioritas: 1,
+        deadline_po: '2026-10-25',
+        estimasi_harga: 100_000,
+        sudah_dibayar: 80_000,
+        created_at: '2026-10-02T00:00:00Z',
+      },
+      {
+        id: 'p3',
+        prioritas: 2,
+        deadline_po: '2026-10-21',
+        estimasi_harga: 120_000,
+        sudah_dibayar: 20_000,
+        created_at: '2026-10-03T00:00:00Z',
+      },
+    ];
+
+    assert.deepEqual(
+      [...list].sort(comparePlans('deadline')).map((p) => p.id),
+      ['p3', 'p2', 'p1']
+    );
+    assert.deepEqual(
+      [...list].sort(comparePlans('sisa_tagihan')).map((p) => p.id),
+      ['p3', 'p1', 'p2']
+    );
+    assert.deepEqual(
+      [...list].sort(comparePlans('prioritas')).map((p) => p.id),
+      ['p2', 'p3', 'p1']
+    );
   });
 });
