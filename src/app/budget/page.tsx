@@ -9,6 +9,7 @@ import { Button, buttonClasses } from '@/components/ui/Button';
 import { Wallet, TrendingUp, ShieldCheck, Plus, Receipt } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { BudgetFormCard } from './BudgetFormCard';
+import { DeleteTransactionButton } from './DeleteTransactionButton';
 import { TransactionModal } from './TransactionModal';
 import {
   computeBudgetSummary,
@@ -16,7 +17,13 @@ import {
   shiftPeriode,
   sortReleaseSuggestions,
 } from '@/lib/budget';
-import { STATUS_LABELS, summarizePayments, type PaymentRow, type PlanStatus } from '@/lib/plans';
+import {
+  STATUS_LABELS,
+  TXN_TYPE_LABELS,
+  summarizePayments,
+  type PaymentRow,
+  type PlanStatus,
+} from '@/lib/plans';
 import { formatRupiah, formatTanggal } from '@/lib/format';
 import type { TransactionType } from '@/types/database';
 
@@ -225,31 +232,40 @@ export default async function BudgetPage({
             />
           ) : (
             <ul className="space-y-2">
-              {txnRows.map((txn) => (
-                <li
-                  key={txn.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 backdrop-blur"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">
-                      {txn.plans?.items?.judul ?? 'Plan tanpa item'}
-                    </p>
-                    <p className="text-[11px] text-slate-500">
-                      {formatTanggal(txn.tanggal)} · {txn.jenis}
-                      {txn.catatan ? ` · ${txn.catatan}` : ''}
-                    </p>
-                  </div>
+              {txnRows.map((txn) => {
+                const judul = txn.plans?.items?.judul ?? 'Plan tanpa item';
+                const jenisLabel = TXN_TYPE_LABELS[txn.jenis] ?? txn.jenis;
 
-                  <p
-                    className={`text-sm font-bold tabular-nums ${
-                      txn.jenis === 'refund' ? 'text-emerald-600' : 'text-slate-900'
-                    }`}
+                return (
+                  <li
+                    key={txn.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 backdrop-blur"
                   >
-                    {txn.jenis === 'refund' ? '+' : ''}
-                    {formatRupiah(txn.jumlah)}
-                  </p>
-                </li>
-              ))}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">{judul}</p>
+                      <p className="text-[11px] text-slate-500">
+                        {formatTanggal(txn.tanggal)} · {jenisLabel}
+                        {txn.catatan ? ` · ${txn.catatan}` : ''}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0">
+                      <p
+                        className={`text-sm font-bold tabular-nums ${
+                          txn.jenis === 'refund' ? 'text-emerald-600' : 'text-slate-900'
+                        }`}
+                      >
+                        {txn.jenis === 'refund' ? '+' : ''}
+                        {formatRupiah(txn.jumlah)}
+                      </p>
+                      <DeleteTransactionButton
+                        id={txn.id}
+                        label={`${jenisLabel} ${judul}`}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
