@@ -37,6 +37,7 @@ import {
   type PlanStatus,
 } from '@/lib/plans';
 import { countdownTone, formatCountdown, formatRupiah, formatTanggal } from '@/lib/format';
+import { replaceQueryParams } from '@/lib/url';
 import type { ListingStatus, ItemType } from '@/types/database';
 
 export interface PlanListingRef {
@@ -84,10 +85,14 @@ export interface PlanItemOption {
   estimasi_harga?: number;
 }
 
+export type PlanStatusFilter = PlanStatus | 'semua' | 'hold';
+
 interface PlansClientProps {
   initialPlans: PlanWithDetails[];
   items: PlanItemOption[];
   commitment: number;
+  initialSearch?: string;
+  initialStatus?: PlanStatusFilter;
 }
 
 const ACTION_LABELS: Record<PlanStatus, string> = {
@@ -123,17 +128,29 @@ function priorityTone(prioritas: number): string {
   return 'bg-slate-50 text-slate-400 border-slate-200';
 }
 
-export function PlansClient({ initialPlans, items, commitment }: PlansClientProps) {
+export function PlansClient({
+  initialPlans,
+  items,
+  commitment,
+  initialSearch = '',
+  initialStatus = 'semua',
+}: PlansClientProps) {
   const router = useRouter();
 
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PlanStatus | 'semua' | 'hold'>('semua');
+  const [search, setSearch] = useState(initialSearch);
+  const [statusFilter, setStatusFilter] = useState<PlanStatusFilter>(initialStatus);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<PlanWithDetails | null>(null);
   const [transition, setTransition] = useState<{ plan: PlanWithDetails; to: PlanStatus } | null>(
     null
   );
+
+  function updateFilters(nextSearch: string, nextStatus: PlanStatusFilter) {
+    setSearch(nextSearch);
+    setStatusFilter(nextStatus);
+    replaceQueryParams({ q: nextSearch, status: nextStatus });
+  }
 
   const counts = useMemo(() => {
     const result: Record<string, number> = {
@@ -181,9 +198,9 @@ export function PlansClient({ initialPlans, items, commitment }: PlansClientProp
         <div className="flex-1 max-w-md">
           <SearchBar
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onClear={() => setSearch('')}
-            placeholder="Cari judul, seri, atau toko..."
+            onChange={(e) => updateFilters(e.target.value, statusFilter)}
+            onClear={() => updateFilters('', statusFilter)}
+            placeholder="Cari judul, seri, atau toko…"
           />
         </div>
 
@@ -229,13 +246,13 @@ export function PlansClient({ initialPlans, items, commitment }: PlansClientProp
         <FilterChip
           label="Semua"
           active={statusFilter === 'semua'}
-          onClick={() => setStatusFilter('semua')}
+          onClick={() => updateFilters(search, 'semua')}
           count={counts.semua}
         />
         <FilterChip
           label="Hold Budget"
           active={statusFilter === 'hold'}
-          onClick={() => setStatusFilter('hold')}
+          onClick={() => updateFilters(search, 'hold')}
           count={counts.hold}
         />
         {PLAN_STATUSES.map((status) => (
@@ -243,7 +260,7 @@ export function PlansClient({ initialPlans, items, commitment }: PlansClientProp
             key={status}
             label={STATUS_LABELS[status]}
             active={statusFilter === status}
-            onClick={() => setStatusFilter(status)}
+            onClick={() => updateFilters(search, status)}
             count={counts[status]}
           />
         ))}
@@ -270,8 +287,7 @@ export function PlansClient({ initialPlans, items, commitment }: PlansClientProp
             if (initialPlans.length === 0) {
               setIsCreateOpen(true);
             } else {
-              setSearch('');
-              setStatusFilter('semua');
+              updateFilters('', 'semua');
             }
           }}
         />
