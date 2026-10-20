@@ -299,7 +299,7 @@ export default async function DashboardPage() {
               </p>
             )}
             <Link
-              href="/plans"
+              href="/plans?status=hold"
               className="inline-flex items-center gap-1 font-semibold underline underline-offset-2"
             >
               <span>Batalkan plan prioritas rendah di Rencana</span>
@@ -336,11 +336,14 @@ export default async function DashboardPage() {
               {urgentPoPlans.map((plan) => {
                 const tone = countdownTone(plan.deadline_po) ?? 'slate';
                 const terlewat = plan.hariTersisa < 0;
+                const planHref = plan.judul
+                  ? `/plans?status=po&q=${encodeURIComponent(plan.judul)}`
+                  : '/plans?status=po';
 
                 return (
                   <li key={plan.id}>
                     <Link
-                      href="/plans"
+                      href={planHref}
                       className={`flex items-center gap-3 rounded-2xl border border-white/60 bg-white/70 px-3 py-2.5 backdrop-blur shadow-soft transition-colors hover:border-primary-300 hover:bg-white ${
                         terlewat ? 'bg-rose-50/60' : ''
                       }`}
