@@ -1,5 +1,5 @@
 import type { ItemType, PlanStatus } from '@/types/database';
-import { asArray } from '@/lib/supabase/embed';
+import { asArray } from './supabase/embed.ts';
 
 /**
  * Normalisasi baris `items` + embed `plans`/`listings` dari PostgREST menjadi
@@ -69,6 +69,38 @@ export function mapItemWithDetails(row: ItemRowWithRelations): KatalogItemWithDe
 
 export function mapItemsWithDetails(rows: ItemRowWithRelations[]): KatalogItemWithDetails[] {
   return rows.map(mapItemWithDetails);
+}
+
+export interface SeriesSummary {
+  seri: string;
+  totalVolumes: number;
+  ownedVolumes: number;
+}
+
+/**
+ * Ringkas daftar seri unik dari item katalog, diurutkan dari jumlah volume
+ * terbanyak lalu alfabetis (id).
+ */
+export function summarizeSeries(
+  items: Pick<KatalogItemWithDetails, 'seri' | 'plan_status'>[]
+): SeriesSummary[] {
+  const bySeries = new Map<string, SeriesSummary>();
+
+  for (const item of items) {
+    const seri = item.seri?.trim();
+    if (!seri) continue;
+
+    const existing = bySeries.get(seri) ?? { seri, totalVolumes: 0, ownedVolumes: 0 };
+    existing.totalVolumes += 1;
+    if (item.plan_status === 'diterima') {
+      existing.ownedVolumes += 1;
+    }
+    bySeries.set(seri, existing);
+  }
+
+  return Array.from(bySeries.values()).sort(
+    (a, b) => b.totalVolumes - a.totalVolumes || a.seri.localeCompare(b.seri, 'id')
+  );
 }
 
 function cheapestListingPrice(listings: ItemRowWithRelations['listings']): number | null {
