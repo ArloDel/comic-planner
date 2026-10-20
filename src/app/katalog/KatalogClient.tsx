@@ -25,7 +25,11 @@ import { DeleteModal } from '@/components/katalog/DeleteModal';
 import { formatRupiahOrNull } from '@/lib/format';
 import { PLAN_STATUSES, STATUS_LABELS } from '@/lib/plans';
 import type { ItemType } from '@/types/database';
-import type { ExtendedStatus, KatalogItemWithDetails } from '@/lib/catalog';
+import {
+  summarizeSeries,
+  type ExtendedStatus,
+  type KatalogItemWithDetails,
+} from '@/lib/catalog';
 
 type TipeFilter = ItemType | 'semua';
 type SortBy = 'terbaru' | 'judul' | 'seri' | 'harga';
@@ -108,6 +112,8 @@ export function KatalogClient({ initialItems }: KatalogClientProps) {
     return counts;
   }, [initialItems]);
 
+  const seriesSummaries = useMemo(() => summarizeSeries(initialItems), [initialItems]);
+
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
 
@@ -134,7 +140,7 @@ export function KatalogClient({ initialItems }: KatalogClientProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onClear={() => setSearch('')}
-            placeholder="Cari judul, seri, atau penerbit..."
+            placeholder="Cari judul, seri, atau penerbit…"
           />
         </div>
 
@@ -147,6 +153,29 @@ export function KatalogClient({ initialItems }: KatalogClientProps) {
           <span>Tambah Item</span>
         </Button>
       </div>
+
+      {/* Series Summary Bar */}
+      {seriesSummaries.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <span className="inline-flex items-center gap-1.5 shrink-0 text-xs font-semibold text-slate-700 mr-1">
+            <Layers className="h-3.5 w-3.5 text-primary-500" aria-hidden="true" />
+            Seri Koleksi:
+          </span>
+          {seriesSummaries.map(({ seri, totalVolumes }) => (
+            <Link
+              key={seri}
+              href={`/katalog/seri/${encodeURIComponent(seri)}`}
+              title={`Buka tracker volume seri ${seri}`}
+              className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-slate-200/80 bg-white/80 hover:bg-primary-50 hover:border-primary-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:text-primary-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+            >
+              <span className="truncate max-w-[160px]">{seri}</span>
+              <span className="text-[11px] font-medium text-slate-500 tabular-nums">
+                ({totalVolumes} vol)
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Filter Chips Bar */}
       <div className="space-y-3">
