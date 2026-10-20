@@ -267,3 +267,43 @@ export function isValidDateInput(value: string): boolean {
   const date = new Date(`${value}T00:00:00`);
   return !Number.isNaN(date.getTime());
 }
+
+export type PlanSortBy = 'prioritas' | 'deadline' | 'sisa_tagihan' | 'terbaru';
+
+export interface SortablePlan {
+  prioritas: number;
+  deadline_po: string | null;
+  estimasi_harga: number;
+  sudah_dibayar: number;
+  created_at: string;
+}
+
+export function comparePlans(sortBy: PlanSortBy) {
+  return (a: SortablePlan, b: SortablePlan): number => {
+    switch (sortBy) {
+      case 'deadline': {
+        if (a.deadline_po && b.deadline_po) {
+          const cmp = a.deadline_po.localeCompare(b.deadline_po);
+          if (cmp !== 0) return cmp;
+        } else if (a.deadline_po) {
+          return -1;
+        } else if (b.deadline_po) {
+          return 1;
+        }
+        return a.prioritas - b.prioritas;
+      }
+      case 'sisa_tagihan': {
+        const sisaA = Math.max(a.estimasi_harga - a.sudah_dibayar, 0);
+        const sisaB = Math.max(b.estimasi_harga - b.sudah_dibayar, 0);
+        return sisaB - sisaA || a.prioritas - b.prioritas;
+      }
+      case 'terbaru':
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case 'prioritas':
+        return (
+          a.prioritas - b.prioritas ||
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+    }
+  };
+}
