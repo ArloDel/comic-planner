@@ -9,7 +9,7 @@ export function replaceQueryParams(params: Record<string, string | null | undefi
   const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     const trimmed = value?.trim();
-    if (trimmed && trimmed !== 'semua' && trimmed !== 'terbaru') {
+    if (trimmed && trimmed !== 'semua' && trimmed !== 'terbaru' && trimmed !== 'prioritas') {
       searchParams.set(key, trimmed);
     }
   }
