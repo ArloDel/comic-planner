@@ -8,7 +8,13 @@ import {
   type PlanListingRef,
   type PlanWithDetails,
 } from './PlansClient';
-import { calculateCommitment, summarizePayments, type PaymentRow } from '@/lib/plans';
+import {
+  calculateCommitment,
+  isPlanStatus,
+  summarizePayments,
+  type PaymentRow,
+  type PlanStatus,
+} from '@/lib/plans';
 import { asArray } from '@/lib/supabase/embed';
 
 export const metadata = {
@@ -66,13 +72,21 @@ interface HistoryRow {
   changed_at: string;
 }
 
-/**
- * Relasi hasil select PostgREST punya dua bentuk: relasi many-to-one (`plans.item_id`
- * → `items`) dibalas sebagai objek tunggal, sedangkan one-to-many (`items.listings`)
- * sebagai array. Normalisasi keduanya supaya pemanggil tidak perlu tahu bedanya —
- * pola yang sama dipakai `lib/catalog.ts` untuk halaman katalog.
- */
-export default async function PlansPage() {
+function parsePlanStatusFilter(raw?: string): PlanStatus | 'semua' | 'hold' {
+  if (raw === 'hold') return 'hold';
+  if (raw && isPlanStatus(raw)) return raw;
+  return 'semua';
+}
+
+export default async function PlansPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string }>;
+}) {
+  const { q: rawQ, status: rawStatus } = await searchParams;
+  const initialSearch = rawQ ?? '';
+  const initialStatus = parsePlanStatusFilter(rawStatus);
+
   let userEmail: string | null = null;
   let plans: PlanWithDetails[] = [];
   let items: PlanItemOption[] = [];
@@ -229,7 +243,13 @@ export default async function PlansPage() {
       pageTitle="Rencana Belanja"
       pageSubtitle="Alur status Wishlist → PO → DP → Lunas → Diterima, dengan riwayat tiap perubahan"
     >
-      <PlansClient initialPlans={plans} items={items} commitment={commitment} />
+      <PlansClient
+        initialPlans={plans}
+        items={items}
+        commitment={commitment}
+        initialSearch={initialSearch}
+        initialStatus={initialStatus}
+      />
     </AppShell>
   );
 }
