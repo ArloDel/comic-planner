@@ -4,6 +4,7 @@ import React, { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { login } from '@/app/auth/actions';
 import { BackdropDecor } from '@/components/ui/BackdropDecor';
+import { BrandMark } from '@/components/ui/BrandMark';
 import { Button } from '@/components/ui/Button';
 
 function LoginForm() {
@@ -36,9 +37,7 @@ function LoginForm() {
   return (
     <div className="relative w-full max-w-sm rounded-glass bg-white/85 backdrop-blur-xl p-7 shadow-glass-lg border border-white/80">
       <div className="mb-6 text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-600 text-white font-bold text-xl shadow-soft">
-          CP
-        </div>
+        <BrandMark size="lg" className="mx-auto mb-3" />
         <h1 className="text-xl font-bold tracking-tight text-slate-900">
           ComicPlan
         </h1>
