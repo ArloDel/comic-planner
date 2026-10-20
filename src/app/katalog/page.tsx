@@ -9,7 +9,12 @@ export const metadata = {
   description: 'Daftar koleksi komik dan manga dengan status perolehan real-time',
 };
 
-export default async function KatalogPage() {
+export default async function KatalogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string; tipe?: string; sort?: string }>;
+}) {
+  const params = await searchParams;
   let userEmail: string | null = null;
   let formattedItems: ReturnType<typeof mapItemsWithDetails> = [];
 
@@ -40,7 +45,7 @@ export default async function KatalogPage() {
       pageTitle="Katalog Komik"
       pageSubtitle="Kelola dan cari seluruh judul komik, manga, dan status perolehan Anda"
     >
-      <KatalogClient initialItems={formattedItems} />
+      <KatalogClient initialItems={formattedItems} initialFilters={params} />
     </AppShell>
   );
 }
