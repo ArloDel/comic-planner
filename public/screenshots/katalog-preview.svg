@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" fill="none">
+  <defs>
+    <linearGradient id="bg-kat" x1="0" y1="0" x2="960" y2="540" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="55%" stop-color="#eef2ff" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <filter id="card-kat" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.06" />
+    </filter>
+  </defs>
+
+  <rect width="960" height="540" rx="18" fill="url(#bg-kat)" />
+
+  <!-- Top Bar -->
+  <rect x="0" y="0" width="960" height="68" fill="#ffffff" fill-opacity="0.82" />
+  <line x1="0" y1="68" x2="960" y2="68" stroke="#e2e8f0" />
+  <text x="36" y="34" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Katalog Komik &amp; Tracker Seri</text>
+  <text x="36" y="52" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">Akses cepat per seri koleksi &amp; tracker volume visual interaktif</text>
+
+  <!-- Series Summary Chips Bar -->
+  <text x="36" y="102" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155">Seri Koleksi:</text>
+
+  <rect x="122" y="84" width="138" height="28" rx="14" fill="#eef2ff" stroke="#a5b4fc" />
+  <text x="136" y="102" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#4338ca">One Piece (12 vol)</text>
+
+  <rect x="270" y="84" width="154" height="28" rx="14" fill="#ffffff" stroke="#e2e8f0" />
+  <text x="284" y="102" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">Chainsaw Man (8 vol)</text>
+
+  <rect x="434" y="84" width="152" height="28" rx="14" fill="#ffffff" stroke="#e2e8f0" />
+  <text x="448" y="102" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">Sakamoto Days (6 vol)</text>
+
+  <rect x="596" y="84" width="136" height="28" rx="14" fill="#ffffff" stroke="#e2e8f0" />
+  <text x="610" y="102" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">Blue Lock (5 vol)</text>
+
+  <!-- Series Hero Card -->
+  <g filter="url(#card-kat)">
+    <rect x="36" y="128" width="888" height="128" rx="18" fill="#ffffff" fill-opacity="0.95" />
+    <rect x="58" y="148" width="78" height="20" rx="6" fill="#eef2ff" />
+    <text x="66" y="162" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#4f46e5">KOLEKSI SERI</text>
+    <text x="146" y="162" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">• Penerbit Elex Media Komputindo</text>
+
+    <text x="58" y="192" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700" fill="#0f172a">One Piece</text>
+    <rect x="764" y="156" width="138" height="36" rx="10" fill="#4f46e5" />
+    <text x="782" y="178" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#ffffff">+ Tambah Volume 13</text>
+
+    <!-- Summary Pills -->
+    <line x1="58" y1="210" x2="902" y2="210" stroke="#f1f5f9" />
+    <rect x="58" y="220" width="96" height="24" rx="12" fill="#ecfdf5" stroke="#a7f3d0" />
+    <text x="74" y="236" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="700" fill="#065f46">✓ 8 Dimiliki</text>
+
+    <rect x="164" y="220" width="96" height="24" rx="12" fill="#fffbeb" stroke="#fde68a" />
+    <text x="178" y="236" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="700" fill="#92400e">2 Pre-Order</text>
+
+    <rect x="270" y="220" width="84" height="24" rx="12" fill="#f1f5f9" stroke="#e2e8f0" />
+    <text x="284" y="236" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="700" fill="#334155">1 Wishlist</text>
+
+    <rect x="364" y="220" width="94" height="24" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-dasharray="3 3" />
+    <text x="378" y="236" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#64748b">1 Belum Ada</text>
+  </g>
+
+  <!-- Visual Volume Tracker Grid -->
+  <text x="36" y="286" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#0f172a">Tracker Volume Visual (Klik nomor volume untuk edit / tambah cepat)</text>
+
+  <g filter="url(#card-kat)">
+    <rect x="36" y="300" width="888" height="206" rx="18" fill="#ffffff" fill-opacity="0.92" />
+
+    <!-- Row 1: Volumes 1 - 6 -->
+    <rect x="58" y="322" width="128" height="72" rx="12" fill="#ecfdf5" stroke="#6ee7b7" />
+    <text x="116" y="354" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#065f46">1</text>
+    <text x="98" y="376" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#047857">DITERIMA</text>
+
+    <rect x="200" y="322" width="128" height="72" rx="12" fill="#ecfdf5" stroke="#6ee7b7" />
+    <text x="258" y="354" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#065f46">2</text>
+    <text x="240" y="376" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#047857">DITERIMA</text>
+
+    <rect x="342" y="322" width="128" height="72" rx="12" fill="#ecfdf5" stroke="#6ee7b7" />
+    <text x="400" y="354" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#065f46">3</text>
+    <text x="382" y="376" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#047857">DITERIMA</text>
+
+    <rect x="484" y="322" width="128" height="72" rx="12" fill="#ecfdf5" stroke="#6ee7b7" />
+    <text x="542" y="354" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#065f46">4</text>
+    <text x="524" y="376" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#047857">DITERIMA</text>
+
+    <!-- Missing Vol 5 -->
+    <rect x="626" y="322" width="128" height="72" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="5 4" />
+    <text x="684" y="354" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#94a3b8">5</text>
+    <text x="668" y="376" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#94a3b8">+ KOSONG</text>
+
+    <rect x="768" y="322" width="128" height="72" rx="12" fill="#ecfdf5" stroke="#6ee7b7" />
+    <text x="826" y="354" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#065f46">6</text>
+    <text x="808" y="376" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#047857">DITERIMA</text>
+
+    <!-- Row 2: Volumes 7 - 12 -->
+    <rect x="58" y="410" width="128" height="72" rx="12" fill="#ecfdf5" stroke="#6ee7b7" />
+    <text x="116" y="442" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#065f46">7</text>
+    <text x="98" y="464" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#047857">DITERIMA</text>
+
+    <rect x="200" y="410" width="128" height="72" rx="12" fill="#ecfdf5" stroke="#6ee7b7" />
+    <text x="258" y="442" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#065f46">8</text>
+    <text x="240" y="464" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#047857">DITERIMA</text>
+
+    <rect x="342" y="410" width="128" height="72" rx="12" fill="#f0f9ff" stroke="#7dd3fc" />
+    <text x="400" y="442" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#0369a1">9</text>
+    <text x="388" y="464" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#0284c7">LUNAS</text>
+
+    <rect x="484" y="410" width="128" height="72" rx="12" fill="#fffbeb" stroke="#fcd34d" />
+    <text x="538" y="442" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#92400e">10</text>
+    <text x="538" y="464" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#b45309">DP</text>
+
+    <rect x="626" y="410" width="128" height="72" rx="12" fill="#fffbeb" stroke="#fcd34d" />
+    <text x="680" y="442" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#92400e">11</text>
+    <text x="660" y="464" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#b45309">PRE-ORDER</text>
+
+    <rect x="768" y="410" width="128" height="72" rx="12" fill="#f1f5f9" stroke="#cbd5e1" />
+    <text x="822" y="442" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#334155">12</text>
+    <text x="808" y="464" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#475569">WISHLIST</text>
+  </g>
+</svg>
