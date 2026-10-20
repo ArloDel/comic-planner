@@ -1,173 +1,163 @@
-# ComicPlan
+<div align="center">
+  <img src="src/app/icon.svg" alt="ComicPlan Logo" width="72" height="72" />
+  <h1>ComicPlan</h1>
+  <p><strong>Personal Manga &amp; Comic Purchasing Planner — Shopee PO Sync, Series Volume Tracker &amp; Monthly Budget Hold</strong></p>
 
-ComicPlan adalah aplikasi web personal untuk merencanakan dan melacak pembelian komik/manga dari toko Shopee target — baik ready stock maupun pre-order (PO) — dilengkapi tracking budget bulanan, integrasi import via Tampermonkey userscript, dan notifikasi deadline.
-
-## Tech Stack
-- **Frontend & API**: Next.js 16 (App Router), TypeScript, Tailwind CSS (Mobile-First)
-- **Database & Auth**: Supabase (PostgreSQL), Single-User Mode, RLS Strict
-- **Icons**: Lucide React
+  <p>
+    <a href="https://comic-planner.vercel.app"><strong>🌐 Live Preview</strong></a> ·
+    <a href="#tampilan-aplikasi-live-preview">Screenshots</a> ·
+    <a href="#fitur-utama">Fitur Utama</a> ·
+    <a href="#panduan-setup--deploy-vercel">Setup &amp; Deploy</a> ·
+    <a href="#userscript-tampermonkey-shopee">Tampermonkey Sync</a>
+  </p>
+</div>
 
 ---
 
-## Panduan Setup
+## Ringkasan
+
+**ComicPlan** adalah aplikasi web personal (single-user) untuk merencanakan dan melacak pembelian komik/manga fisik maupun pre-order (PO) dari toko Shopee target. Aplikasi ini menggabungkan **katalog & visual tracker volume per seri**, **state machine rencana belanja (`wishlist` → `po` → `dp` → `lunas` → `diterima` / `batal`)**, **perhitungan otomatis komitmen/hold budget bulanan**, serta **impor 1-klik langsung dari etalase Shopee via Tampermonkey userscript**.
+
+---
+
+## Tampilan Aplikasi (Live Preview)
+
+> **Live Demo:** [https://comic-planner.vercel.app](https://comic-planner.vercel.app) *(ganti dengan URL Vercel produksi Anda setelah deploy)*
+
+### 1. Dashboard — Ringkasan Sisa Aman & PO Mendekati Deadline
+![Dashboard Preview](public/screenshots/dashboard-preview.svg)
+
+### 2. Katalog & Tracker Volume Visual Per Seri
+![Katalog & Series Tracker Preview](public/screenshots/katalog-preview.svg)
+
+### 3. Rencana Belanja — State Machine, Hold Budget & Pencatatan Transaksi 1-Langkah
+![Plans & Budget Hold Preview](public/screenshots/plans-preview.svg)
+
+---
+
+## Fitur Utama
+
+- **Dashboard Sisa Aman & Countdown Deadline PO**:
+  - Menghitung otomatis `Sisa Aman = Total Budget − Realisasi Bulan Ini − Komitmen PO/DP`.
+  - Menampilkan daftar PO yang mendekati deadline (`H-7`) dengan klik langsung ke filter rencana terkait.
+  - Memberikan rekomendasi pelepasan hold berdasarkan prioritas terendah ketika sisa aman bernilai negatif.
+- **Katalog Komik & Tracker Volume Per Seri (`/katalog` & `/katalog/seri/[seri]`)**:
+  - Bar chip **Seri Koleksi** (`One Piece (12 vol)`) untuk melompat langsung ke tracker volume per seri.
+  - Grid nomor volume interaktif (`1..N`) yang menandai volume dimiliki, PO/DP, wishlist, atau volume yang masih bolong (klik kotak kosong untuk langsung menambah volume tersebut).
+  - Filter status, tipe komik, pencarian, dan urutan tersimpan di URL query string (tidak hilang saat refresh atau klik tombol Back).
+- **Rencana Belanja Satu Pintu (`/plans`)**:
+  - State machine tervalidasi di aplikasi & trigger PostgreSQL (`wishlist` → `po` → `dp` → `lunas` → `diterima` / `batal`).
+  - **Transisi + Transaksi 1-Langkah**: Saat mengubah status ke `DP` atau `Lunas`, Anda dapat langsung mencatat nominal pembayaran dalam satu modal tanpa berpindah halaman.
+  - Edit cepat **Prioritas (`#1`–`#5`)**, **Estimasi Harga**, **Listing Toko**, dan **Deadline PO**, disertai pengurutan berdasarkan prioritas, deadline terdekat, atau sisa tagihan terbesar.
+- **Budget & Riwayat Transaksi (`/budget`)**:
+  - Pengaturan alokasi budget per periode (`YYYY-MM`) dengan indikator pemakaian real-time.
+  - Pencatatan transaksi (`DP`, `Pelunasan`, `Bayar Penuh`, `Refund`) dan fitur hapus transaksi dengan konfirmasi inline.
+- **Sinkronisasi Shopee via Tampermonkey (`/import` & `/api/import`)**:
+  - Ekstraksi produk & status PO dari halaman toko Shopee menggunakan userscript Tampermonkey atau uji coba payload JSON manual.
+  - Deduplikasi otomatis berdasarkan `(marketplace, shop_id, item_id_shopee)`.
+- **Pengaturan & Backup Data (`/settings`)**:
+  - Manajemen kredensial `IMPORT_TOKEN`, daftar toko Shopee terlacak, dan ekspor data ke **CSV** (`items`, `plans`, `transactions`) maupun **Backup JSON Lengkap**.
+
+---
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router, Server Actions, React 19)
+- **Language & Styling**: TypeScript 5, Tailwind CSS 4 (Indigo Glassmorphism, Mobile-First)
+- **Database & Auth**: Supabase (PostgreSQL, Row Level Security, Single-User Guard Trigger)
+- **Icons & Testing**: Lucide React, Node.js Native Test Runner (`node --test`)
+
+---
+
+## Panduan Setup & Deploy Vercel
 
 ### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Setup Supabase Database
-
+### 2. Setup Database Supabase
 1. Buat project baru di [Supabase Dashboard](https://supabase.com).
-2. Masuk ke menu **SQL Editor**.
-3. Buka file [`supabase/schema.sql`](supabase/schema.sql) atau [`supabase/migrations/20261002000000_initial_schema.sql`](supabase/migrations/20261002000000_initial_schema.sql).
-4. Salin seluruh isi SQL dan jalankan (Run). Migration ini akan membuat 6 tabel:
-   - `budgets`: Periode bulanan (date unique) & alokasi budget.
-   - `items`: Master data komik (judul, seri, volume, cover, tipe).
-   - `listings`: Listing produk dari marketplace dengan unique constraint `(marketplace, shop_id, item_id_shopee)`.
-   - `plans`: Siklus status pembelian (`wishlist` → `po` → `dp` → `lunas` → `diterima` / `batal`).
-   - `transactions`: Catatan riwayat pembayaran (`dp`, `pelunasan`, `bayar_penuh`, `refund`).
-   - `status_history`: Audit trail otomatis perubahan status plan.
-5. Migration juga otomatis mengaktifkan **Row Level Security (RLS)** dan memasang trigger audit status serta guard single-user signup.
+2. Buka menu **SQL Editor**, salin seluruh isi [`supabase/schema.sql`](supabase/schema.sql), lalu klik **Run**.
+3. Skema ini membuat 6 tabel (`budgets`, `items`, `listings`, `plans`, `transactions`, `status_history`), mengaktifkan **RLS**, memasang trigger validasi transisi status (`guard_plan_status_transition`), audit trail (`log_plan_status_change`), serta guard single-user (`prevent_extra_user_signups`).
 
 ### 3. Konfigurasi Auth Single-User di Supabase
-
-Aplikasi dirancang strictly untuk **1 pengguna personal**:
-1. Di Supabase Dashboard, buka **Authentication** → **Providers** → **Email**.
-2. Matikan toggle **"Allow new users to sign up"** (disable public registration).
-3. Buka **Authentication** → **Users** → klik **"Add User"** (atau **"Invite User"**) untuk membuat akun pemilik pertama.
-4. Database dilengkapi trigger `prevent_extra_user_signups` pada `auth.users` yang otomatis menolak pendaftaran baru jika sudah ada 1 pengguna terdaftar.
-5. Anda juga dapat menentukan email pemilik pada environment variable `ALLOWED_USER_EMAIL` sebagai validasi lapis ganda di middleware dan server actions.
+1. Buka **Authentication → Providers → Email**, lalu matikan **"Allow new users to sign up"**.
+2. Buka **Authentication → Users → Add User** untuk membuat 1 akun email pemilik.
 
 ### 4. Konfigurasi Environment Variables
-
 Salin `.env.example` menjadi `.env.local`:
 ```bash
 cp .env.example .env.local
 ```
 
-Isi variabel berikut:
+Isi ke-5 variabel berikut (baik di `.env.local` maupun di dashboard **Vercel → Project Settings → Environment Variables**):
 ```env
-# URL & Public Anon Key Supabase (Dapat diakses di browser)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI...
-
-# Service Role Key (SERVER ONLY - DILARANG diekspos ke client bundle)
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI...
-
-# Secret token untuk sync dari Tampermonkey userscript
 IMPORT_TOKEN=ganti_dengan_token_rahasia_anda
-
-# Email pemilik (single-user guard)
 ALLOWED_USER_EMAIL=owner@example.com
 ```
 
-> **Catatan Keamanan (Service Key)**:
-> `SUPABASE_SERVICE_ROLE_KEY` hanya digunakan di `src/lib/supabase/admin.ts` yang dilindungi dengan package `server-only`. Next.js akan memblokir build jika admin client ini secara tidak sengaja diimpor di client bundle.
-> Semua mutasi data melalui server route (RLS strict), dan klien browser hanya memiliki akses SELECT untuk user terautentikasi.
-
-### 5. Menjalankan Server Development
-
+### 5. Menjalankan Secara Lokal
 ```bash
 npm run dev
 ```
+Buka [http://localhost:3000](http://localhost:3000).
 
-Aplikasi dapat diakses di [http://localhost:3000](http://localhost:3000).
+### 6. Deploy ke Vercel
+1. Buka [vercel.com/new](https://vercel.com/new) dan impor repositori GitHub ini.
+2. Masukkan 5 Environment Variables di atas lalu klik **Deploy**.
+3. Setelah mendapatkan domain Vercel (misal `https://comic-planner.vercel.app`), tambahkan URL tersebut ke **Supabase Dashboard → Authentication → URL Configuration** (`Site URL` & `Redirect URLs`).
 
 ---
 
-## Endpoint Impor (F5)
+## Endpoint Impor (`POST /api/import`)
 
-`POST /api/import` menerima produk Shopee dari userscript Tampermonkey (TASK-006).
-Endpoint ini memakai **token**, bukan sesi Supabase, karena userscript berjalan di
-origin Shopee dan tidak punya cookie aplikasi.
-
-**Header**
+Endpoint ini menerima batch produk Shopee dari userscript Tampermonkey menggunakan header `X-Import-Token`.
 
 | Header | Nilai |
 |---|---|
-| `X-Import-Token` | Harus sama persis dengan env `IMPORT_TOKEN` |
+| `Content-Type` | `application/json` |
+| `X-Import-Token` | Sama persis dengan `IMPORT_TOKEN` di environment server |
 
-**Body** — array polos atau `{ "items": [...] }`:
-
+**Contoh Payload:**
 ```json
 {
   "items": [
     {
       "itemid": "987654321",
       "shopid": "555000111",
-      "nama": "One Piece Vol. 101 (Edisi Indonesia)",
+      "nama": "One Piece Vol. 108 (Edisi Indonesia)",
       "harga_raw": 4500000000,
       "label_po": true,
       "deadline_po": "2026-12-01",
-      "tanggal_rilis": "2026-11-20",
-      "thumbnail": "https://down-...jpg",
-      "url": "https://shopee.co.id/product/987654321",
+      "thumbnail": "https://down-id.img.susercontent.com/...",
+      "url": "https://shopee.co.id/product/555000111/987654321",
       "nama_toko": "Manga Store ID",
       "seri": "One Piece",
-      "volume": "101"
+      "volume": 108
     }
   ]
 }
 ```
 
-- `itemid`, `shopid`, `nama` wajib. Selain itu semua opsional.
-- `harga_raw` dalam satuan mentah Shopee: **÷ 100.000 → rupiah** (contoh di atas = Rp 45.000).
-- `label_po` boleh `true`/`1`/`"true"`/`"po"` — bila terisi maka `listings.status = 'po'` + `deadline_po`.
-- Maks. 200 produk per request.
-
-**Respons**
-
-```json
-{ "created": 3, "updated": 12, "skipped": 1, "errors": [{ "index": 7, "itemid": null, "nama": null, "message": "harga tidak bisa dibaca (harga_raw bukan angka)" }] }
-```
-
-`errors` berisi produk yang **dilewati**; produk lain tetap diproses
-(parsing defensif, PRD F5).
-
-**Perilaku dedup**
-
-- Produk baru → `items` + `listings` + `plans` berstatus `wishlist`.
-- Produk lama (kunci `(marketplace, shop_id, item_id_shopee)` sudah ada) → hanya
-  `listings` yang di-refresh: harga, status, deadline. `plans` tidak disentuh.
-- Harga & deadline yang tidak dibawa payload dipertahankan; listing yang turun
-  dari PO ke ready=deadline-nya dibersihkan.
-- Semua penulisan berupa 4 statement batch, bukan satu per item (50 produk < 3 detik).
-
-**Status codes:** `400` payload tidak valid · `403` token salah/tak ada ·
-`500` `IMPORT_TOKEN` belum dikonfigurasi di server.
-
 ---
 
-## Userscript Tampermonkey Shopee (F5 Client)
+## Userscript Tampermonkey Shopee
 
-Skrip Tampermonkey [`userscript/comicplan-import.user.js`](userscript/comicplan-import.user.js) mengekstrak produk komik dari etalase toko dan halaman detail produk Shopee, lalu menyinkronkannya ke ComicPlan via endpoint `POST /api/import`.
-
-### Yang Dibutuhkan
-
-1. **Browser Extension**: Pasang ekstensi [Tampermonkey](https://www.tampermonkey.net/) (atau Violentmonkey) pada browser Chrome, Edge, Firefox, atau Kiwi Browser (Android).
-2. **Server ComicPlan**: Pastikan web app ComicPlan dapat diakses dari browser (misal `http://localhost:3000` untuk development lokal, atau URL staging/production Anda).
-3. **Import Token**: Token rahasia yang sama dengan yang dikonfigurasi di file `.env.local` server (`IMPORT_TOKEN=...`).
-
-### Cara Instalasi & Penggunaan
-
-1. Buka dashboard ekstensi **Tampermonkey** → klik menu **Add a new script (+)**.
-2. Salin seluruh isi file [`userscript/comicplan-import.user.js`](userscript/comicplan-import.user.js), lalu simpan (`Ctrl+S`).
-3. Buka halaman toko Shopee (misal `https://shopee.co.id/shop/<shopid>`) atau halaman produk komik.
-4. Panel mengambang bergaya glassmorphism **ComicPlan Sync** akan otomatis muncul di sudut kanan bawah:
-   - Klik ikon gerigi (⚙️) untuk mengatur **Endpoint URL** (default: `http://localhost:3000/api/import`) dan memasukkan **Import Token**. Konfigurasi tersimpan secara persisten di storage Tampermonkey.
-   - Sambil Anda menjelajahi etalase atau kategori toko, produk yang terdeteksi otomatis masuk ke dalam daftar panel.
-   - Pilih/centang produk yang ingin diimpor, gunakan filter **Hanya PO** jika diinginkan, lalu klik tombol **Sync ke ComicPlan**.
-   - Pada halaman detail produk tunggal, gunakan tombol **⚡ Impor Satuan** untuk mengimpor satu komik secara instan.
-   - Panel dapat diminimalkan menjadi FAB bulat kecil (`CP`) dengan mengklik tombol minimize (`─`).
+1. Pasang ekstensi [Tampermonkey](https://www.tampermonkey.net/) di browser desktop atau Kiwi Browser (Android).
+2. Buka halaman **`/import`** di aplikasi ComicPlan, lalu klik **Salin Script Tampermonkey** atau **Unduh `.user.js`** (tersedia juga di [`userscript/comicplan-import.user.js`](userscript/comicplan-import.user.js)).
+3. Buka halaman toko Shopee, klik ikon **⚙️** pada panel mengambang **ComicPlan Sync**, lalu tempel **URL Endpoint** dan **Import Token**.
+4. Centang komik yang ingin dimasukkan ke katalog & wishlist, lalu klik **Sync ke ComicPlan**.
 
 ---
 
 ## Skrip yang Tersedia
 
-- `npm run dev`: Menjalankan Next.js development server
-- `npm run build`: Memeriksa type safety dan membuat production build
-- `npm run start`: Menjalankan production server
-- `npm run lint`: Menjalankan ESLint
-- `npm test`: Menjalankan unit test (`node --test`, tanpa dependency baru)
-
+- `npm run dev` — Menjalankan server development Next.js
+- `npm run build` — Memeriksa tipe TypeScript dan membuat production build
+- `npm run start` — Menjalankan production server
+- `npm run lint` — Menjalankan pemeriksaan ESLint
+- `npm test` — Menjalankan seluruh unit test (`node --test tests/*.test.ts`)
