@@ -142,3 +142,34 @@ export async function createTransaction(
     };
   }
 }
+
+/** Hapus transaksi yang salah input dan hitung ulang realisasi/komitmen. */
+export async function deleteTransaction(
+  id: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!id) {
+      return { success: false, error: 'ID transaksi wajib diisi' };
+    }
+
+    const { supabase, error: authError } = await requireUser();
+    if (!supabase) {
+      return { success: false, error: authError ?? 'Sesi tidak valid.' };
+    }
+
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
+
+    if (error) {
+      return { success: false, error: `Gagal menghapus transaksi: ${error.message}` };
+    }
+
+    revalidateBudgetPaths();
+    return { success: true };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error:
+        err instanceof Error ? err.message : 'Terjadi kesalahan sistem saat menghapus transaksi',
+    };
+  }
+}
