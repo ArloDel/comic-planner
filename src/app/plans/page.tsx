@@ -13,6 +13,7 @@ import {
   isPlanStatus,
   summarizePayments,
   type PaymentRow,
+  type PlanSortBy,
   type PlanStatus,
 } from '@/lib/plans';
 import { asArray } from '@/lib/supabase/embed';
@@ -78,14 +79,22 @@ function parsePlanStatusFilter(raw?: string): PlanStatus | 'semua' | 'hold' {
   return 'semua';
 }
 
+function parsePlanSortBy(raw?: string): PlanSortBy {
+  if (raw === 'deadline' || raw === 'sisa_tagihan' || raw === 'terbaru' || raw === 'prioritas') {
+    return raw;
+  }
+  return 'prioritas';
+}
+
 export default async function PlansPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; sort?: string }>;
 }) {
-  const { q: rawQ, status: rawStatus } = await searchParams;
+  const { q: rawQ, status: rawStatus, sort: rawSort } = await searchParams;
   const initialSearch = rawQ ?? '';
   const initialStatus = parsePlanStatusFilter(rawStatus);
+  const initialSort = parsePlanSortBy(rawSort);
 
   let userEmail: string | null = null;
   let plans: PlanWithDetails[] = [];
@@ -249,6 +258,7 @@ export default async function PlansPage({
         commitment={commitment}
         initialSearch={initialSearch}
         initialStatus={initialStatus}
+        initialSort={initialSort}
       />
     </AppShell>
   );
