@@ -23,7 +23,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ItemModal } from '@/components/katalog/ItemModal';
 import { DeleteModal } from '@/components/katalog/DeleteModal';
 import { formatRupiahOrNull } from '@/lib/format';
-import { PLAN_STATUSES, STATUS_LABELS } from '@/lib/plans';
+import { PLAN_STATUSES, STATUS_LABELS, isPlanStatus } from '@/lib/plans';
+import { replaceQueryParams } from '@/lib/url';
 import type { ItemType } from '@/types/database';
 import {
   summarizeSeries,
@@ -33,6 +34,7 @@ import {
 
 type TipeFilter = ItemType | 'semua';
 type SortBy = 'terbaru' | 'judul' | 'seri' | 'harga';
+type StatusFilter = ExtendedStatus | 'semua';
 
 const TIPE_OPTIONS: { value: TipeFilter; label: string }[] = [
   { value: 'semua', label: 'Semua Tipe' },
@@ -54,7 +56,7 @@ const STATUS_FILTERS: { value: ExtendedStatus; label: string }[] = [
   ...PLAN_STATUSES.map((status) => ({ value: status, label: STATUS_LABELS[status] })),
 ];
 
-const EMPTY_COUNTS: Record<ExtendedStatus | 'semua', number> = {
+const EMPTY_COUNTS: Record<StatusFilter, number> = {
   semua: 0,
   'belum ada': 0,
   wishlist: 0,
@@ -64,6 +66,22 @@ const EMPTY_COUNTS: Record<ExtendedStatus | 'semua', number> = {
   diterima: 0,
   batal: 0,
 };
+
+function parseStatusFilter(raw?: string): StatusFilter {
+  if (raw === 'belum ada') return 'belum ada';
+  if (raw && isPlanStatus(raw)) return raw;
+  return 'semua';
+}
+
+function parseTipeFilter(raw?: string): TipeFilter {
+  if (TIPE_OPTIONS.some((opt) => opt.value === raw)) return raw as TipeFilter;
+  return 'semua';
+}
+
+function parseSortBy(raw?: string): SortBy {
+  if (SORT_OPTIONS.some((opt) => opt.value === raw)) return raw as SortBy;
+  return 'terbaru';
+}
 
 function compareBy(sortBy: SortBy) {
   return (a: KatalogItemWithDetails, b: KatalogItemWithDetails) => {
@@ -84,21 +102,55 @@ function compareBy(sortBy: SortBy) {
 
 interface KatalogClientProps {
   initialItems: KatalogItemWithDetails[];
+  initialFilters?: {
+    q?: string;
+    status?: string;
+    tipe?: string;
+    sort?: string;
+  };
 }
 
-export function KatalogClient({ initialItems }: KatalogClientProps) {
+export function KatalogClient({ initialItems, initialFilters }: KatalogClientProps) {
   const router = useRouter();
 
-  // Filter & Search states
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<ExtendedStatus | 'semua'>('semua');
-  const [tipeFilter, setTipeFilter] = useState<TipeFilter>('semua');
-  const [sortBy, setSortBy] = useState<SortBy>('terbaru');
+  // Filter & Search states (diinisialisasi dari URL query params)
+  const [search, setSearch] = useState(initialFilters?.q ?? '');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() =>
+    parseStatusFilter(initialFilters?.status)
+  );
+  const [tipeFilter, setTipeFilter] = useState<TipeFilter>(() =>
+    parseTipeFilter(initialFilters?.tipe)
+  );
+  const [sortBy, setSortBy] = useState<SortBy>(() => parseSortBy(initialFilters?.sort));
 
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<KatalogItemWithDetails | null>(null);
   const [deletingItem, setDeletingItem] = useState<KatalogItemWithDetails | null>(null);
+
+  function updateFilters(next: {
+    q?: string;
+    status?: StatusFilter;
+    tipe?: TipeFilter;
+    sort?: SortBy;
+  }) {
+    const qVal = next.q !== undefined ? next.q : search;
+    const statusVal = next.status !== undefined ? next.status : statusFilter;
+    const tipeVal = next.tipe !== undefined ? next.tipe : tipeFilter;
+    const sortVal = next.sort !== undefined ? next.sort : sortBy;
+
+    setSearch(qVal);
+    setStatusFilter(statusVal);
+    setTipeFilter(tipeVal);
+    setSortBy(sortVal);
+
+    replaceQueryParams({
+      q: qVal,
+      status: statusVal,
+      tipe: tipeVal,
+      sort: sortVal,
+    });
+  }
 
   const statusCounts = useMemo(() => {
     const counts = { ...EMPTY_COUNTS, semua: initialItems.length };
@@ -138,8 +190,8 @@ export function KatalogClient({ initialItems }: KatalogClientProps) {
         <div className="flex-1 max-w-md">
           <SearchBar
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onClear={() => setSearch('')}
+            onChange={(e) => updateFilters({ q: e.target.value })}
+            onClear={() => updateFilters({ q: '' })}
             placeholder="Cari judul, seri, atau penerbit…"
           />
         </div>
@@ -183,7 +235,7 @@ export function KatalogClient({ initialItems }: KatalogClientProps) {
           <FilterChip
             label="Semua"
             active={statusFilter === 'semua'}
-            onClick={() => setStatusFilter('semua')}
+            onClick={() => updateFilters({ status: 'semua' })}
             count={statusCounts.semua}
           />
           {STATUS_FILTERS.map(({ value, label }) => (
@@ -191,7 +243,7 @@ export function KatalogClient({ initialItems }: KatalogClientProps) {
               key={value}
               label={label}
               active={statusFilter === value}
-              onClick={() => setStatusFilter(value)}
+              onClick={() => updateFilters({ status: value })}
               count={statusCounts[value]}
             />
           ))}
@@ -208,7 +260,7 @@ export function KatalogClient({ initialItems }: KatalogClientProps) {
               compact
               aria-label="Filter tipe komik"
               value={tipeFilter}
-              onChange={(e) => setTipeFilter(e.target.value as TipeFilter)}
+              onChange={(e) => updateFilters({ tipe: e.target.value as TipeFilter })}
               options={TIPE_OPTIONS}
             />
           </div>
@@ -222,7 +274,7 @@ export function KatalogClient({ initialItems }: KatalogClientProps) {
               compact
               aria-label="Urutkan item"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortBy)}
+              onChange={(e) => updateFilters({ sort: e.target.value as SortBy })}
               options={SORT_OPTIONS}
             />
           </div>
@@ -248,9 +300,7 @@ export function KatalogClient({ initialItems }: KatalogClientProps) {
             if (initialItems.length === 0) {
               setIsCreateOpen(true);
             } else {
-              setSearch('');
-              setStatusFilter('semua');
-              setTipeFilter('semua');
+              updateFilters({ q: '', status: 'semua', tipe: 'semua' });
             }
           }}
         />
