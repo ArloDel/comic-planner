@@ -4,7 +4,7 @@
   <p><strong>Personal Manga &amp; Comic Purchasing Planner — Shopee PO Sync, Series Volume Tracker &amp; Monthly Budget Hold</strong></p>
 
   <p>
-    <a href="https://comic-planner-k5pp.vercel.app/"><strong>🌐 Live Preview</strong></a> ·
+    <a href="https://comic-planner.vercel.app/"><strong>🌐 Live Preview</strong></a> ·
     <a href="#tampilan-aplikasi-live-preview">Screenshots</a> ·
     <a href="#fitur-utama">Fitur Utama</a> ·
     <a href="#panduan-setup--deploy-vercel">Setup &amp; Deploy</a> ·
@@ -22,7 +22,7 @@
 
 ## Tampilan Aplikasi (Live Preview)
 
-> **Live Demo:** [https://comic-planner-k5pp.vercel.app/](https://comic-planner-k5pp.vercel.app/)
+> **Live Demo:** [https://comic-planner.vercel.app/](https://comic-planner.vercel.app/)
 
 ### 1. Dashboard — Ringkasan Sisa Aman & PO Mendekati Deadline
 ![Dashboard Preview](public/screenshots/dashboard-preview.svg)
@@ -109,7 +109,7 @@ Buka [http://localhost:3000](http://localhost:3000).
 ### 6. Deploy ke Vercel
 1. Buka [vercel.com/new](https://vercel.com/new) dan impor repositori GitHub ini.
 2. Masukkan 5 Environment Variables di atas lalu klik **Deploy**.
-3. Setelah mendapatkan domain Vercel (`https://comic-planner-k5pp.vercel.app/`), tambahkan URL tersebut ke **Supabase Dashboard → Authentication → URL Configuration** (`Site URL` & `Redirect URLs`).
+3. Setelah mendapatkan domain Vercel (`https://comic-planner.vercel.app/`), tambahkan URL tersebut ke **Supabase Dashboard → Authentication → URL Configuration** (`Site URL` & `Redirect URLs`).
 
 ---
 
