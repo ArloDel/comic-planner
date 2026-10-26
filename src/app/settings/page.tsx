@@ -1,4 +1,5 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { createClient } from '@/lib/supabase/server';
 import { currentPeriode, shiftPeriode } from '@/lib/budget';
@@ -33,8 +34,6 @@ export default async function SettingsPage() {
   const periode = currentPeriode();
   const prevPeriode = shiftPeriode(periode, -1);
 
-  const rawToken = process.env.IMPORT_TOKEN?.trim() || null;
-  const maskedToken = maskSecretToken(rawToken);
   const allowedEmailConfigured = Boolean(process.env.ALLOWED_USER_EMAIL?.trim());
 
   let userEmail: string | null = null;
@@ -110,6 +109,13 @@ export default async function SettingsPage() {
   } catch (err) {
     console.error('Error loading settings page:', err);
   }
+
+  if (!userEmail) {
+    redirect('/login');
+  }
+
+  const rawToken = process.env.IMPORT_TOKEN?.trim() || null;
+  const maskedToken = maskSecretToken(rawToken);
 
   return (
     <AppShell
