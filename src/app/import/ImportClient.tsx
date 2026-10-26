@@ -92,9 +92,19 @@ export function ImportClient({
     }
   }
 
+  function getResolvedUserscript(): string | null {
+    if (!userscriptSource) return null;
+    if (typeof window === 'undefined') return userscriptSource;
+    return userscriptSource.replace(
+      'http://localhost:3000/api/import',
+      `${window.location.origin}/api/import`
+    );
+  }
+
   function handleDownloadUserscript() {
-    if (!userscriptSource) return;
-    const blob = new Blob([userscriptSource], { type: 'text/javascript;charset=utf-8' });
+    const resolved = getResolvedUserscript();
+    if (!resolved) return;
+    const blob = new Blob([resolved], { type: 'text/javascript;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -226,7 +236,10 @@ export function ImportClient({
                 type="button"
                 variant="primary"
                 size="sm"
-                onClick={() => copyText(userscriptSource, 'script', 'Userscript')}
+                onClick={() => {
+                  const resolved = getResolvedUserscript();
+                  if (resolved) copyText(resolved, 'script', 'Userscript');
+                }}
               >
                 {copiedField === 'script' ? (
                   <Check className="h-4 w-4 mr-1.5" aria-hidden="true" />
