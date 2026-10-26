@@ -87,6 +87,8 @@ export interface ExistingListing {
   nama_toko?: string | null;
   url?: string | null;
   tanggal_rilis?: string | null;
+  /** `false` bila item belum punya plan aktif (`status != 'batal'`), default `true`. */
+  has_active_plan?: boolean;
 }
 
 export interface PlannedItem {
@@ -430,6 +432,19 @@ export function planImport(
 
     if (known) {
       plan.updatedListings.push(listing);
+      if (known.has_active_plan === false) {
+        plan.newPlans.push({
+          id: newId(),
+          item_id: listing.item_id,
+          listing_id: listing.id,
+          prioritas: IMPORT_DEFAULT_PRIORITY,
+          estimasi_harga: listing.harga,
+          status: 'wishlist',
+          deadline_po: null,
+          created_at: timestamp,
+          updated_at: timestamp,
+        });
+      }
       plan.updated++;
       continue;
     }
