@@ -96,8 +96,8 @@ export function ImportClient({
     if (!userscriptSource) return null;
     if (typeof window === 'undefined') return userscriptSource;
     return userscriptSource.replace(
-      'http://localhost:3000/api/import',
-      `${window.location.origin}/api/import`
+      /const DEFAULT_API_URL = '[^']+';/,
+      `const DEFAULT_API_URL = '${window.location.origin}/api/import';`
     );
   }
 
