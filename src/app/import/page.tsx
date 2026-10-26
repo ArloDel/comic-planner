@@ -1,6 +1,7 @@
 import React from 'react';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { redirect } from 'next/navigation';
 import { Clock, Download, Package, Store } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { StatCard } from '@/components/ui/StatCard';
@@ -51,10 +52,6 @@ export default async function ImportPage() {
   let userEmail: string | null = null;
   let listings: ImportedListingItem[] = [];
 
-  const rawToken = process.env.IMPORT_TOKEN?.trim() || null;
-  const maskedToken = maskSecretToken(rawToken);
-  const userscriptSource = await readUserscriptFile();
-
   try {
     const supabase = await createClient();
     const {
@@ -94,6 +91,14 @@ export default async function ImportPage() {
   } catch (err) {
     console.error('Error loading import page:', err);
   }
+
+  if (!userEmail) {
+    redirect('/login');
+  }
+
+  const rawToken = process.env.IMPORT_TOKEN?.trim() || null;
+  const maskedToken = maskSecretToken(rawToken);
+  const userscriptSource = await readUserscriptFile();
 
   const poCount = listings.filter((l) => l.status === 'po').length;
   const readyCount = listings.length - poCount;
