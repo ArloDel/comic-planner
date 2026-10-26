@@ -68,7 +68,27 @@ async function findExistingListings(
       throw new Error(`Gagal membaca listing yang sudah ada: ${error.message}`);
     }
 
-    for (const row of data ?? []) {
+    const rows = data ?? [];
+    const matchedItemIds = Array.from(new Set(rows.map((row) => row.item_id)));
+    const activePlanItemIds = new Set<string>();
+
+    if (matchedItemIds.length > 0) {
+      const { data: activePlans, error: planError } = await supabase
+        .from('plans')
+        .select('item_id')
+        .in('item_id', matchedItemIds)
+        .neq('status', 'batal');
+
+      if (planError) {
+        throw new Error(`Gagal memeriksa rencana pembelian aktif: ${planError.message}`);
+      }
+
+      for (const planRow of activePlans ?? []) {
+        activePlanItemIds.add(String(planRow.item_id));
+      }
+    }
+
+    for (const row of rows) {
       existing.set(
         listingKey({
           marketplace: IMPORT_MARKETPLACE,
@@ -83,6 +103,7 @@ async function findExistingListings(
           nama_toko: row.nama_toko,
           url: row.url,
           tanggal_rilis: row.tanggal_rilis,
+          has_active_plan: activePlanItemIds.has(row.item_id),
         }
       );
     }
@@ -169,6 +190,16 @@ export async function POST(request: Request) {
         .upsert(plan.updatedListings, { onConflict: 'marketplace,shop_id,item_id_shopee' });
 
       if (error) throw new Error(`Gagal memperbarui listing: ${error.message}`);
+
+      const updatedItemIds = Array.from(
+        new Set(plan.updatedListings.map((listing) => listing.item_id))
+      );
+      const latestTimestamp = plan.updatedListings[0]?.updated_at ?? new Date().toISOString();
+
+      await supabase
+        .from('items')
+        .update({ updated_at: latestTimestamp })
+        .in('id', updatedItemIds);
     }
 
     if (plan.newPlans.length) {
@@ -179,6 +210,8 @@ export async function POST(request: Request) {
     revalidatePath('/');
     revalidatePath('/katalog');
     revalidatePath('/plans');
+    revalidatePath('/import');
+    revalidatePath('/settings');
 
     return jsonResponse({
       created: plan.created,
