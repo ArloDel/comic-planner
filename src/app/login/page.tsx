@@ -18,7 +18,9 @@ function LoginForm() {
     formError ||
     (urlError === 'unauthorized_email'
       ? 'Akses ditolak: Aplikasi ini dibatasi khusus untuk email pemilik yang terdaftar.'
-      : null);
+      : urlError === 'missing_config'
+        ? 'Konfigurasi server belum lengkap: pastikan NEXT_PUBLIC_SUPABASE_URL dan NEXT_PUBLIC_SUPABASE_ANON_KEY sudah diatur di Environment Variables.'
+        : null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
