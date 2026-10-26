@@ -6,11 +6,18 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
+  const { pathname } = request.nextUrl;
+  const isAuthPage = pathname.startsWith('/login');
+  const isApiRoute = pathname.startsWith('/api');
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Return early if Supabase env vars are not configured yet (e.g. initial dev before setup)
+    // Fail-closed: jangan buka halaman terlindungi jika env Supabase belum lengkap
+    if (!isAuthPage && !isApiRoute) {
+      return redirectTo(request, '/login', { error: 'missing_config' });
+    }
     return supabaseResponse;
   }
 
@@ -34,10 +41,6 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
-  const isAuthPage = pathname.startsWith('/login');
-  const isApiRoute = pathname.startsWith('/api');
 
   // Single-user allowlist check if configured
   const allowedEmail = process.env.ALLOWED_USER_EMAIL;
