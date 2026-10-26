@@ -23,7 +23,7 @@
   // =========================================================================
   // 1. KONFIGURASI & STORAGE
   // =========================================================================
-  const DEFAULT_API_URL = 'http://localhost:3000/api/import';
+  const DEFAULT_API_URL = 'https://comic-planner.vercel.app/api/import';
   const STORAGE_KEY_URL = 'comicplan_api_url';
   const STORAGE_KEY_TOKEN = 'comicplan_import_token';
   const STORAGE_KEY_MINIMIZED = 'comicplan_is_minimized';
