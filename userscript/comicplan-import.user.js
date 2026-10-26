@@ -59,7 +59,7 @@
   // 2. PARSING & EKSTRAKSI LOGIC (PURE & DEFENSIF)
   // =========================================================================
   const SHOPEE_API_REGEX =
-    /\/api\/v[24]\/(?:shop\/(?:search_items|rcmd_items|get_shop_base)|(?:search\/)?search_items|pdp\/get_pc|item\/get|recommend\/recommend)/i;
+    /\/api\/v[24]\/(?:shop\/(?:search_items|rcmd_items|get_shop_base|get_shop_tab)|(?:search\/)?search_items|pdp\/(?:get_pc|get_rw)|item\/get|recommend\/(?:recommend|recommend_v2)|pages\/get_category_tree)/i;
 
   function isShopeeApiUrl(url) {
     if (!url || typeof url !== 'string') return false;
@@ -335,7 +335,9 @@
 
       // Ambil nama dari title atau DOM
       let nama = '';
-      const titleMeta = document.querySelector('meta[property="og:title"]');
+      const h1 = document.querySelector('h1') || document.querySelector('.qaNIZv') || document.querySelector('[class*="attM6y"]');
+      if (h1 && h1.innerText) nama = h1.innerText.trim();
+      const titleMeta = !nama ? document.querySelector('meta[property="og:title"]') : null;
       if (titleMeta && titleMeta.content) {
         nama = titleMeta.content.replace(/\s*\|\s*Shopee Indonesia$/i, '').trim();
       }
@@ -1022,7 +1024,7 @@
         const updated = res.updated ?? 0;
         statusNotice = {
           type: 'success',
-          text: `✅ ${created} dibuat · ${updated} diperbarui`,
+          text: `✅ ${created} dibuat · ${updated} diperbarui${(res.skipped ?? 0) > 0 ? ' · ' + res.skipped + ' dilewati' : ''}`,
         };
       } catch {
         statusNotice = {
