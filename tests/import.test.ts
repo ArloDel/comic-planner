@@ -410,4 +410,32 @@ describe('perencanaan upsert batch', () => {
     assert.equal(plan.created, 2);
     assert.equal(plan.newListings.length, 2);
   });
+
+  it('re-import membuat ulang plan wishlist bila plan aktif sudah terhapus/batal', () => {
+    const items = parsed([shopeeProduct({ harga_raw: 4_800_000_000 })]);
+    const key = listingKey(items[0] as ImportItem);
+    const existing = new Map<string, ExistingListing>([
+      [
+        key,
+        {
+          listing_id: 'listing-lama',
+          item_id: 'item-lama',
+          harga: 45_000,
+          deadline_po: null,
+          has_active_plan: false,
+        },
+      ],
+    ]);
+
+    const plan = planImport(items, { existing, newId: sequentialIds(), now: fixedNow });
+
+    assert.equal(plan.created, 0);
+    assert.equal(plan.updated, 1);
+    assert.equal(plan.updatedListings.length, 1);
+    assert.equal(plan.newPlans.length, 1);
+    assert.equal(plan.newPlans[0].item_id, 'item-lama');
+    assert.equal(plan.newPlans[0].listing_id, 'listing-lama');
+    assert.equal(plan.newPlans[0].status, 'wishlist');
+    assert.equal(plan.newPlans[0].estimasi_harga, 48_000);
+  });
 });
