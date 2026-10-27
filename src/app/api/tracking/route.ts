@@ -63,16 +63,20 @@ export async function GET(request: Request) {
     }
   }
 
+  const apiKey =
+    request.headers.get('x-binderbyte-key') || process.env.BINDERBYTE_API_KEY || null;
+  const apiKeyConfigured = Boolean(process.env.BINDERBYTE_API_KEY);
+
   if (!savedResi) {
     return NextResponse.json({
       hasTracking: false,
       courier: savedCourier,
       resi: '',
       photoUrl: savedPhoto,
+      apiKeyConfigured,
     });
   }
 
-  const apiKey = process.env.BINDERBYTE_API_KEY || null;
   const tracking = await trackPackageBinderbyte({
     courier: savedCourier,
     waybill: savedResi,
@@ -120,6 +124,7 @@ export async function GET(request: Request) {
     courier: savedCourier,
     resi: savedResi,
     photoUrl: savedPhoto,
+    apiKeyConfigured,
     tracking,
   });
 }
@@ -132,6 +137,7 @@ export async function POST(request: Request) {
     foto_bukti_url?: string | null;
     force_status?: 'ON_PROCESS' | 'DELIVERED' | null;
     complete_order?: boolean;
+    custom_api_key?: string | null;
   };
 
   try {
@@ -140,19 +146,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Body JSON tidak valid' }, { status: 400 });
   }
 
-  const { plan_id, courier, resi, foto_bukti_url, force_status, complete_order } = body;
+  const { plan_id, courier, resi, foto_bukti_url, force_status, complete_order, custom_api_key } = body;
 
   if (!plan_id || !resi) {
     return NextResponse.json({ error: 'plan_id dan nomor resi wajib diisi' }, { status: 400 });
   }
 
-  const apiKey = process.env.BINDERBYTE_API_KEY || null;
+  const apiKey =
+    custom_api_key ||
+    request.headers.get('x-binderbyte-key') ||
+    process.env.BINDERBYTE_API_KEY ||
+    null;
+  const apiKeyConfigured = Boolean(process.env.BINDERBYTE_API_KEY || custom_api_key);
   const tracking = await trackPackageBinderbyte({
     courier: courier || 'spx',
     waybill: resi,
     apiKey,
     forceMockStatus: force_status,
   });
+
+  if (!tracking.success && !tracking.isMock) {
+    return NextResponse.json(
+      {
+        error:
+          tracking.error ||
+          'Nomor resi tidak ditemukan pada sistem kurir. Pastikan kurir dan nomor resi sesuai.',
+        tracking,
+      },
+      { status: 400 }
+    );
+  }
 
   const nowIso = new Date().toISOString();
 
