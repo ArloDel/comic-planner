@@ -1,4 +1,5 @@
 import React from 'react';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { AppShell } from '@/components/layout/AppShell';
 import { SeriClient } from './SeriClient';
@@ -35,16 +36,31 @@ export default async function SeriPage({ params }: SeriPageProps) {
 
     userEmail = user?.email || null;
 
-    const { data: dbItems } = await supabase
-      .from('items')
-      .select(
-        'id, judul, seri, volume, penerbit, tipe, cover_url, created_at, updated_at, plans(id, status, estimasi_harga)'
-      )
-      .eq('seri', decodedSeri)
-      .order('volume', { ascending: true, nullsFirst: false })
-      .returns<ItemRowWithRelations[]>();
+    if (user) {
+      const { data: dbItems } = await supabase
+        .from('items')
+        .select(
+          'id, judul, seri, volume, penerbit, tipe, cover_url, created_at, updated_at, plans(id, status, estimasi_harga)'
+        )
+        .eq('seri', decodedSeri)
+        .order('volume', { ascending: true, nullsFirst: false })
+        .returns<ItemRowWithRelations[]>();
 
-    items = mapItemsWithDetails(dbItems ?? []);
+      items = mapItemsWithDetails(dbItems ?? []);
+    } else {
+      const admin = createAdminClient();
+      const { data: dbItems } = await admin
+        .from('items')
+        .select(
+          'id, judul, seri, volume, penerbit, tipe, cover_url, created_at, updated_at, plans(id, status)'
+        )
+        .eq('seri', decodedSeri)
+        .order('volume', { ascending: true, nullsFirst: false })
+        .returns<ItemRowWithRelations[]>();
+
+      items = mapItemsWithDetails(dbItems ?? []);
+    }
+
     publisher = items.find((item) => item.penerbit)?.penerbit ?? null;
   } catch (err) {
     console.error('Database connection error in SeriPage:', err);
@@ -56,7 +72,12 @@ export default async function SeriPage({ params }: SeriPageProps) {
       pageTitle={`Seri: ${decodedSeri}`}
       pageSubtitle={`Tracker progres volume seri ${decodedSeri}`}
     >
-      <SeriClient seriName={decodedSeri} penerbit={publisher} items={items} />
+      <SeriClient
+        seriName={decodedSeri}
+        penerbit={publisher}
+        items={items}
+        readOnly={!userEmail}
+      />
     </AppShell>
   );
 }
