@@ -23,6 +23,14 @@ const memoryTrackingStore = new Map<
   }
 >();
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_PHOTO_LENGTH = 10 * 1024 * 1024; // 10MB safe ceiling
+
+function isValidPhotoUrl(url: string): boolean {
+  if (url.length > MAX_PHOTO_LENGTH) return false;
+  return url.startsWith('data:image/') || url.startsWith('https://');
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const planId = searchParams.get('plan_id')?.trim();
@@ -32,6 +40,10 @@ export async function GET(request: Request) {
 
   if (!planId && !resi) {
     return NextResponse.json({ error: 'plan_id atau resi diperlukan' }, { status: 400 });
+  }
+
+  if (planId && !UUID_REGEX.test(planId)) {
+    return NextResponse.json({ error: 'Format plan_id tidak valid' }, { status: 400 });
   }
 
   // Cek apakah ada data tersimpan sebelumnya untuk plan ini
@@ -154,6 +166,21 @@ export async function POST(request: Request) {
 
   if (!plan_id || !resi) {
     return NextResponse.json({ error: 'plan_id dan nomor resi wajib diisi' }, { status: 400 });
+  }
+
+  if (!UUID_REGEX.test(plan_id)) {
+    return NextResponse.json({ error: 'Format plan_id tidak valid' }, { status: 400 });
+  }
+
+  if (resi.length > 100) {
+    return NextResponse.json({ error: 'Nomor resi terlalu panjang (maksimal 100 karakter)' }, { status: 400 });
+  }
+
+  if (foto_bukti_url && !isValidPhotoUrl(foto_bukti_url)) {
+    return NextResponse.json(
+      { error: 'Format foto bukti tidak valid atau ukuran melebihi batas yang diizinkan' },
+      { status: 400 }
+    );
   }
 
   const apiKey =
