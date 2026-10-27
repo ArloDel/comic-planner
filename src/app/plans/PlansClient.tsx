@@ -111,10 +111,10 @@ interface PlansClientProps {
 
 const ACTION_LABELS: Record<PlanStatus, string> = {
   wishlist: 'Kembalikan ke Wishlist',
-  po: 'Masuk PO',
-  dp: 'Bayar DP',
-  lunas: 'Tandai Lunas',
-  diterima: 'Terima Barang',
+  po: 'Pesan & Lacak Resi',
+  dp: 'Lacak Pengiriman',
+  lunas: 'Lacak Pengiriman',
+  diterima: 'Selesaikan Pesanan',
   batal: 'Batalkan Rencana',
 };
 
@@ -127,9 +127,9 @@ const DEADLINE_TONE_CLASSES = {
 
 const ACTION_ICONS: Record<PlanStatus, React.ComponentType<{ className?: string }>> = {
   wishlist: ListChecks,
-  po: ShoppingCart,
-  dp: Wallet,
-  lunas: Check,
+  po: Truck,
+  dp: Truck,
+  lunas: Truck,
   diterima: PackageCheck,
   batal: XCircle,
 };
@@ -182,10 +182,22 @@ export function PlansClient({
     const result: Record<string, number> = {
       semua: initialPlans.length,
       hold: initialPlans.filter((plan) => isHoldingBudget(plan.status)).length,
+      wishlist: 0,
+      po: 0,
+      diterima: 0,
+      batal: 0,
     };
 
-    for (const status of PLAN_STATUSES) {
-      result[status] = initialPlans.filter((plan) => plan.status === status).length;
+    for (const plan of initialPlans) {
+      if (plan.status === 'wishlist') {
+        result.wishlist += 1;
+      } else if (plan.status === 'po' || plan.status === 'dp' || plan.status === 'lunas') {
+        result.po += 1;
+      } else if (plan.status === 'diterima') {
+        result.diterima += 1;
+      } else if (plan.status === 'batal') {
+        result.batal += 1;
+      }
     }
 
     return result;
@@ -206,6 +218,10 @@ export function PlansClient({
 
     if (statusFilter === 'hold') {
       result = result.filter((plan) => isHoldingBudget(plan.status));
+    } else if (statusFilter === 'po') {
+      result = result.filter(
+        (plan) => plan.status === 'po' || plan.status === 'dp' || plan.status === 'lunas'
+      );
     } else if (statusFilter !== 'semua') {
       result = result.filter((plan) => plan.status === statusFilter);
     }
@@ -277,20 +293,35 @@ export function PlansClient({
             count={counts.semua}
           />
           <FilterChip
+            label="Wishlist"
+            active={statusFilter === 'wishlist'}
+            onClick={() => updateFilters({ status: 'wishlist' })}
+            count={counts.wishlist}
+          />
+          <FilterChip
+            label="🚚 Sedang Dikirim"
+            active={statusFilter === 'po'}
+            onClick={() => updateFilters({ status: 'po' })}
+            count={counts.po}
+          />
+          <FilterChip
+            label="🎉 Selesai"
+            active={statusFilter === 'diterima'}
+            onClick={() => updateFilters({ status: 'diterima' })}
+            count={counts.diterima}
+          />
+          <FilterChip
             label="Hold Budget"
             active={statusFilter === 'hold'}
             onClick={() => updateFilters({ status: 'hold' })}
             count={counts.hold}
           />
-          {PLAN_STATUSES.map((status) => (
-            <FilterChip
-              key={status}
-              label={STATUS_LABELS[status]}
-              active={statusFilter === status}
-              onClick={() => updateFilters({ status })}
-              count={counts[status]}
-            />
-          ))}
+          <FilterChip
+            label="Batal"
+            active={statusFilter === 'batal'}
+            onClick={() => updateFilters({ status: 'batal' })}
+            count={counts.batal}
+          />
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-1 text-xs text-slate-500">
@@ -456,10 +487,29 @@ export function PlansClient({
                       {formatRupiah(plan.estimasi_harga)}
                     </p>
 
-                    {/* Hanya transisi legal yang ditampilkan; tetap diverifikasi ulang di server */}
+                    {/* Aksi status */}
                     <div className="mt-2 flex flex-wrap sm:justify-end gap-1.5">
                       {legal.map((to) => {
                         const Icon = ACTION_ICONS[to];
+
+                        if (to === 'po' || to === 'diterima') {
+                          return (
+                            <button
+                              key={to}
+                              type="button"
+                              onClick={() => setTrackingPlan(plan)}
+                              title={ACTION_LABELS[to]}
+                              className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 min-h-[36px] text-[11px] font-semibold transition-colors ${
+                                to === 'diterima'
+                                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                  : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                              }`}
+                            >
+                              <Icon className="h-3.5 w-3.5" />
+                              <span>{ACTION_LABELS[to]}</span>
+                            </button>
+                          );
+                        }
 
                         return (
                           <button
@@ -479,7 +529,7 @@ export function PlansClient({
                         );
                       })}
 
-                      {plan.status !== 'diterima' && plan.status !== 'batal' && (
+                      {plan.status !== 'wishlist' && plan.status !== 'diterima' && plan.status !== 'batal' && (
                         <button
                           type="button"
                           onClick={() => setTrackingPlan(plan)}
