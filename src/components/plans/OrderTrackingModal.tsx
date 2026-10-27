@@ -215,7 +215,16 @@ export function OrderTrackingModal({
       }
 
       setTracking(data.tracking);
-      setSuccessMsg('Informasi pelacakan berhasil diperbarui!');
+      setSuccessMsg(
+        currentStatus === 'wishlist'
+          ? 'Pesanan berhasil dicatat! Status komik kini Sedang Dikirim.'
+          : 'Informasi pelacakan berhasil diperbarui!'
+      );
+
+      // Jika berpindah dari wishlist ke sedang dikirim, perbarui view di halaman induk
+      if (currentStatus === 'wishlist') {
+        onOrderCompleted?.();
+      }
 
       // Simpan nomor resi & kurir ke LocalStorage agar user tidak perlu input lagi
       if (typeof window !== 'undefined') {
@@ -321,10 +330,13 @@ export function OrderTrackingModal({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Lacak Pengiriman Pesanan
+                {currentStatus === 'wishlist'
+                  ? 'Pesan & Lacak Pengiriman'
+                  : 'Lacak Pengiriman Pesanan'}
               </h2>
               <p className="text-xs text-slate-500 line-clamp-1">
                 {itemTitle} {volume != null ? `(Vol. ${volume})` : ''}
+                {currentStatus === 'wishlist' ? ' · Memindahkan komik ke status Sedang Dikirim' : ''}
               </p>
             </div>
           </div>
