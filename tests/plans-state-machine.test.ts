@@ -8,6 +8,7 @@ import {
   canTransition,
   comparePlans,
   isPlanStatus,
+  isShippingStatus,
   isValidDateInput,
   isValidPriority,
   nextStatuses,
@@ -259,5 +260,16 @@ describe('helper', () => {
       [...list].sort(comparePlans('prioritas')).map((p) => p.id),
       ['p2', 'p3', 'p1']
     );
+  });
+
+  it('isShippingStatus mengidentifikasi status pengiriman po, dp, lunas dengan tepat', () => {
+    assert.equal(isShippingStatus('po'), true);
+    assert.equal(isShippingStatus('dp'), true);
+    assert.equal(isShippingStatus('lunas'), true);
+    assert.equal(isShippingStatus('wishlist'), false);
+    assert.equal(isShippingStatus('diterima'), false);
+    assert.equal(isShippingStatus('batal'), false);
+    assert.equal(isShippingStatus(null), false);
+    assert.equal(isShippingStatus(undefined), false);
   });
 });
