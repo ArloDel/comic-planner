@@ -18,6 +18,7 @@ import {
   History,
   Link2,
   TrendingDown,
+  Truck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -29,6 +30,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { PlanModal } from '@/components/plans/PlanModal';
 import { TransitionModal } from '@/components/plans/TransitionModal';
 import { StatusTimeline } from '@/components/plans/StatusTimeline';
+import { OrderTrackingModal } from '@/components/plans/OrderTrackingModal';
 import {
   PLAN_STATUSES,
   STATUS_LABELS,
@@ -159,6 +161,7 @@ export function PlansClient({
   const [transition, setTransition] = useState<{ plan: PlanWithDetails; to: PlanStatus } | null>(
     null
   );
+  const [trackingPlan, setTrackingPlan] = useState<PlanWithDetails | null>(null);
 
   function updateFilters(next: {
     q?: string;
@@ -476,6 +479,18 @@ export function PlansClient({
                         );
                       })}
 
+                      {plan.status !== 'diterima' && plan.status !== 'batal' && (
+                        <button
+                          type="button"
+                          onClick={() => setTrackingPlan(plan)}
+                          title="Lacak paket / status pengiriman via Binderbyte"
+                          className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50/90 text-indigo-700 hover:bg-indigo-100 px-2.5 py-1 min-h-[36px] text-[11px] font-semibold transition-colors shadow-2xs"
+                        >
+                          <Truck className="h-3.5 w-3.5" />
+                          <span>Lacak Pesanan</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => setEditingPlan(plan)}
@@ -566,6 +581,18 @@ export function PlansClient({
           defaultDeadline={transition.plan.listing?.deadline_po ?? null}
           estimasiHarga={transition.plan.estimasi_harga}
           sudahDibayar={transition.plan.sudah_dibayar}
+        />
+      )}
+
+      {trackingPlan && (
+        <OrderTrackingModal
+          isOpen
+          onClose={() => setTrackingPlan(null)}
+          planId={trackingPlan.id}
+          itemTitle={trackingPlan.item?.judul ?? 'Komik'}
+          volume={trackingPlan.item?.volume}
+          currentStatus={trackingPlan.status}
+          onOrderCompleted={handleRefresh}
         />
       )}
     </div>
