@@ -112,24 +112,35 @@ async function findExistingListings(
   return existing;
 }
 
-const CORS_HEADERS: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Import-Token',
-};
+const ALLOWED_ORIGIN_PATTERN =
+  /^https?:\/\/(?:(?:[a-z0-9-]+\.)?shopee\.co\.id|localhost(?::\d+)?|127\.0\.0\.1(?::\d+)?|[a-z0-9-]+\.vercel\.app)$/i;
 
-export async function OPTIONS() {
+function buildCorsHeaders(request?: Request): Record<string, string> {
+  const origin = request?.headers.get('origin') ?? '';
+  const allowedOrigin = ALLOWED_ORIGIN_PATTERN.test(origin)
+    ? origin
+    : 'https://shopee.co.id';
+
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Import-Token',
+    Vary: 'Origin',
+  };
+}
+
+export async function OPTIONS(request: Request) {
   return new NextResponse(null, {
     status: 204,
-    headers: CORS_HEADERS,
+    headers: buildCorsHeaders(request),
   });
 }
 
-function jsonResponse(data: unknown, init: ResponseInit = {}) {
+function jsonResponse(data: unknown, init: ResponseInit = {}, request?: Request) {
   return NextResponse.json(data, {
     ...init,
     headers: {
-      ...CORS_HEADERS,
+      ...buildCorsHeaders(request),
       ...(init.headers ?? {}),
     },
   });
@@ -141,24 +152,25 @@ export async function POST(request: Request) {
   if (!expectedToken) {
     return jsonResponse(
       { error: 'IMPORT_TOKEN belum dikonfigurasi di server.' },
-      { status: 500 }
+      { status: 500 },
+      request
     );
   }
 
   if (!isImportTokenValid(request.headers.get('x-import-token'), expectedToken)) {
-    return jsonResponse({ error: 'Token import tidak valid.' }, { status: 403 });
+    return jsonResponse({ error: 'Token import tidak valid.' }, { status: 403 }, request);
   }
 
   let payload: unknown;
   try {
     payload = await request.json();
   } catch {
-    return jsonResponse({ error: 'Body harus berupa JSON yang valid.' }, { status: 400 });
+    return jsonResponse({ error: 'Body harus berupa JSON yang valid.' }, { status: 400 }, request);
   }
 
   const parsed = parseImportPayload(payload);
   if (!parsed.ok) {
-    return jsonResponse({ error: parsed.error }, { status: 400 });
+    return jsonResponse({ error: parsed.error }, { status: 400 }, request);
   }
 
   try {
@@ -213,18 +225,22 @@ export async function POST(request: Request) {
     revalidatePath('/import');
     revalidatePath('/settings');
 
-    return jsonResponse({
-      created: plan.created,
-      updated: plan.updated,
-      skipped: parsed.errors.length,
-      errors: parsed.errors,
-    });
+    return jsonResponse(
+      {
+        created: plan.created,
+        updated: plan.updated,
+        skipped: parsed.errors.length,
+        errors: parsed.errors,
+      },
+      {},
+      request
+    );
   } catch (err) {
     const message =
       err instanceof Error && err.message
         ? err.message
         : 'Terjadi kesalahan sistem saat menyimpan hasil impor.';
 
-    return jsonResponse({ error: message }, { status: 500 });
+    return jsonResponse({ error: message }, { status: 500 }, request);
   }
 }
