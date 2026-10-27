@@ -70,20 +70,78 @@ export function OrderTrackingModal({
   async function loadSavedTracking() {
     setLoading(true);
     setErrorMsg(null);
+
+    // 1. Ambil data tersimpan dari LocalStorage terlebih dahulu agar instan (1x input)
+    let localCourier = initialCourier;
+    let localResi = initialResi;
+    let hasLocalData = false;
+
+    if (typeof window !== 'undefined') {
+      try {
+        const rawLocal = localStorage.getItem(`comicplan_tracking_${planId}`);
+        if (rawLocal) {
+          const parsed = JSON.parse(rawLocal);
+          if (parsed.courier) {
+            localCourier = parsed.courier;
+            setCourier(parsed.courier);
+          }
+          if (parsed.resi) {
+            localResi = parsed.resi;
+            setResi(parsed.resi);
+            hasLocalData = true;
+          }
+          if (parsed.tracking) setTracking(parsed.tracking);
+          if (parsed.photoUrl) setPhotoPreview(parsed.photoUrl);
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
     try {
       const savedKey = typeof window !== 'undefined' ? localStorage.getItem('comicplan_binderbyte_key') : null;
-      const res = await fetch(`/api/tracking?plan_id=${encodeURIComponent(planId)}`, {
+      const queryParams = new URLSearchParams({ plan_id: planId });
+      if (localResi) queryParams.set('resi', localResi);
+      if (localCourier) queryParams.set('courier', localCourier);
+
+      const res = await fetch(`/api/tracking?${queryParams.toString()}`, {
         headers: savedKey ? { 'x-binderbyte-key': savedKey } : {},
       });
       const data = await res.json();
       if (data.apiKeyConfigured !== undefined) {
         setApiKeyConfigured(Boolean(data.apiKeyConfigured || savedKey));
       }
+
       if (data.hasTracking && data.tracking) {
-        setCourier(data.courier || initialCourier);
-        setResi(data.resi || '');
+        const activeCourier = data.courier || localCourier;
+        const activeResi = data.resi || localResi;
+        const activePhoto = data.photoUrl || null;
+
+        setCourier(activeCourier);
+        setResi(activeResi);
         setTracking(data.tracking);
-        if (data.photoUrl) setPhotoPreview(data.photoUrl);
+        if (activePhoto) setPhotoPreview(activePhoto);
+
+        // Sinkronkan ke cache lokal
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(
+              `comicplan_tracking_${planId}`,
+              JSON.stringify({
+                courier: activeCourier,
+                resi: activeResi,
+                photoUrl: activePhoto,
+                tracking: data.tracking,
+                savedAt: new Date().toISOString(),
+              })
+            );
+          } catch {
+            // Ignored
+          }
+        }
+      } else if (hasLocalData && localResi) {
+        // Jika ada resi tersimpan di local tapi server belum auto-fetch, picu auto-cek live
+        handleCheckTracking(undefined, localCourier, localResi);
       }
     } catch {
       // Ignored
@@ -104,8 +162,26 @@ export function OrderTrackingModal({
     setApiKeyConfigured(Boolean(key.trim()));
   }
 
-  async function handleCheckTracking(forceStatus?: 'ON_PROCESS' | 'DELIVERED') {
-    if (!resi.trim()) {
+  function handleClearSavedResi() {
+    setResi('');
+    setTracking(null);
+    setPhotoPreview(null);
+    setErrorMsg(null);
+    setSuccessMsg('Nomor resi berhasil dihapus.');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(`comicplan_tracking_${planId}`);
+    }
+  }
+
+  async function handleCheckTracking(
+    forceStatus?: 'ON_PROCESS' | 'DELIVERED',
+    overrideCourier?: string,
+    overrideResi?: string
+  ) {
+    const targetCourier = overrideCourier || courier;
+    const targetResi = (overrideResi || resi).trim();
+
+    if (!targetResi) {
       setErrorMsg('Masukkan nomor resi terlebih dahulu');
       return;
     }
@@ -124,8 +200,8 @@ export function OrderTrackingModal({
         },
         body: JSON.stringify({
           plan_id: planId,
-          courier,
-          resi: resi.trim(),
+          courier: targetCourier,
+          resi: targetResi,
           foto_bukti_url: photoPreview,
           force_status: forceStatus || null,
           custom_api_key: keyToSend,
@@ -140,6 +216,24 @@ export function OrderTrackingModal({
 
       setTracking(data.tracking);
       setSuccessMsg('Informasi pelacakan berhasil diperbarui!');
+
+      // Simpan nomor resi & kurir ke LocalStorage agar user tidak perlu input lagi
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(
+            `comicplan_tracking_${planId}`,
+            JSON.stringify({
+              courier: targetCourier,
+              resi: targetResi,
+              photoUrl: photoPreview,
+              tracking: data.tracking,
+              savedAt: new Date().toISOString(),
+            })
+          );
+        } catch {
+          // Ignored
+        }
+      }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Terjadi kesalahan jaringan');
     } finally {
@@ -197,6 +291,10 @@ export function OrderTrackingModal({
       if (!res.ok || data.error) {
         setErrorMsg(data.error || 'Gagal menyelesaikan pesanan');
         return;
+      }
+
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(`comicplan_tracking_${planId}`);
       }
 
       onOrderCompleted?.();
@@ -325,9 +423,20 @@ export function OrderTrackingModal({
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Nomor Resi / Kode Pengiriman
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  Nomor Resi / Kode Pengiriman
+                </label>
+                {resi && (
+                  <button
+                    type="button"
+                    onClick={handleClearSavedResi}
+                    className="text-[10px] text-slate-400 hover:text-rose-600 font-medium transition-colors"
+                  >
+                    Ganti Resi
+                  </button>
+                )}
+              </div>
               <div className="flex gap-2">
                 <input
                   type="text"
