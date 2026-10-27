@@ -58,8 +58,8 @@ export const TERMINAL_STATUSES: readonly PlanStatus[] = ['diterima', 'batal'];
  */
 export const TRANSITIONS: Record<PlanStatus, readonly PlanStatus[]> = {
   wishlist: ['po', 'batal'],
-  po: ['diterima', 'dp', 'lunas', 'batal'],
-  dp: ['diterima', 'lunas', 'batal'],
+  po: ['diterima', 'batal'],
+  dp: ['diterima', 'batal'],
   lunas: ['diterima', 'batal'],
   diterima: [],
   batal: [],
