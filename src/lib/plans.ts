@@ -102,6 +102,11 @@ export function isHoldingBudget(status: PlanStatus): boolean {
   return HOLDS_BUDGET.includes(status);
 }
 
+/** Cek apakah status termasuk kategori 'Sedang Dikirim' (po, dp, lunas). */
+export function isShippingStatus(status: unknown): boolean {
+  return status === 'po' || status === 'dp' || status === 'lunas';
+}
+
 export function isTerminal(status: PlanStatus): boolean {
   return TERMINAL_STATUSES.includes(status);
 }
