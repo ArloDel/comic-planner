@@ -75,6 +75,7 @@ interface HistoryRow {
 
 function parsePlanStatusFilter(raw?: string): PlanStatus | 'semua' | 'hold' {
   if (raw === 'hold') return 'hold';
+  if (raw === 'dikirim') return 'po';
   if (raw && isPlanStatus(raw)) return raw;
   return 'semua';
 }
