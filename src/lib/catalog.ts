@@ -23,7 +23,7 @@ export interface ItemRowWithRelations {
 interface PlanEmbed {
   id: string;
   status: string;
-  estimasi_harga: number | null;
+  estimasi_harga?: number | null;
 }
 
 /** Status item di UI: status plan aktif, atau `belum ada` bila item belum punya plan. */
@@ -75,6 +75,43 @@ export interface SeriesSummary {
   seri: string;
   totalVolumes: number;
   ownedVolumes: number;
+}
+
+export interface CollectionStats {
+  totalItems: number;
+  ownedCount: number;
+  poCount: number;
+  wishlistCount: number;
+  seriesCount: number;
+}
+
+/**
+ * Hitung statistik ringkasan koleksi non-finansial untuk tampilan publik / ringkasan.
+ */
+export function summarizeCollectionStats(
+  items: Pick<KatalogItemWithDetails, 'seri' | 'plan_status'>[]
+): CollectionStats {
+  let ownedCount = 0;
+  let poCount = 0;
+  let wishlistCount = 0;
+
+  for (const item of items) {
+    if (item.plan_status === 'diterima' || item.plan_status === 'lunas') {
+      ownedCount += 1;
+    } else if (item.plan_status === 'po' || item.plan_status === 'dp') {
+      poCount += 1;
+    } else if (item.plan_status === 'wishlist') {
+      wishlistCount += 1;
+    }
+  }
+
+  return {
+    totalItems: items.length,
+    ownedCount,
+    poCount,
+    wishlistCount,
+    seriesCount: summarizeSeries(items).length,
+  };
 }
 
 /**
