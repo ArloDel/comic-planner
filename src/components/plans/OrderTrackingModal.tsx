@@ -49,6 +49,16 @@ export function OrderTrackingModal({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean>(true);
+  const [customApiKey, setCustomApiKey] = useState<string>('');
+  const [showApiKeyInput, setShowApiKeyInput] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedKey = localStorage.getItem('comicplan_binderbyte_key');
+      if (savedKey) setCustomApiKey(savedKey);
+    }
+  }, []);
 
   // Muat status tracking yang ada saat modal dibuka
   useEffect(() => {
@@ -61,8 +71,14 @@ export function OrderTrackingModal({
     setLoading(true);
     setErrorMsg(null);
     try {
-      const res = await fetch(`/api/tracking?plan_id=${encodeURIComponent(planId)}`);
+      const savedKey = typeof window !== 'undefined' ? localStorage.getItem('comicplan_binderbyte_key') : null;
+      const res = await fetch(`/api/tracking?plan_id=${encodeURIComponent(planId)}`, {
+        headers: savedKey ? { 'x-binderbyte-key': savedKey } : {},
+      });
       const data = await res.json();
+      if (data.apiKeyConfigured !== undefined) {
+        setApiKeyConfigured(Boolean(data.apiKeyConfigured || savedKey));
+      }
       if (data.hasTracking && data.tracking) {
         setCourier(data.courier || initialCourier);
         setResi(data.resi || '');
@@ -76,6 +92,18 @@ export function OrderTrackingModal({
     }
   }
 
+  function handleSaveCustomKey(key: string) {
+    setCustomApiKey(key);
+    if (typeof window !== 'undefined') {
+      if (key.trim()) {
+        localStorage.setItem('comicplan_binderbyte_key', key.trim());
+      } else {
+        localStorage.removeItem('comicplan_binderbyte_key');
+      }
+    }
+    setApiKeyConfigured(Boolean(key.trim()));
+  }
+
   async function handleCheckTracking(forceStatus?: 'ON_PROCESS' | 'DELIVERED') {
     if (!resi.trim()) {
       setErrorMsg('Masukkan nomor resi terlebih dahulu');
@@ -87,15 +115,20 @@ export function OrderTrackingModal({
     setSuccessMsg(null);
 
     try {
+      const keyToSend = customApiKey.trim() || undefined;
       const res = await fetch('/api/tracking', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(keyToSend ? { 'x-binderbyte-key': keyToSend } : {}),
+        },
         body: JSON.stringify({
           plan_id: planId,
           courier,
           resi: resi.trim(),
           foto_bukti_url: photoPreview,
           force_status: forceStatus || null,
+          custom_api_key: keyToSend,
         }),
       });
 
@@ -223,6 +256,56 @@ export function OrderTrackingModal({
 
         {/* Form Kurir & Resi */}
         <div className="mt-4 space-y-3">
+          {/* Status API Key & Opsi Input */}
+          <div className="flex items-center justify-between text-[11px] px-1">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`inline-block h-2 w-2 rounded-full ${
+                  apiKeyConfigured || customApiKey ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'
+                }`}
+              />
+              <span className="text-slate-600 font-medium">
+                {apiKeyConfigured || customApiKey
+                  ? 'Koneksi Binderbyte: Aktif'
+                  : 'API Key Server Belum Terdeteksi'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowApiKeyInput((prev) => !prev)}
+              className="text-primary-600 hover:text-primary-700 font-medium hover:underline text-[11px]"
+            >
+              {showApiKeyInput ? 'Tutup Input Key' : 'Atur API Key'}
+            </button>
+          </div>
+
+          {showApiKeyInput && (
+            <div className="p-3 rounded-xl bg-slate-100/90 border border-slate-200 text-xs space-y-2">
+              <label className="block text-[11px] font-bold text-slate-700">
+                Binderbyte API Key (Tersimpan aman di browser Anda)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={customApiKey}
+                  onChange={(e) => handleSaveCustomKey(e.target.value)}
+                  placeholder="sk_..."
+                  className="flex-1 text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKeyInput(false)}
+                  className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800"
+                >
+                  Simpan
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500">
+                Gunakan ini jika di dashboard Vercel belum diset environment variable <code>BINDERBYTE_API_KEY</code>.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
@@ -265,7 +348,7 @@ export function OrderTrackingModal({
                   ) : (
                     <Truck className="h-3.5 w-3.5 mr-1" />
                   )}
-                  <span>Lacak</span>
+                  <span>Lacak Real</span>
                 </Button>
               </div>
             </div>
@@ -275,7 +358,7 @@ export function OrderTrackingModal({
           <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-900">
               <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
-              <span>Mode Uji Coba Cepat (Sandbox):</span>
+              <span>Simulasi Uji Coba Cepat (Sandbox):</span>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -325,12 +408,40 @@ export function OrderTrackingModal({
                 </p>
               </div>
 
-              {tracking.isMock && (
-                <span className="rounded-md bg-indigo-100 text-indigo-700 px-2 py-0.5 text-[10px] font-bold">
-                  Simulasi Binderbyte
+              {tracking.isMock ? (
+                <span className="rounded-md bg-indigo-100 text-indigo-700 px-2.5 py-1 text-[11px] font-bold border border-indigo-200 flex items-center gap-1">
+                  🧪 Mode Simulasi / Sandbox
+                </span>
+              ) : (
+                <span className="rounded-md bg-emerald-100 text-emerald-800 px-2.5 py-1 text-[11px] font-bold border border-emerald-200 flex items-center gap-1">
+                  🟢 Real Tracking Live (Binderbyte)
                 </span>
               )}
             </div>
+
+            {/* Informasi Pengirim & Penerima jika ada */}
+            {(tracking.shipper || tracking.receiver || tracking.origin || tracking.destination) && (
+              <div className="grid grid-cols-2 gap-2 text-xs p-3 rounded-xl bg-white border border-slate-200">
+                <div>
+                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">
+                    Pengirim (Shipper)
+                  </span>
+                  <p className="font-semibold text-slate-800 mt-0.5">{tracking.shipper || '-'}</p>
+                  {tracking.origin && (
+                    <p className="text-[11px] text-slate-500 mt-0.5">Asal: {tracking.origin}</p>
+                  )}
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">
+                    Penerima (Receiver)
+                  </span>
+                  <p className="font-semibold text-slate-800 mt-0.5">{tracking.receiver || '-'}</p>
+                  {tracking.destination && (
+                    <p className="text-[11px] text-slate-500 mt-0.5">Tujuan: {tracking.destination}</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Riwayat Timeline */}
             <div className="space-y-2">
