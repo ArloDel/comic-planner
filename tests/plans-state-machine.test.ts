@@ -38,10 +38,9 @@ describe('state machine plans', () => {
       ['wishlist', 'dp'],
       ['wishlist', 'lunas'],
       ['wishlist', 'diterima'],
-      ['po', 'diterima'],
-      ['dp', 'diterima'],
       ['lunas', 'dp'],
       ['diterima', 'lunas'],
+      ['diterima', 'po'],
       ['batal', 'wishlist'],
       ['batal', 'po'],
     ];
@@ -87,7 +86,8 @@ describe('state machine plans', () => {
     assert.match(transitionError('diterima', 'batal') ?? '', /tidak bisa dibatalkan/);
   });
 
-  it('membolehkan po → lunas untuk pembelian tanpa DP', () => {
+  it('membolehkan transisi langsung po (Sedang Dikirim) → diterima (Selesai)', () => {
+    assert.equal(canTransition('po', 'diterima'), true);
     assert.equal(canTransition('po', 'lunas'), true);
   });
 
@@ -99,19 +99,12 @@ describe('state machine plans', () => {
     }
   });
 
-  it('hanya status po yang wajib punya deadline', () => {
-    assert.equal(requiresDeadline('po'), true);
+  it('alur pesanan sederhana tidak membebani deadline wajib', () => {
+    assert.equal(requiresDeadline('po'), false);
     assert.equal(requiresDeadline('dp'), false);
     assert.equal(requiresDeadline('batal'), false);
-  });
-
-  it('menolak masuk po tanpa deadline', () => {
-    const message = transitionError('wishlist', 'po', { deadline: null });
-    assert.match(message ?? '', /Deadline PO wajib diisi/);
-  });
-
-  it('menerima transisi po dengan deadline override maupun bawaan listing', () => {
-    assert.equal(transitionError('wishlist', 'po', { deadline: '2026-11-30' }), null);
+    // Masuk po tanpa deadline tetap diizinkan
+    assert.equal(transitionError('wishlist', 'po', { deadline: null }), null);
   });
 });
 
