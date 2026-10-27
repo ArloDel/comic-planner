@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowUpDown,
@@ -36,6 +36,7 @@ import {
   STATUS_LABELS,
   comparePlans,
   isHoldingBudget,
+  isShippingStatus,
   nextStatuses,
   priorityLabel,
   type PlanHistoryEntry,
@@ -162,6 +163,64 @@ export function PlansClient({
     null
   );
   const [trackingPlan, setTrackingPlan] = useState<PlanWithDetails | null>(null);
+  const [trackingMap, setTrackingMap] = useState<
+    Record<string, { courier: string; resi: string; statusText?: string; isDelivered?: boolean }>
+  >({});
+
+  function refreshTrackingMap() {
+    if (typeof window === 'undefined') return;
+    const map: Record<string, { courier: string; resi: string; statusText?: string; isDelivered?: boolean }> = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('comicplan_tracking_')) {
+          const planId = key.replace('comicplan_tracking_', '');
+          const val = JSON.parse(localStorage.getItem(key) || '{}');
+          if (val.resi) {
+            map[planId] = {
+              courier: val.courier || 'spx',
+              resi: val.resi,
+              statusText:
+                val.tracking?.statusText ||
+                (val.tracking?.isDelivered ? 'Telah Tiba' : 'Sedang Dikirim'),
+              isDelivered: Boolean(val.tracking?.isDelivered),
+            };
+          }
+        }
+      }
+    } catch {
+      // Ignored
+    }
+    setTrackingMap(map);
+  }
+
+  useEffect(() => {
+    refreshTrackingMap();
+  }, []);
+
+  function isPlanInDelivery(plan: PlanWithDetails) {
+    return isShippingStatus(plan.status) || Boolean(trackingMap[plan.id]?.resi);
+  }
+
+  // Sinkronisasi otomatis ke server jika ada item yang punya resi tapi di database masih wishlist
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    for (const plan of initialPlans) {
+      if (plan.status === 'wishlist' && trackingMap[plan.id]?.resi) {
+        fetch('/api/tracking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            plan_id: plan.id,
+            courier: trackingMap[plan.id].courier || 'spx',
+            resi: trackingMap[plan.id].resi,
+          }),
+        })
+          .then(() => router.refresh())
+          .catch(() => {});
+      }
+    }
+  }, [initialPlans, trackingMap, router]);
 
   function updateFilters(next: {
     q?: string;
@@ -189,10 +248,11 @@ export function PlansClient({
     };
 
     for (const plan of initialPlans) {
-      if (plan.status === 'wishlist') {
-        result.wishlist += 1;
-      } else if (plan.status === 'po' || plan.status === 'dp' || plan.status === 'lunas') {
+      const inDelivery = isPlanInDelivery(plan);
+      if (inDelivery) {
         result.po += 1;
+      } else if (plan.status === 'wishlist') {
+        result.wishlist += 1;
       } else if (plan.status === 'diterima') {
         result.diterima += 1;
       } else if (plan.status === 'batal') {
@@ -201,7 +261,7 @@ export function PlansClient({
     }
 
     return result;
-  }, [initialPlans]);
+  }, [initialPlans, trackingMap]);
 
   const filteredPlans = useMemo(() => {
     let result = [...initialPlans];
@@ -219,15 +279,15 @@ export function PlansClient({
     if (statusFilter === 'hold') {
       result = result.filter((plan) => isHoldingBudget(plan.status));
     } else if (statusFilter === 'po') {
-      result = result.filter(
-        (plan) => plan.status === 'po' || plan.status === 'dp' || plan.status === 'lunas'
-      );
+      result = result.filter((plan) => isPlanInDelivery(plan));
+    } else if (statusFilter === 'wishlist') {
+      result = result.filter((plan) => plan.status === 'wishlist' && !trackingMap[plan.id]?.resi);
     } else if (statusFilter !== 'semua') {
       result = result.filter((plan) => plan.status === statusFilter);
     }
 
     return result.sort(comparePlans(sortBy));
-  }, [initialPlans, search, statusFilter, sortBy]);
+  }, [initialPlans, search, statusFilter, sortBy, trackingMap]);
 
   function handleRefresh() {
     router.refresh();
@@ -368,7 +428,9 @@ export function PlansClient({
         <div className="space-y-3">
           {filteredPlans.map((plan) => {
             const expanded = expandedId === plan.id;
-            const legal = nextStatuses(plan.status);
+            const inDelivery = isPlanInDelivery(plan);
+            const effectiveStatus: PlanStatus = inDelivery && plan.status === 'wishlist' ? 'po' : plan.status;
+            const legal = nextStatuses(effectiveStatus);
             const deadlineCountdown =
               plan.status === 'po' ? formatCountdown(plan.deadline_po) : null;
             const deadlineTone = countdownTone(plan.deadline_po) ?? 'slate';
@@ -396,7 +458,15 @@ export function PlansClient({
                   {/* Info utama */}
                   <div className="flex-1 min-w-0 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusPill status={plan.status} size="sm" />
+                      <StatusPill status={effectiveStatus} size="sm" />
+                      {trackingMap[plan.id]?.resi && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                          <Truck className="h-3 w-3" />
+                          <span className="truncate max-w-[10rem]">
+                            {trackingMap[plan.id].courier.toUpperCase()}: {trackingMap[plan.id].resi}
+                          </span>
+                        </span>
+                      )}
 
                       <button
                         type="button"
@@ -632,7 +702,10 @@ export function PlansClient({
           itemTitle={trackingPlan.item?.judul ?? 'Komik'}
           volume={trackingPlan.item?.volume}
           currentStatus={trackingPlan.status}
-          onOrderCompleted={handleRefresh}
+          onOrderCompleted={() => {
+            refreshTrackingMap();
+            handleRefresh();
+          }}
         />
       )}
     </div>
