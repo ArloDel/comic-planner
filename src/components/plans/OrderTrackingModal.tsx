@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
+import { InlineLoadingBar } from '@/components/ui/TopLoadingBar';
 import { COURIER_OPTIONS, type TrackingResult } from '@/lib/binderbyte';
 
 interface OrderTrackingModalProps {
@@ -322,6 +323,7 @@ export function OrderTrackingModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white/95 backdrop-blur-xl border border-white/80 p-5 sm:p-6 shadow-glass-lg">
+        <InlineLoadingBar isLoading={loading || completing} />
         {/* Header */}
         <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
@@ -460,6 +462,7 @@ export function OrderTrackingModal({
                 <Button
                   variant="primary"
                   size="sm"
+                  isLoading={loading}
                   disabled={loading || !resi.trim()}
                   onClick={() => handleCheckTracking()}
                   className="shrink-0 text-xs"
@@ -639,6 +642,7 @@ export function OrderTrackingModal({
           <div className="mt-4 pt-3 border-t border-slate-200/60 flex justify-end">
             <Button
               variant="primary"
+              isLoading={completing}
               disabled={completing || !photoPreview}
               onClick={handleConfirmDeliveredAndComplete}
               className="text-xs font-bold shadow-glass bg-emerald-600 hover:bg-emerald-700"
