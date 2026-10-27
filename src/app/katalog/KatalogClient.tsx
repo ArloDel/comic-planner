@@ -11,6 +11,7 @@ import {
   Layers,
   ArrowUpDown,
   Filter,
+  Truck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -22,6 +23,7 @@ import { CoverImage } from '@/components/ui/CoverImage';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ItemModal } from '@/components/katalog/ItemModal';
 import { DeleteModal } from '@/components/katalog/DeleteModal';
+import { OrderTrackingModal } from '@/components/plans/OrderTrackingModal';
 import { formatRupiahOrNull } from '@/lib/format';
 import { PLAN_STATUSES, STATUS_LABELS, isPlanStatus } from '@/lib/plans';
 import { replaceQueryParams } from '@/lib/url';
@@ -34,7 +36,7 @@ import {
 
 type TipeFilter = ItemType | 'semua';
 type SortBy = 'terbaru' | 'judul' | 'seri' | 'harga';
-type StatusFilter = ExtendedStatus | 'semua';
+type StatusFilter = ExtendedStatus | 'semua' | 'dikirim';
 
 const TIPE_OPTIONS: { value: TipeFilter; label: string }[] = [
   { value: 'semua', label: 'Semua Tipe' },
@@ -58,6 +60,7 @@ const STATUS_FILTERS: { value: ExtendedStatus; label: string }[] = [
 
 const EMPTY_COUNTS: Record<StatusFilter, number> = {
   semua: 0,
+  dikirim: 0,
   'belum ada': 0,
   wishlist: 0,
   po: 0,
@@ -68,6 +71,7 @@ const EMPTY_COUNTS: Record<StatusFilter, number> = {
 };
 
 function parseStatusFilter(raw?: string): StatusFilter {
+  if (raw === 'dikirim') return 'dikirim';
   if (raw === 'belum ada') return 'belum ada';
   if (raw && isPlanStatus(raw)) return raw;
   return 'semua';
@@ -136,6 +140,41 @@ export function KatalogClient({
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<KatalogItemWithDetails | null>(null);
   const [deletingItem, setDeletingItem] = useState<KatalogItemWithDetails | null>(null);
+  const [trackingModalItem, setTrackingModalItem] = useState<KatalogItemWithDetails | null>(null);
+  const [trackingMap, setTrackingMap] = useState<
+    Record<string, { courier: string; resi: string; statusText?: string; isDelivered?: boolean }>
+  >({});
+
+  function refreshTrackingMap() {
+    if (typeof window === 'undefined') return;
+    const map: Record<string, { courier: string; resi: string; statusText?: string; isDelivered?: boolean }> = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('comicplan_tracking_')) {
+          const planId = key.replace('comicplan_tracking_', '');
+          const val = JSON.parse(localStorage.getItem(key) || '{}');
+          if (val.resi) {
+            map[planId] = {
+              courier: val.courier || 'spx',
+              resi: val.resi,
+              statusText:
+                val.tracking?.statusText ||
+                (val.tracking?.isDelivered ? 'Telah Tiba' : 'Sedang Dikirim'),
+              isDelivered: Boolean(val.tracking?.isDelivered),
+            };
+          }
+        }
+      }
+    } catch {
+      // Ignored
+    }
+    setTrackingMap(map);
+  }
+
+  React.useEffect(() => {
+    refreshTrackingMap();
+  }, []);
 
   function updateFilters(next: {
     q?: string;
@@ -162,16 +201,19 @@ export function KatalogClient({
   }
 
   const statusCounts = useMemo(() => {
-    const counts = { ...EMPTY_COUNTS, semua: initialItems.length };
+    const counts = { ...EMPTY_COUNTS, semua: initialItems.length, dikirim: 0 };
 
     for (const item of initialItems) {
       if (counts[item.plan_status] !== undefined) {
         counts[item.plan_status] += 1;
       }
+      if (item.plan_id && trackingMap[item.plan_id]) {
+        counts.dikirim += 1;
+      }
     }
 
     return counts;
-  }, [initialItems]);
+  }, [initialItems, trackingMap]);
 
   const seriesSummaries = useMemo(() => summarizeSeries(initialItems), [initialItems]);
 
@@ -181,12 +223,16 @@ export function KatalogClient({
     return initialItems
       .filter((item) => {
         if (q && !matchesSearch(item, q)) return false;
-        if (statusFilter !== 'semua' && item.plan_status !== statusFilter) return false;
+        if (statusFilter === 'dikirim') {
+          if (!item.plan_id || !trackingMap[item.plan_id]) return false;
+        } else if (statusFilter !== 'semua' && item.plan_status !== statusFilter) {
+          return false;
+        }
         if (tipeFilter !== 'semua' && item.tipe !== tipeFilter) return false;
         return true;
       })
       .sort(compareBy(sortBy));
-  }, [initialItems, search, statusFilter, tipeFilter, sortBy]);
+  }, [initialItems, search, statusFilter, tipeFilter, sortBy, trackingMap]);
 
   function handleRefresh() {
     router.refresh();
@@ -252,6 +298,12 @@ export function KatalogClient({
             active={statusFilter === 'semua'}
             onClick={() => updateFilters({ status: 'semua' })}
             count={statusCounts.semua}
+          />
+          <FilterChip
+            label="🚚 Sedang Dikirim"
+            active={statusFilter === 'dikirim'}
+            onClick={() => updateFilters({ status: 'dikirim' })}
+            count={statusCounts.dikirim}
           />
           {STATUS_FILTERS.map(({ value, label }) => (
             <FilterChip
@@ -356,6 +408,18 @@ export function KatalogClient({
                     </span>
                   </div>
                 )}
+
+                {/* Tracking Badge overlay on bottom */}
+                {item.plan_id && trackingMap[item.plan_id] && (
+                  <div className="absolute bottom-1.5 left-1.5 right-1.5 z-10">
+                    <span className="inline-flex items-center gap-1 w-full justify-center rounded-lg bg-indigo-950/85 backdrop-blur-md px-1.5 py-0.5 text-[9px] font-bold text-indigo-200 border border-indigo-400/30 shadow-xs">
+                      <Truck className="h-2.5 w-2.5 text-indigo-400 shrink-0 animate-pulse" />
+                      <span className="truncate">
+                        {trackingMap[item.plan_id].isDelivered ? 'Paket Tiba' : 'Dalam Pengiriman'}
+                      </span>
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="mt-2.5 flex-1 flex flex-col justify-between">
@@ -391,6 +455,32 @@ export function KatalogClient({
                   {item.penerbit && (
                     <p className="mt-0.5 text-[10px] text-slate-400 truncate">{item.penerbit}</p>
                   )}
+
+                  {/* Tombol Lacak Pesanan Langsung jika Item Memiliki Tracking Aktif */}
+                  {item.plan_id && trackingMap[item.plan_id] && (
+                    <button
+                      type="button"
+                      onClick={() => setTrackingModalItem(item)}
+                      title="Klik untuk melihat detail pelacakan kurir Binderbyte"
+                      className="mt-2 w-full inline-flex items-center justify-between gap-1 px-2 py-1 rounded-lg bg-indigo-50/90 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 transition-colors text-[10px] font-bold shadow-2xs group/btn cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1 truncate">
+                        <Truck className="h-3 w-3 shrink-0 text-indigo-600 group-hover/btn:scale-110 transition-transform" />
+                        <span className="truncate">
+                          {trackingMap[item.plan_id].courier.toUpperCase()}: {trackingMap[item.plan_id].resi}
+                        </span>
+                      </span>
+                      <span
+                        className={`shrink-0 text-[8px] px-1 py-0.2 rounded font-bold uppercase tracking-wider ${
+                          trackingMap[item.plan_id].isDelivered
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-indigo-600 text-white'
+                        }`}
+                      >
+                        {trackingMap[item.plan_id].isDelivered ? 'Tiba' : 'Lacak'}
+                      </span>
+                    </button>
+                  )}
                 </div>
 
                 {!readOnly && (
@@ -404,6 +494,14 @@ export function KatalogClient({
                     </span>
 
                     <div className="flex items-center">
+                      {item.plan_id && !trackingMap[item.plan_id] && (item.plan_status === 'po' || item.plan_status === 'dp' || item.plan_status === 'lunas') && (
+                        <IconAction
+                          label={`Mulai lacak pesanan ${item.judul}`}
+                          onClick={() => setTrackingModalItem(item)}
+                        >
+                          <Truck className="h-3.5 w-3.5 text-indigo-600" />
+                        </IconAction>
+                      )}
                       <IconAction
                         label={`Edit ${item.judul}`}
                         onClick={() => setEditingItem(item)}
@@ -448,6 +546,28 @@ export function KatalogClient({
           onClose={() => setDeletingItem(null)}
           onSuccess={handleRefresh}
           item={{ id: deletingItem.id, judul: deletingItem.judul, seri: deletingItem.seri }}
+        />
+      )}
+
+      {trackingModalItem && trackingModalItem.plan_id && (
+        <OrderTrackingModal
+          key={trackingModalItem.id}
+          isOpen
+          onClose={() => setTrackingModalItem(null)}
+          planId={trackingModalItem.plan_id}
+          itemTitle={trackingModalItem.judul}
+          volume={trackingModalItem.volume}
+          currentStatus={
+            trackingModalItem.plan_status !== 'belum ada'
+              ? trackingModalItem.plan_status
+              : 'wishlist'
+          }
+          initialCourier={trackingMap[trackingModalItem.plan_id]?.courier || 'spx'}
+          initialResi={trackingMap[trackingModalItem.plan_id]?.resi || ''}
+          onOrderCompleted={() => {
+            refreshTrackingMap();
+            handleRefresh();
+          }}
         />
       )}
     </div>
