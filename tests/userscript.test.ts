@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import {
   constructShopeeImageUrl,
   detectShopeePreOrder,
+  escapeHtml,
   extractShopeePayload,
   isShopeeApiUrl,
   matchProductOrShopUrl,
@@ -285,5 +286,14 @@ describe('ekstraksi payload respons Shopee defensif', () => {
       assert.equal(plan.created, 1);
       assert.equal(plan.newPlans[0].status, 'wishlist');
     }
+  });
+
+  it('menetralkan karakter HTML berbahaya lewat escapeHtml untuk mencegah DOM XSS', () => {
+    const malicious = 'One Piece "><img src=x onerror="alert(\'xss\')">&';
+    assert.equal(
+      escapeHtml(malicious),
+      'One Piece &quot;&gt;&lt;img src=x onerror=&quot;alert(&#39;xss&#39;)&quot;&gt;&amp;'
+    );
+    assert.equal(escapeHtml(null), '');
   });
 });
