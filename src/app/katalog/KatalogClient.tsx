@@ -25,7 +25,7 @@ import { ItemModal } from '@/components/katalog/ItemModal';
 import { DeleteModal } from '@/components/katalog/DeleteModal';
 import { OrderTrackingModal } from '@/components/plans/OrderTrackingModal';
 import { formatRupiahOrNull } from '@/lib/format';
-import { PLAN_STATUSES, STATUS_LABELS, isPlanStatus } from '@/lib/plans';
+import { PLAN_STATUSES, STATUS_LABELS, isPlanStatus, isShippingStatus } from '@/lib/plans';
 import { replaceQueryParams } from '@/lib/url';
 import type { ItemType } from '@/types/database';
 import {
@@ -55,7 +55,10 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
 
 const STATUS_FILTERS: { value: ExtendedStatus; label: string }[] = [
   { value: 'belum ada', label: 'Belum Ada' },
-  ...PLAN_STATUSES.map((status) => ({ value: status, label: STATUS_LABELS[status] })),
+  { value: 'wishlist', label: 'Wishlist' },
+  { value: 'po', label: '🚚 Sedang Dikirim' },
+  { value: 'diterima', label: '🎉 Selesai' },
+  { value: 'batal', label: 'Batal' },
 ];
 
 const EMPTY_COUNTS: Record<StatusFilter, number> = {
@@ -71,7 +74,7 @@ const EMPTY_COUNTS: Record<StatusFilter, number> = {
 };
 
 function parseStatusFilter(raw?: string): StatusFilter {
-  if (raw === 'dikirim') return 'dikirim';
+  if (raw === 'dikirim') return 'po';
   if (raw === 'belum ada') return 'belum ada';
   if (raw && isPlanStatus(raw)) return raw;
   return 'semua';
@@ -200,15 +203,23 @@ export function KatalogClient({
     });
   }
 
+  function isItemInDelivery(item: KatalogItemWithDetails): boolean {
+    return (
+      isShippingStatus(item.plan_status) ||
+      (item.plan_id ? Boolean(trackingMap[item.plan_id]?.resi) : false)
+    );
+  }
+
   const statusCounts = useMemo(() => {
-    const counts = { ...EMPTY_COUNTS, semua: initialItems.length, dikirim: 0 };
+    const counts = { ...EMPTY_COUNTS, semua: initialItems.length };
 
     for (const item of initialItems) {
-      if (counts[item.plan_status] !== undefined) {
+      if (isItemInDelivery(item)) {
+        counts.po += 1;
+      } else if (item.plan_status === 'wishlist') {
+        counts.wishlist += 1;
+      } else if (counts[item.plan_status] !== undefined) {
         counts[item.plan_status] += 1;
-      }
-      if (item.plan_id && trackingMap[item.plan_id]) {
-        counts.dikirim += 1;
       }
     }
 
@@ -223,8 +234,12 @@ export function KatalogClient({
     return initialItems
       .filter((item) => {
         if (q && !matchesSearch(item, q)) return false;
-        if (statusFilter === 'dikirim') {
-          if (!item.plan_id || !trackingMap[item.plan_id]) return false;
+        if (statusFilter === 'po' || (statusFilter as string) === 'dikirim') {
+          if (!isItemInDelivery(item)) return false;
+        } else if (statusFilter === 'wishlist') {
+          if (item.plan_status !== 'wishlist' || (item.plan_id && Boolean(trackingMap[item.plan_id]?.resi))) {
+            return false;
+          }
         } else if (statusFilter !== 'semua' && item.plan_status !== statusFilter) {
           return false;
         }
@@ -299,17 +314,11 @@ export function KatalogClient({
             onClick={() => updateFilters({ status: 'semua' })}
             count={statusCounts.semua}
           />
-          <FilterChip
-            label="🚚 Sedang Dikirim"
-            active={statusFilter === 'dikirim'}
-            onClick={() => updateFilters({ status: 'dikirim' })}
-            count={statusCounts.dikirim}
-          />
           {STATUS_FILTERS.map(({ value, label }) => (
             <FilterChip
               key={value}
               label={label}
-              active={statusFilter === value}
+              active={statusFilter === value || (value === 'po' && (statusFilter as string) === 'dikirim')}
               onClick={() => updateFilters({ status: value })}
               count={statusCounts[value]}
             />
@@ -494,7 +503,7 @@ export function KatalogClient({
                     </span>
 
                     <div className="flex items-center">
-                      {item.plan_id && !trackingMap[item.plan_id] && (item.plan_status === 'po' || item.plan_status === 'dp' || item.plan_status === 'lunas') && (
+                      {item.plan_id && !trackingMap[item.plan_id] && item.plan_status !== 'diterima' && item.plan_status !== 'batal' && (
                         <IconAction
                           label={`Mulai lacak pesanan ${item.judul}`}
                           onClick={() => setTrackingModalItem(item)}
