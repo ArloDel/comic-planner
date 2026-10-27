@@ -138,10 +138,25 @@ describe('normalisasi satu produk', () => {
     assert.equal(result.ok && result.item.harga, null);
   });
 
-  it('tidak menyentuh elemen yang bukan objek', () => {
+  it(' tidak menyentuh elemen yang bukan objek', () => {
     const result = normalizeImportItem('bukan objek', 2);
     assert.equal(result.ok, false);
     assert.match(result.ok === false ? result.error.message : '', /itemid/);
+  });
+
+  it('menolak skema URL berbahaya (javascript:/data:) pada url dan thumbnail', () => {
+    const result = normalizeImportItem(
+      shopeeProduct({
+        url: 'javascript:alert(1)',
+        thumbnail: 'data:text/html,<script>alert(1)</script>',
+      }),
+      0
+    );
+
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.item.url, null);
+    assert.equal(result.item.thumbnail, null);
   });
 });
 
