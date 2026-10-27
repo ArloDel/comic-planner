@@ -360,7 +360,7 @@ export function ImportClient({
             />
 
             <div className="flex justify-end">
-              <Button type="submit" variant="primary" size="sm" disabled={submitting}>
+              <Button type="submit" variant="primary" size="sm" isLoading={submitting} disabled={submitting}>
                 <Upload className="h-4 w-4 mr-1.5" aria-hidden="true" />
                 <span>{submitting ? 'Mengimpor…' : 'Proses Impor'}</span>
               </Button>
