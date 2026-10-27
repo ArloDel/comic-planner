@@ -10,6 +10,7 @@ import {
   Wallet,
   Download,
   Settings,
+  LogIn,
   LogOut,
   MoreHorizontal,
   X,
@@ -26,13 +27,18 @@ interface AppShellProps {
   headerAction?: React.ReactNode;
 }
 
-const navItems = [
+const ownerNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/katalog', label: 'Katalog', icon: BookOpen },
   { href: '/plans', label: 'Rencana', icon: ListChecks },
   { href: '/budget', label: 'Budget', icon: Wallet },
   { href: '/import', label: 'Impor', icon: Download },
   { href: '/settings', label: 'Pengaturan', icon: Settings },
+];
+
+const guestNavItems = [
+  { href: '/', label: 'Ringkasan', icon: LayoutDashboard },
+  { href: '/katalog', label: 'Katalog', icon: BookOpen },
 ];
 
 export function AppShell({
@@ -44,6 +50,8 @@ export function AppShell({
 }: AppShellProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isOwner = Boolean(userEmail);
+  const navItems = isOwner ? ownerNavItems : guestNavItems;
 
   const isActive = (href: string) => {
     if (href === '/') {
@@ -100,25 +108,35 @@ export function AppShell({
             })}
           </nav>
 
-          {/* User mini info & Logout */}
+          {/* User mini info & Logout / Login */}
           <div className="p-3 border-t border-slate-100/60 bg-white/40">
             <div className="px-3 py-2 rounded-xl">
               <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                Pengguna
+                {isOwner ? 'Pengguna' : 'Mode Akses'}
               </p>
               <p className="text-xs font-medium text-slate-700 truncate mt-0.5">
-                {userEmail || 'Owner Akun'}
+                {userEmail || 'Tamu · Hanya Baca'}
               </p>
             </div>
-            <form action={logout} className="mt-1">
-              <button
-                type="submit"
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50/60 transition-colors"
+            {isOwner ? (
+              <form action={logout} className="mt-1">
+                <button
+                  type="submit"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50/60 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Keluar</span>
+                </button>
+              </form>
+            ) : (
+              <Link
+                href="/login"
+                className="mt-1 w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-primary-700 bg-primary-50/80 hover:bg-primary-100 transition-colors"
               >
-                <LogOut className="h-4 w-4" />
-                <span>Keluar</span>
-              </button>
-            </form>
+                <LogIn className="h-4 w-4" />
+                <span>Masuk Pemilik</span>
+              </Link>
+            )}
           </div>
         </aside>
 
@@ -153,13 +171,24 @@ export function AppShell({
 
       {/* Mobile Bottom Tab Bar (< lg) */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/85 backdrop-blur-xl border-t border-white/60 shadow-glass-lg pb-[env(safe-area-inset-bottom)]">
-        <div className="grid grid-cols-5 h-16 items-center px-1">
-          {[
-            { href: '/', label: 'Beranda', icon: LayoutDashboard },
-            { href: '/katalog', label: 'Katalog', icon: BookOpen },
-            { href: '/plans', label: 'Rencana', icon: ListChecks },
-            { href: '/budget', label: 'Budget', icon: Wallet },
-          ].map((tab) => {
+        <div
+          className={`grid ${
+            isOwner ? 'grid-cols-5' : 'grid-cols-3'
+          } h-16 items-center px-1`}
+        >
+          {(isOwner
+            ? [
+                { href: '/', label: 'Beranda', icon: LayoutDashboard },
+                { href: '/katalog', label: 'Katalog', icon: BookOpen },
+                { href: '/plans', label: 'Rencana', icon: ListChecks },
+                { href: '/budget', label: 'Budget', icon: Wallet },
+              ]
+            : [
+                { href: '/', label: 'Ringkasan', icon: LayoutDashboard },
+                { href: '/katalog', label: 'Katalog', icon: BookOpen },
+                { href: '/login', label: 'Masuk', icon: LogIn },
+              ]
+          ).map((tab) => {
             const active = isActive(tab.href);
             const Icon = tab.icon;
 
@@ -177,16 +206,18 @@ export function AppShell({
             );
           })}
 
-          {/* "Lainnya" button */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="Menu lainnya"
-            className="flex flex-col items-center justify-center gap-1 py-1 text-slate-500 hover:text-slate-800 transition-transform"
-          >
-            <MoreHorizontal className="h-5 w-5" />
-            <span className="text-[10px] font-semibold">Lainnya</span>
-          </button>
+          {/* "Lainnya" button (khusus pemilik) */}
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Menu lainnya"
+              className="flex flex-col items-center justify-center gap-1 py-1 text-slate-500 hover:text-slate-800 transition-transform"
+            >
+              <MoreHorizontal className="h-5 w-5" />
+              <span className="text-[10px] font-semibold">Lainnya</span>
+            </button>
+          )}
         </div>
       </div>
 
