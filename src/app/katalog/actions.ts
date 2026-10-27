@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { sanitizeHttpUrl } from '@/lib/import';
 import type { ItemType, PlanStatus } from '@/types/database';
 
 export interface ItemFormData {
@@ -62,7 +63,7 @@ function sanitizeItemInput(data: ItemFormData): SanitizedItem {
     volume: Number.isFinite(volume) ? volume : null,
     penerbit: data.penerbit?.trim() || null,
     tipe: data.tipe ?? null,
-    cover_url: data.cover_url?.trim() || null,
+    cover_url: sanitizeHttpUrl(data.cover_url),
   };
 }
 
