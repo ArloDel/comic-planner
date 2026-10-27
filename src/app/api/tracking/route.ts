@@ -42,22 +42,26 @@ export async function GET(request: Request) {
   if (planId) {
     try {
       const supabase = createAdminClient();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('order_trackings')
         .select('*')
         .eq('plan_id', planId)
         .maybeSingle();
 
-      if (data) {
-        savedCourier = data.kurir || courier;
-        savedResi = data.resi || resi;
+      if (!error && data) {
+        savedCourier = data.kurir || courier || savedCourier;
+        savedResi = data.resi || resi || savedResi;
         savedPhoto = data.foto_bukti_url || null;
       }
     } catch {
+      // Supabase table might not exist yet
+    }
+
+    if (!savedResi) {
       const inMem = memoryTrackingStore.get(planId);
       if (inMem) {
-        savedCourier = inMem.courier || courier;
-        savedResi = inMem.resi || resi;
+        savedCourier = inMem.courier || courier || savedCourier;
+        savedResi = inMem.resi || resi || savedResi;
         savedPhoto = inMem.foto_bukti_url || null;
       }
     }
