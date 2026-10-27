@@ -1,4 +1,5 @@
 import React from 'react';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { AppShell } from '@/components/layout/AppShell';
 import { KatalogClient } from './KatalogClient';
@@ -26,15 +27,28 @@ export default async function KatalogPage({
 
     userEmail = user?.email || null;
 
-    const { data: items } = await supabase
-      .from('items')
-      .select(
-        'id, judul, seri, volume, penerbit, tipe, cover_url, created_at, updated_at, plans(id, status, estimasi_harga), listings(harga)'
-      )
-      .order('created_at', { ascending: false })
-      .returns<ItemRowWithRelations[]>();
+    if (user) {
+      const { data: items } = await supabase
+        .from('items')
+        .select(
+          'id, judul, seri, volume, penerbit, tipe, cover_url, created_at, updated_at, plans(id, status, estimasi_harga), listings(harga)'
+        )
+        .order('created_at', { ascending: false })
+        .returns<ItemRowWithRelations[]>();
 
-    formattedItems = mapItemsWithDetails(items ?? []);
+      formattedItems = mapItemsWithDetails(items ?? []);
+    } else {
+      const admin = createAdminClient();
+      const { data: items } = await admin
+        .from('items')
+        .select(
+          'id, judul, seri, volume, penerbit, tipe, cover_url, created_at, updated_at, plans(id, status)'
+        )
+        .order('created_at', { ascending: false })
+        .returns<ItemRowWithRelations[]>();
+
+      formattedItems = mapItemsWithDetails(items ?? []);
+    }
   } catch (err) {
     console.error('Error loading katalog items:', err);
   }
@@ -43,9 +57,17 @@ export default async function KatalogPage({
     <AppShell
       userEmail={userEmail}
       pageTitle="Katalog Komik"
-      pageSubtitle="Kelola dan cari seluruh judul komik, manga, dan status perolehan Anda"
+      pageSubtitle={
+        userEmail
+          ? 'Kelola dan cari seluruh judul komik, manga, dan status perolehan Anda'
+          : 'Showcase publik koleksi komik, manga, dan status perolehan (hanya baca)'
+      }
     >
-      <KatalogClient initialItems={formattedItems} initialFilters={params} />
+      <KatalogClient
+        initialItems={formattedItems}
+        initialFilters={params}
+        readOnly={!userEmail}
+      />
     </AppShell>
   );
 }
