@@ -108,10 +108,19 @@ interface KatalogClientProps {
     tipe?: string;
     sort?: string;
   };
+  readOnly?: boolean;
 }
 
-export function KatalogClient({ initialItems, initialFilters }: KatalogClientProps) {
+export function KatalogClient({
+  initialItems,
+  initialFilters,
+  readOnly = false,
+}: KatalogClientProps) {
   const router = useRouter();
+  const visibleSortOptions = useMemo(
+    () => (readOnly ? SORT_OPTIONS.filter((opt) => opt.value !== 'harga') : SORT_OPTIONS),
+    [readOnly]
+  );
 
   // Filter & Search states (diinisialisasi dari URL query params)
   const [search, setSearch] = useState(initialFilters?.q ?? '');
@@ -196,14 +205,20 @@ export function KatalogClient({ initialItems, initialFilters }: KatalogClientPro
           />
         </div>
 
-        <Button
-          variant="primary"
-          onClick={() => setIsCreateOpen(true)}
-          className="w-full sm:w-auto shadow-glass"
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          <span>Tambah Item</span>
-        </Button>
+        {!readOnly ? (
+          <Button
+            variant="primary"
+            onClick={() => setIsCreateOpen(true)}
+            className="w-full sm:w-auto shadow-glass"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            <span>Tambah Item</span>
+          </Button>
+        ) : (
+          <span className="inline-flex items-center self-start sm:self-auto rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-600">
+            Mode Publik · Hanya Baca
+          </span>
+        )}
       </div>
 
       {/* Series Summary Bar */}
@@ -275,7 +290,7 @@ export function KatalogClient({ initialItems, initialFilters }: KatalogClientPro
               aria-label="Urutkan item"
               value={sortBy}
               onChange={(e) => updateFilters({ sort: e.target.value as SortBy })}
-              options={SORT_OPTIONS}
+              options={visibleSortOptions}
             />
           </div>
         </div>
@@ -295,14 +310,24 @@ export function KatalogClient({ initialItems, initialFilters }: KatalogClientPro
               ? 'Mulai tambahkan komik pertama Anda secara manual atau gunakan fitur impor Shopee.'
               : 'Coba ubah kata kunci pencarian atau sesuaikan filter status.'
           }
-          actionLabel={initialItems.length === 0 ? '+ Tambah Komik Pertama' : 'Reset Filter'}
-          onAction={() => {
-            if (initialItems.length === 0) {
-              setIsCreateOpen(true);
-            } else {
-              updateFilters({ q: '', status: 'semua', tipe: 'semua' });
-            }
-          }}
+          actionLabel={
+            initialItems.length === 0
+              ? readOnly
+                ? undefined
+                : '+ Tambah Komik Pertama'
+              : 'Reset Filter'
+          }
+          onAction={
+            initialItems.length === 0 && readOnly
+              ? undefined
+              : () => {
+                  if (initialItems.length === 0) {
+                    setIsCreateOpen(true);
+                  } else {
+                    updateFilters({ q: '', status: 'semua', tipe: 'semua' });
+                  }
+                }
+          }
         />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4.5">
@@ -368,31 +393,33 @@ export function KatalogClient({ initialItems, initialFilters }: KatalogClientPro
                   )}
                 </div>
 
-                <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between gap-1">
-                  <span className="text-xs font-bold text-slate-900 tabular-nums">
-                    {displayPrice(item) ?? (
-                      <span className="text-[10px] font-normal text-slate-400">
-                        Belum ada harga
-                      </span>
-                    )}
-                  </span>
+                {!readOnly && (
+                  <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between gap-1">
+                    <span className="text-xs font-bold text-slate-900 tabular-nums">
+                      {displayPrice(item) ?? (
+                        <span className="text-[10px] font-normal text-slate-400">
+                          Belum ada harga
+                        </span>
+                      )}
+                    </span>
 
-                  <div className="flex items-center">
-                    <IconAction
-                      label={`Edit ${item.judul}`}
-                      onClick={() => setEditingItem(item)}
-                    >
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </IconAction>
-                    <IconAction
-                      label={`Hapus ${item.judul}`}
-                      onClick={() => setDeletingItem(item)}
-                      tone="danger"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </IconAction>
+                    <div className="flex items-center">
+                      <IconAction
+                        label={`Edit ${item.judul}`}
+                        onClick={() => setEditingItem(item)}
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </IconAction>
+                      <IconAction
+                        label={`Hapus ${item.judul}`}
+                        onClick={() => setDeletingItem(item)}
+                        tone="danger"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </IconAction>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </GlassCard>
           ))}
