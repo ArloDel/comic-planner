@@ -116,6 +116,20 @@ export function constructShopeeImageUrl(imageIdOrUrl: unknown): string | null {
 }
 
 /**
+ * Sanitasi string sebelum disisipkan ke dalam template HTML (`innerHTML`)
+ * pada panel mengambang userscript agar bebas dari DOM XSS.
+ */
+export function escapeHtml(raw: unknown): string {
+  if (raw === null || raw === undefined) return '';
+  return String(raw)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Normalisasi harga mentah Shopee ke format yang diharapkan server F5.
  *
  * Aturan F5:
