@@ -23,20 +23,20 @@ export const PLAN_STATUSES: readonly PlanStatus[] = [
 
 export const STATUS_LABELS: Record<PlanStatus, string> = {
   wishlist: 'Wishlist',
-  po: 'Pre-Order',
-  dp: 'DP',
-  lunas: 'Lunas',
-  diterima: 'Diterima',
+  po: 'Sedang Dikirim',
+  dp: 'Sedang Dikirim',
+  lunas: 'Sedang Dikirim',
+  diterima: 'Selesai',
   batal: 'Batal',
 };
 
 export const STATUS_HINTS: Record<PlanStatus, string> = {
-  wishlist: 'Masih di niatan, belum ada outflow.',
-  po: 'Sudah order ke toko — budget di-hold penuh.',
-  dp: 'DP sudah dibayar — sisanya masih di-hold.',
-  lunas: 'Sudah lunas, tinggal nunggu barang datang.',
-  diterima: 'Barang sudah di tangan dan masuk koleksi.',
-  batal: 'Dibatalkan — hold budget dilepas otomatis.',
+  wishlist: 'Masih di keranjang/incaran, belum dipesan.',
+  po: 'Pesanan sedang diproses dan dikirim oleh kurir ekspedisi.',
+  dp: 'Pesanan sedang dikirim oleh kurir ekspedisi.',
+  lunas: 'Pesanan sedang dikirim oleh kurir ekspedisi.',
+  diterima: 'Pesanan telah tiba dan fisik komik sudah diverifikasi.',
+  batal: 'Rencana belanja dibatalkan.',
 };
 
 /**
@@ -44,32 +44,37 @@ export const STATUS_HINTS: Record<PlanStatus, string> = {
  * ini, sehingga begitu status plan jadi `batal` komitmennya langsung turun
  * tanpa ada job/event terpisah.
  */
-export const HOLDS_BUDGET: readonly PlanStatus[] = ['po', 'dp'];
+export const HOLDS_BUDGET: readonly PlanStatus[] = ['po', 'dp', 'lunas'];
 
 /** Status yang tidak punya jalan keluar lagi. */
 export const TERMINAL_STATUSES: readonly PlanStatus[] = ['diterima', 'batal'];
 
 /**
- * Peta transisi legal.
+ * Peta transisi legal yang disederhanakan:
  *
- * Jalur utama: wishlist → po → dp → lunas → diterima
+ * Jalur utama: wishlist → po (Sedang Dikirim) → diterima (Selesai)
  * Jalur samping: `batal` tersedia dari setiap status aktif.
- *
- * `po → lunas` diizinkan supaya plan yang dibayar penuh tanpa DP tidak terjebak.
- * `diterima` dan `batal` terminal: membatalkan plan yang sudah diterima akan
- * membuat komik milik sendiri hilang dari koleksi.
+ * Tetap mempertahankan jalur transisi legacy agar kompatibel dengan data lama.
  */
 export const TRANSITIONS: Record<PlanStatus, readonly PlanStatus[]> = {
   wishlist: ['po', 'batal'],
-  po: ['dp', 'lunas', 'batal'],
-  dp: ['lunas', 'batal'],
+  po: ['diterima', 'dp', 'lunas', 'batal'],
+  dp: ['diterima', 'lunas', 'batal'],
   lunas: ['diterima', 'batal'],
   diterima: [],
   batal: [],
 };
 
-/** Status yang wajib punya deadline PO saat plan masuk ke status tersebut. */
-export const STATUS_REQUIRES_DEADLINE: readonly PlanStatus[] = ['po'];
+/** Status yang wajib punya deadline PO saat plan masuk ke status tersebut (kosong pada alur sederhana). */
+export const STATUS_REQUIRES_DEADLINE: readonly PlanStatus[] = [];
+
+/** Daftar status aktif utama yang disederhanakan untuk UI */
+export const SIMPLIFIED_STATUSES: readonly PlanStatus[] = [
+  'wishlist',
+  'po',
+  'diterima',
+  'batal',
+];
 
 export interface PlanHistoryEntry {
   status_lama: string | null;
