@@ -62,3 +62,14 @@ test('trackPackageBinderbyte validates required inputs', async () => {
   assert.equal(result.status, 'NOT_FOUND');
   assert.equal(result.error, 'Kurir dan nomor resi wajib diisi');
 });
+
+test('trackPackageBinderbyte trims courier and waybill inputs safely', async () => {
+  const result = await trackPackageBinderbyte({
+    courier: '  spx  ',
+    waybill: '  DELIV123456  ',
+  });
+  assert.equal(result.success, true);
+  assert.equal(result.courier, 'spx');
+  assert.equal(result.waybill, 'DELIV123456');
+  assert.equal(result.isDelivered, true);
+});
