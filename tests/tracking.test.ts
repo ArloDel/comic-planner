@@ -44,6 +44,15 @@ test('trackPackageBinderbyte auto-mocks when waybill starts with DELIV', async (
   assert.equal(result.isDelivered, true);
 });
 
+test('trackPackageBinderbyte returns error if apiKey is missing for real waybill', async () => {
+  const result = await trackPackageBinderbyte({
+    courier: 'jne',
+    waybill: '1234567890',
+  });
+  assert.equal(result.success, false);
+  assert.match(result.error || '', /API Key/i);
+});
+
 test('trackPackageBinderbyte validates required inputs', async () => {
   const result = await trackPackageBinderbyte({
     courier: '',
