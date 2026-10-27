@@ -3,20 +3,36 @@ import Link from 'next/link';
 import {
   AlertTriangle,
   ArrowRight,
+  BookOpen,
+  CheckCircle2,
   ClipboardList,
+  Clock,
+  Heart,
+  Layers,
+  LogIn,
   ShieldCheck,
   TrendingUp,
   Wallet,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { StatCard } from '@/components/ui/StatCard';
+import { StatusPill } from '@/components/ui/StatusPill';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { WarningBanner } from '@/components/ui/WarningBanner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CoverImage } from '@/components/ui/CoverImage';
 import { buttonClasses } from '@/components/ui/Button';
 import { asArray } from '@/lib/supabase/embed';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import {
+  mapItemsWithDetails,
+  summarizeCollectionStats,
+  summarizeSeries,
+  type ItemRowWithRelations,
+  type KatalogItemWithDetails,
+} from '@/lib/catalog';
 import {
   computeBudgetSummary,
   currentPeriode,
@@ -101,6 +117,7 @@ export default async function DashboardPage() {
   let urgentPoPlans: PoDeadlinePlan[] = [];
   let periodTxns: PeriodTxnRow[] = [];
   let recentActivity: HistoryRow[] = [];
+  let publicItems: KatalogItemWithDetails[] = [];
 
   try {
     const supabase = await createClient();
@@ -109,85 +126,271 @@ export default async function DashboardPage() {
     } = await supabase.auth.getUser();
     userEmail = user?.email ?? null;
 
-    const [{ data: budgetRow }, { data: periodTxnRows }, { data: holdingRows }, { data: allTxns }, { data: historyRows }] =
-      await Promise.all([
-        supabase
-          .from('budgets')
-          .select('total_budget')
-          .eq('periode', `${periode}-01`)
-          .maybeSingle(),
-        supabase
-          .from('transactions')
-          .select('id, plan_id, jenis, jumlah, tanggal, catatan')
-          .gte('tanggal', start)
-          .lt('tanggal', endExclusive)
-          .order('tanggal', { ascending: false })
-          .returns<PeriodTxnRow[]>(),
-        supabase
-          .from('plans')
-          .select(
-            'id, prioritas, estimasi_harga, status, deadline_po, items(id, judul, seri, volume, cover_url)'
-          )
-          .in('status', ['po', 'dp'] as DbPlanStatus[])
-          .returns<PlanRowWithRelations[]>(),
-        supabase.from('transactions').select('plan_id, jumlah, jenis').returns<PaymentRow[]>(),
-        supabase
-          .from('status_history')
-          .select('id, plan_id, status_lama, status_baru, changed_at, plans(id, items(judul))')
-          .order('changed_at', { ascending: false })
-          .limit(5)
-          .returns<HistoryRow[]>(),
-      ]);
+    if (!user) {
+      const admin = createAdminClient();
+      const { data: items } = await admin
+        .from('items')
+        .select(
+          'id, judul, seri, volume, penerbit, tipe, cover_url, created_at, updated_at, plans(id, status)'
+        )
+        .order('created_at', { ascending: false })
+        .returns<ItemRowWithRelations[]>();
 
-    budgetTerset = Number(budgetRow?.total_budget ?? 0) > 0;
+      publicItems = mapItemsWithDetails(items ?? []);
+    } else {
+      const [{ data: budgetRow }, { data: periodTxnRows }, { data: holdingRows }, { data: allTxns }, { data: historyRows }] =
+        await Promise.all([
+          supabase
+            .from('budgets')
+            .select('total_budget')
+            .eq('periode', `${periode}-01`)
+            .maybeSingle(),
+          supabase
+            .from('transactions')
+            .select('id, plan_id, jenis, jumlah, tanggal, catatan')
+            .gte('tanggal', start)
+            .lt('tanggal', endExclusive)
+            .order('tanggal', { ascending: false })
+            .returns<PeriodTxnRow[]>(),
+          supabase
+            .from('plans')
+            .select(
+              'id, prioritas, estimasi_harga, status, deadline_po, items(id, judul, seri, volume, cover_url)'
+            )
+            .in('status', ['po', 'dp'] as DbPlanStatus[])
+            .returns<PlanRowWithRelations[]>(),
+          supabase.from('transactions').select('plan_id, jumlah, jenis').returns<PaymentRow[]>(),
+          supabase
+            .from('status_history')
+            .select('id, plan_id, status_lama, status_baru, changed_at, plans(id, items(judul))')
+            .order('changed_at', { ascending: false })
+            .limit(5)
+            .returns<HistoryRow[]>(),
+        ]);
 
-    // "Sudah dibayar" per plan = semua transaksi (refund mengurangi), bukan
-    // hanya bulan ini — komitmen mesti pakai pembayaran kumulatif.
-    const dibayar = summarizePayments(allTxns ?? []);
+      budgetTerset = Number(budgetRow?.total_budget ?? 0) > 0;
 
-    periodTxns = (periodTxnRows ?? []).filter((t) => t.tanggal.startsWith(periode));
+      // "Sudah dibayar" per plan = semua transaksi (refund mengurangi), bukan
+      // hanya bulan ini — komitmen mesti pakai pembayaran kumulatif.
+      const dibayar = summarizePayments(allTxns ?? []);
 
-    holdingPlans = (holdingRows ?? []).map((row) => {
-      const item = asArray(row.items)[0];
+      periodTxns = (periodTxnRows ?? []).filter((t) => t.tanggal.startsWith(periode));
 
-      return {
-        id: row.id,
-        label: item?.judul ?? 'Plan tanpa item',
-        status: row.status as PlanStatus,
-        prioritas: Number(row.prioritas ?? 3),
-        estimasi_harga: Number(row.estimasi_harga ?? 0),
-        sudah_dibayar: dibayar[row.id] ?? 0,
-      };
-    });
-
-    summary = computeBudgetSummary(
-      Number(budgetRow?.total_budget ?? 0),
-      periodTxns.map((t) => ({ jumlah: Number(t.jumlah), jenis: t.jenis })),
-      holdingPlans
-    );
-
-    // Daftar PO ≤ 7 hari: deadline diambil dari kolom plans.deadline_po
-    // (disalin dari listing.deadline_po saat plan masuk status `po`).
-    urgentPoPlans = pickUrgentPoPlans(
-      (holdingRows ?? []).map((row) => {
+      holdingPlans = (holdingRows ?? []).map((row) => {
         const item = asArray(row.items)[0];
 
         return {
           id: row.id,
+          label: item?.judul ?? 'Plan tanpa item',
           status: row.status as PlanStatus,
-          estimasi_harga: row.estimasi_harga,
+          prioritas: Number(row.prioritas ?? 3),
+          estimasi_harga: Number(row.estimasi_harga ?? 0),
           sudah_dibayar: dibayar[row.id] ?? 0,
-          deadline_po: row.deadline_po ?? null,
-          judul: item?.judul ?? null,
-          volume: item?.volume ?? null,
-          cover_url: item?.cover_url ?? null,
         };
-      })
-    );
+      });
 
-    recentActivity = (historyRows ?? []).slice(0, 5);
+      summary = computeBudgetSummary(
+        Number(budgetRow?.total_budget ?? 0),
+        periodTxns.map((t) => ({ jumlah: Number(t.jumlah), jenis: t.jenis })),
+        holdingPlans
+      );
+
+      // Daftar PO ≤ 7 hari: deadline diambil dari kolom plans.deadline_po
+      // (disalin dari listing.deadline_po saat plan masuk status `po`).
+      urgentPoPlans = pickUrgentPoPlans(
+        (holdingRows ?? []).map((row) => {
+          const item = asArray(row.items)[0];
+
+          return {
+            id: row.id,
+            status: row.status as PlanStatus,
+            estimasi_harga: row.estimasi_harga,
+            sudah_dibayar: dibayar[row.id] ?? 0,
+            deadline_po: row.deadline_po ?? null,
+            judul: item?.judul ?? null,
+            volume: item?.volume ?? null,
+            cover_url: item?.cover_url ?? null,
+          };
+        })
+      );
+
+      recentActivity = (historyRows ?? []).slice(0, 5);
+    }
   } catch (err) {
     console.error('Error loading dashboard:', err);
+  }
+
+  if (!userEmail) {
+    const stats = summarizeCollectionStats(publicItems);
+    const seriesList = summarizeSeries(publicItems);
+    const recentItems = publicItems.slice(0, 10);
+
+    return (
+      <AppShell
+        userEmail={null}
+        pageTitle="Ringkasan Koleksi"
+        pageSubtitle="Showcase publik koleksi komik, progres volume per seri, dan status perolehan"
+        headerAction={
+          <div className="flex items-center gap-2">
+            <Link href="/katalog" className={buttonClasses('secondary', 'sm')}>
+              <BookOpen className="h-4 w-4 mr-1.5" />
+              <span>Buka Katalog</span>
+            </Link>
+            <Link href="/login" className={buttonClasses('primary', 'sm')}>
+              <LogIn className="h-4 w-4 mr-1.5" />
+              <span>Masuk Pemilik</span>
+            </Link>
+          </div>
+        }
+      >
+        <div className="space-y-6">
+          {/* Statistik Koleksi Publik */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <StatCard
+              label="Total Katalog"
+              value={stats.totalItems}
+              icon={<BookOpen className="h-4 w-4" />}
+              iconTone="primary"
+            >
+              <p className="text-[11px] text-slate-500">
+                Terbagi dalam {stats.seriesCount} seri koleksi
+              </p>
+            </StatCard>
+
+            <StatCard
+              label="Dimiliki / Lunas"
+              value={stats.ownedCount}
+              icon={<CheckCircle2 className="h-4 w-4" />}
+              iconTone="emerald"
+            >
+              <p className="text-[11px] text-slate-500">Sudah diterima atau lunas</p>
+            </StatCard>
+
+            <StatCard
+              label="Sedang Pre-Order"
+              value={stats.poCount}
+              icon={<Clock className="h-4 w-4" />}
+              iconTone="amber"
+            >
+              <p className="text-[11px] text-slate-500">Dalam antrean PO / DP</p>
+            </StatCard>
+
+            <StatCard
+              label="Wishlist"
+              value={stats.wishlistCount}
+              icon={<Heart className="h-4 w-4" />}
+              iconTone="sky"
+            >
+              <p className="text-[11px] text-slate-500">Target koleksi berikutnya</p>
+            </StatCard>
+          </div>
+
+          {/* Seri yang Dikoleksi */}
+          {seriesList.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary-500" aria-hidden="true" />
+                  <span>Seri Koleksi ({seriesList.length})</span>
+                </h2>
+                <Link
+                  href="/katalog"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700"
+                >
+                  <span>Filter di Katalog</span>
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {seriesList.map(({ seri, totalVolumes, ownedVolumes }) => (
+                  <Link
+                    key={seri}
+                    href={`/katalog/seri/${encodeURIComponent(seri)}`}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 hover:bg-primary-50 hover:border-primary-300 px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-primary-700 transition-colors"
+                  >
+                    <span>{seri}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 tabular-nums">
+                      {ownedVolumes}/{totalVolumes} vol
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Koleksi Terbaru */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-slate-900">
+                Koleksi &amp; Daftar Komik Terbaru
+              </h2>
+              <Link
+                href="/katalog"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700"
+              >
+                <span>Lihat semua ({stats.totalItems})</span>
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+            </div>
+
+            {recentItems.length === 0 ? (
+              <EmptyState
+                icon={<BookOpen className="h-7 w-7" />}
+                title="Katalog belum memiliki komik"
+                description="Pemilik belum menambahkan komik ke dalam katalog."
+              />
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+                {recentItems.map((item) => (
+                  <GlassCard
+                    key={item.id}
+                    className="flex flex-col p-2.5 sm:p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glass"
+                  >
+                    <div className="relative w-full">
+                      <CoverImage src={item.cover_url} alt={item.judul} title={item.judul} />
+                      <div className="absolute top-2 left-2 z-10">
+                        <StatusPill
+                          status={item.plan_status}
+                          size="sm"
+                          className="backdrop-blur-md bg-white/90 shadow-2xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5">
+                      <h3
+                        className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-2 leading-snug"
+                        title={item.judul}
+                      >
+                        {item.judul}
+                      </h3>
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[11px] text-slate-500 font-medium">
+                        {item.seri ? (
+                          <Link
+                            href={`/katalog/seri/${encodeURIComponent(item.seri)}`}
+                            className="hover:text-primary-600 hover:underline truncate max-w-[120px] font-semibold text-slate-600"
+                          >
+                            {item.seri}
+                          </Link>
+                        ) : (
+                          <span>Non-seri</span>
+                        )}
+                        {item.volume !== null && (
+                          <span className="rounded bg-slate-100 px-1 py-0.2 text-[10px] font-bold text-slate-700">
+                            Vol {item.volume}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </GlassCard>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </AppShell>
+    );
   }
 
   const persenTerpakai =
