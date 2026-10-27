@@ -224,6 +224,25 @@ function normalizeVolume(raw: unknown): number | null {
 }
 
 /**
+ * Hanya izinkan URL dengan skema `http:` atau `https:` untuk mencegah
+ * Stored XSS melalui URI `javascript:` / `data:` pada link toko atau cover.
+ */
+export function sanitizeHttpUrl(raw: unknown): string | null {
+  const candidate = text(raw);
+  if (!candidate) return null;
+
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return candidate;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Normalisasi satu produk mentah. Kembalikan `ok: false` hanya untuk field
  * yang membuat baris tidak bisa disimpan sama sekali (kunci unik atau judul
  * kosong) — sisanya dibiarkan null agar bisa disimpan apa adanya.
@@ -267,8 +286,8 @@ export function normalizeImportItem(raw: unknown, index: number): NormalizedImpo
       // Deadline hanya relevan untuk listing PO (lihat `listings.status`).
       deadline_po: is_po ? normalizeDate(source.deadline_po) : null,
       tanggal_rilis: normalizeDate(source.tanggal_rilis),
-      thumbnail: text(source.thumbnail),
-      url: text(source.url),
+      thumbnail: sanitizeHttpUrl(source.thumbnail),
+      url: sanitizeHttpUrl(source.url),
       nama_toko: text(source.nama_toko),
     },
   };
