@@ -28,9 +28,15 @@ interface SeriClientProps {
   seriName: string;
   penerbit?: string | null;
   items: KatalogItemWithDetails[];
+  readOnly?: boolean;
 }
 
-export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
+export function SeriClient({
+  seriName,
+  penerbit,
+  items,
+  readOnly = false,
+}: SeriClientProps) {
   const router = useRouter();
 
   // Modals state
@@ -63,6 +69,7 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
   const belumPunyaCount = Math.max(0, maxRange - items.length);
 
   function handleVolumeBoxClick(volNumber: number) {
+    if (readOnly) return;
     const existing = volumeMap.get(volNumber);
     if (existing) {
       setEditingItem(existing);
@@ -75,6 +82,7 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
   }
 
   function handleAddNewVolume() {
+    if (readOnly) return;
     setEditingItem(null);
     setPrefilledVolume(maxVolumeFound + 1);
     setModalOpen(true);
@@ -116,10 +124,16 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
             </p>
           </div>
 
-          <Button variant="primary" onClick={handleAddNewVolume}>
-            <Plus className="h-4 w-4 mr-1.5" />
-            <span>Tambah Volume {maxVolumeFound + 1}</span>
-          </Button>
+          {!readOnly ? (
+            <Button variant="primary" onClick={handleAddNewVolume}>
+              <Plus className="h-4 w-4 mr-1.5" />
+              <span>Tambah Volume {maxVolumeFound + 1}</span>
+            </Button>
+          ) : (
+            <span className="inline-flex items-center self-start sm:self-auto rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-600">
+              Mode Publik · Hanya Baca
+            </span>
+          )}
         </div>
 
         {/* Stats summary pills */}
@@ -159,7 +173,9 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
             Tracker Volume Visual
           </h2>
           <p className="text-xs text-slate-500">
-            Klik nomor untuk mengedit atau mengisi volume yang bolong.
+            {readOnly
+              ? 'Status kelengkapan nomor volume untuk seri ini.'
+              : 'Klik nomor untuk mengedit atau mengisi volume yang bolong.'}
           </p>
         </div>
 
@@ -173,9 +189,12 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
                 <button
                   key={volNum}
                   type="button"
+                  disabled={readOnly}
                   onClick={() => handleVolumeBoxClick(volNum)}
                   title={`Vol. ${volNum}: ${existingItem.judul} (${style.label})`}
-                  className={`relative aspect-square rounded-xl border flex flex-col items-center justify-center font-bold text-sm transition-all duration-150 hover:scale-105 hover:shadow-md cursor-pointer select-none ${style.boxClasses}`}
+                  className={`relative aspect-square rounded-xl border flex flex-col items-center justify-center font-bold text-sm transition-all duration-150 select-none ${
+                    readOnly ? 'cursor-default' : 'hover:scale-105 hover:shadow-md cursor-pointer'
+                  } ${style.boxClasses}`}
                 >
                   <span>{volNum}</span>
                   {existingItem.plan_status === 'diterima' && (
@@ -189,12 +208,23 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
                 <button
                   key={volNum}
                   type="button"
+                  disabled={readOnly}
                   onClick={() => handleVolumeBoxClick(volNum)}
-                  title={`Volume ${volNum} belum ada. Klik untuk menambahkan.`}
-                  className="aspect-square rounded-xl border-2 border-dashed border-slate-300 bg-white/40 hover:bg-primary-50/60 hover:border-primary-400 hover:text-primary-700 text-slate-400 flex flex-col items-center justify-center font-semibold text-xs transition-all duration-150 cursor-pointer select-none group"
+                  title={
+                    readOnly
+                      ? `Volume ${volNum} belum ada di koleksi.`
+                      : `Volume ${volNum} belum ada. Klik untuk menambahkan.`
+                  }
+                  className={`aspect-square rounded-xl border-2 border-dashed border-slate-300 bg-white/40 text-slate-400 flex flex-col items-center justify-center font-semibold text-xs transition-all duration-150 select-none ${
+                    readOnly
+                      ? 'cursor-default'
+                      : 'hover:bg-primary-50/60 hover:border-primary-400 hover:text-primary-700 cursor-pointer group'
+                  }`}
                 >
-                  <span className="group-hover:hidden">{volNum}</span>
-                  <Plus className="h-4 w-4 hidden group-hover:block text-primary-600" />
+                  <span className={readOnly ? '' : 'group-hover:hidden'}>{volNum}</span>
+                  {!readOnly && (
+                    <Plus className="h-4 w-4 hidden group-hover:block text-primary-600" />
+                  )}
                   <span className="text-[8px] text-slate-400 group-hover:text-primary-600">
                     Kosong
                   </span>
@@ -239,41 +269,45 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
                   {item.judul}
                 </h3>
 
-                <p className="mt-0.5 text-xs font-semibold text-slate-700 tabular-nums">
-                  {formatRupiahOrNull(item.estimasi_harga) ?? (
-                    <span className="text-[11px] font-normal text-slate-400">
-                      Belum ada estimasi
-                    </span>
-                  )}
-                </p>
+                {!readOnly && (
+                  <>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-700 tabular-nums">
+                      {formatRupiahOrNull(item.estimasi_harga) ?? (
+                        <span className="text-[11px] font-normal text-slate-400">
+                          Belum ada estimasi
+                        </span>
+                      )}
+                    </p>
 
-                <div className="mt-2 flex items-center gap-1">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setEditingItem(item)}
-                    className="h-9 px-2.5 text-[11px]"
-                  >
-                    <Edit2 className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                  <button
-                    type="button"
-                    onClick={() => setDeletingItem(item)}
-                    aria-label={`Hapus ${item.judul}`}
-                    title={`Hapus ${item.judul}`}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                    <div className="mt-2 flex items-center gap-1">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setEditingItem(item)}
+                        className="h-9 px-2.5 text-[11px]"
+                      >
+                        <Edit2 className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingItem(item)}
+                        aria-label={`Hapus ${item.judul}`}
+                        title={`Hapus ${item.judul}`}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </GlassCard>
           ))}
         </div>
       </div>
 
-      {modalOpen && (
+      {!readOnly && modalOpen && (
         <ItemModal
           key={`new-${prefilledVolume ?? 'x'}`}
           isOpen
@@ -287,7 +321,7 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
         />
       )}
 
-      {editingItem && (
+      {!readOnly && editingItem && (
         <ItemModal
           key={editingItem.id}
           isOpen
@@ -307,7 +341,7 @@ export function SeriClient({ seriName, penerbit, items }: SeriClientProps) {
         />
       )}
 
-      {deletingItem && (
+      {!readOnly && deletingItem && (
         <DeleteModal
           isOpen
           onClose={() => setDeletingItem(null)}
