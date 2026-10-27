@@ -248,6 +248,53 @@ export interface Database {
           }
         ];
       };
+      order_trackings: {
+        Row: {
+          id: string;
+          plan_id: string;
+          resi: string;
+          kurir: string;
+          status_pengiriman: string;
+          foto_bukti_url: string | null;
+          delivered_at: string | null;
+          tracking_payload: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          resi: string;
+          kurir: string;
+          status_pengiriman?: string;
+          foto_bukti_url?: string | null;
+          delivered_at?: string | null;
+          tracking_payload?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          plan_id?: string;
+          resi?: string;
+          kurir?: string;
+          status_pengiriman?: string;
+          foto_bukti_url?: string | null;
+          delivered_at?: string | null;
+          tracking_payload?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'order_trackings_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: true;
+            referencedRelation: 'plans';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
