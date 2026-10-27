@@ -22,8 +22,9 @@ export const COURIER_OPTIONS: CourierOption[] = [
   { code: 'tiki', name: 'TIKI' },
   { code: 'ninja', name: 'Ninja Xpress' },
   { code: 'lion', name: 'Lion Parcel' },
-  { code: 'id', name: 'ID Express' },
+  { code: 'ide', name: 'ID Express' },
   { code: 'wahana', name: 'Wahana Prestasi Logistik' },
+  { code: 'jnt_cargo', name: 'J&T Cargo' },
 ];
 
 export interface TrackingCheckpoint {
@@ -137,25 +138,38 @@ export async function trackPackageBinderbyte({
     };
   }
 
-  // Jika dipaksa simulasi atau waybill diawali "DELIV" atau "MOCK"
+  // Jika dipaksa simulasi atau nomor waybill diawali "DELIV", "MOCK", atau "SANDBOX"
   if (
     forceMockStatus ||
     cleanWaybill.toUpperCase().startsWith('DELIV') ||
-    cleanWaybill.toUpperCase().startsWith('MOCK')
+    cleanWaybill.toUpperCase().startsWith('MOCK') ||
+    cleanWaybill.toUpperCase().startsWith('SANDBOX')
   ) {
     const isDeliv = forceMockStatus ? forceMockStatus === 'DELIVERED' : cleanWaybill.toUpperCase().startsWith('DELIV');
     return generateMockTracking(cleanCourier, cleanWaybill, isDeliv);
   }
 
-  // Jika API key belum dikonfigurasi, gunakan mock sandbox otomatis
+  // Jika API key belum dikonfigurasi, beri tahu user secara eksplisit
   if (!apiKey) {
-    return generateMockTracking(cleanCourier, cleanWaybill, false);
+    return {
+      success: false,
+      courier: cleanCourier,
+      courierName: getCourierName(cleanCourier),
+      waybill: cleanWaybill,
+      status: 'NOT_FOUND',
+      statusText: 'API Key Binderbyte Belum Dikonfigurasi',
+      history: [],
+      isDelivered: false,
+      error:
+        'API Key Binderbyte belum aktif di server. Tambahkan BINDERBYTE_API_KEY di .env.local / Vercel Environment Variables, atau masukkan API Key pada modal pelacakan.',
+    };
   }
 
   try {
+    const binderCourier = cleanCourier === 'id' ? 'ide' : cleanCourier;
     const url = `https://api.binderbyte.com/v1/track?api_key=${encodeURIComponent(
       apiKey
-    )}&courier=${encodeURIComponent(cleanCourier)}&resi=${encodeURIComponent(cleanWaybill)}`;
+    )}&courier=${encodeURIComponent(binderCourier)}&awb=${encodeURIComponent(cleanWaybill)}`;
 
     const response = await fetch(url, { method: 'GET', cache: 'no-store' });
     const data = await response.json();
@@ -185,7 +199,7 @@ export async function trackPackageBinderbyte({
       success: true,
       courier: cleanCourier,
       courierName: summary.courier || getCourierName(cleanCourier),
-      waybill: summary.waybill_number || cleanWaybill,
+      waybill: summary.awb || summary.waybill_number || cleanWaybill,
       status: isDelivered ? 'DELIVERED' : 'ON_PROCESS',
       statusText: isDelivered ? 'Telah Diterima (Delivered)' : 'Sedang Dikirim (On Process)',
       origin: detail.origin || null,
