@@ -40,6 +40,7 @@ export interface KatalogItemWithDetails {
   created_at: string;
   updated_at: string;
   plan_status: ExtendedStatus;
+  plan_id?: string;
   estimasi_harga?: number;
   listing_harga?: number | null;
 }
@@ -61,6 +62,7 @@ export function mapItemWithDetails(row: ItemRowWithRelations): KatalogItemWithDe
     created_at: row.created_at,
     updated_at: row.updated_at,
     plan_status: (activePlan?.status as ExtendedStatus) || 'belum ada',
+    plan_id: activePlan?.id,
     estimasi_harga:
       activePlan?.estimasi_harga != null ? Number(activePlan.estimasi_harga) : undefined,
     listing_harga: cheapestListingPrice(row.listings),
