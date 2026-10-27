@@ -405,6 +405,16 @@
   let statusNotice = { type: 'info', text: 'Menunggu produk terdeteksi...' };
   let isSyncing = false;
 
+  function escapeHtml(raw) {
+    if (raw === null || raw === undefined) return '';
+    return String(raw)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function formatDisplayRupiah(hargaRaw) {
     if (!hargaRaw) return 'Rp 0';
     const idr = Math.round(hargaRaw / 100000);
@@ -796,11 +806,11 @@
           <div class="cp-settings">
             <div class="cp-field">
               <label class="cp-label">Endpoint URL (/api/import)</label>
-              <input class="cp-input" id="cp-input-url" type="text" value="${config.apiUrl}" placeholder="http://localhost:3000/api/import" />
+              <input class="cp-input" id="cp-input-url" type="text" value="${escapeHtml(config.apiUrl)}" placeholder="https://comic-planner.vercel.app/api/import" />
             </div>
             <div class="cp-field">
               <label class="cp-label">Import Token (X-Import-Token)</label>
-              <input class="cp-input" id="cp-input-token" type="password" value="${config.importToken}" placeholder="Token rahasia server" />
+              <input class="cp-input" id="cp-input-token" type="password" value="${escapeHtml(config.importToken)}" placeholder="Token rahasia server" />
             </div>
             <p style="font-size:11px;color:#64748b;margin:0;">
               Token harus sama persis dengan variabel <code>IMPORT_TOKEN</code> di konfigurasi server ComicPlan Anda.
@@ -854,10 +864,10 @@
             'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="%23cbd5e1"><rect width="24" height="24" rx="4"/></svg>';
           return `
             <div class="cp-item-row">
-              <input type="checkbox" class="cp-item-check" data-key="${key}" ${isChecked} />
-              <img class="cp-item-thumb" src="${thumbSrc}" alt="" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'34\\' height=\\'34\\' fill=\\'%23cbd5e1\\'><rect width=\\'24\\' height=\\'24\\'/></svg>'" />
+              <input type="checkbox" class="cp-item-check" data-key="${escapeHtml(key)}" ${isChecked} />
+              <img class="cp-item-thumb" src="${escapeHtml(thumbSrc)}" alt="" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'34\\' height=\\'34\\' fill=\\'%23cbd5e1\\'><rect width=\\'24\\' height=\\'24\\'/></svg>'" />
               <div class="cp-item-info">
-                <div class="cp-item-title" title="${p.nama}">${p.nama}</div>
+                <div class="cp-item-title" title="${escapeHtml(p.nama)}">${escapeHtml(p.nama)}</div>
                 <div class="cp-item-meta">
                   <span class="cp-item-price">${formatDisplayRupiah(p.harga_raw)}</span>
                   ${p.label_po ? '<span class="cp-pill-po">PO</span>' : ''}
@@ -919,7 +929,7 @@
             ? 'cp-status-error'
             : 'cp-status-info'
         }">
-          ${statusNotice.text}
+          ${escapeHtml(statusNotice.text)}
         </div>
 
         <div class="cp-footer">
