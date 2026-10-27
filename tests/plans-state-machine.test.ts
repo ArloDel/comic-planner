@@ -19,8 +19,8 @@ import {
 import { daysUntil, formatRupiah } from '../src/lib/format.ts';
 import type { PlanStatus } from '../src/types/database.ts';
 
-/** Jalur utama PRD: wishlist → po → dp → lunas → diterima. */
-const MAIN_PATH: PlanStatus[] = ['wishlist', 'po', 'dp', 'lunas', 'diterima'];
+/** Jalur utama yang disederhanakan: wishlist → po (Sedang Dikirim) → diterima (Selesai). */
+const MAIN_PATH: PlanStatus[] = ['wishlist', 'po', 'diterima'];
 
 describe('state machine plans', () => {
   it('mengizinkan seluruh jalur utama PRD', () => {
@@ -88,7 +88,6 @@ describe('state machine plans', () => {
 
   it('membolehkan transisi langsung po (Sedang Dikirim) → diterima (Selesai)', () => {
     assert.equal(canTransition('po', 'diterima'), true);
-    assert.equal(canTransition('po', 'lunas'), true);
   });
 
   it('peta TRANSITIONS hanya berisi status yang dikenal', () => {
