@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TopLoadingBar } from "@/components/ui/TopLoadingBar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased font-sans">
+        <TopLoadingBar />
         {children}
       </body>
     </html>
