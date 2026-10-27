@@ -298,7 +298,7 @@ export function SettingsClient({
                   onChange={(e) => setBudgetInput(e.target.value)}
                   className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm tabular-nums text-slate-900 focus-visible:border-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20"
                 />
-                <Button type="submit" variant="primary" size="sm" disabled={savingBudget}>
+                <Button type="submit" variant="primary" size="sm" isLoading={savingBudget} disabled={savingBudget}>
                   <span>{savingBudget ? 'Menyimpan…' : 'Simpan'}</span>
                 </Button>
               </div>
