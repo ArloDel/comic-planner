@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { InlineLoadingBar } from './TopLoadingBar';
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface ModalProps {
   description?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
+  isLoading?: boolean;
 }
 
 const FOCUSABLE =
@@ -22,11 +24,13 @@ export function Modal({
   description,
   children,
   maxWidth = 'md',
+  isLoading = false,
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   // `onClose` sering inline arrow di pemanggil; disimpan di ref supaya effect
   // utama tidak re-run (dan fokus tidak pindah-pindah) tiap render.
   const onCloseRef = useRef(onClose);
+  const [hasChildLoading, setHasChildLoading] = useState(false);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -74,6 +78,27 @@ export function Modal({
     };
   }, [isOpen]);
 
+  // Pantau jika ada tombol/elemen di dalam modal yang sedang loading ([data-loading="true"])
+  useEffect(() => {
+    if (!isOpen || !panelRef.current) return;
+
+    const checkLoading = () => {
+      const loadingEl = panelRef.current?.querySelector('[data-loading="true"]');
+      setHasChildLoading(Boolean(loadingEl));
+    };
+
+    checkLoading();
+    const observer = new MutationObserver(checkLoading);
+    observer.observe(panelRef.current, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ['data-loading'],
+    });
+
+    return () => observer.disconnect();
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const maxWidthClasses = {
@@ -99,8 +124,10 @@ export function Modal({
       {/* Modal Card */}
       <div
         ref={panelRef}
-        className={`relative w-full ${maxWidthClasses} bg-white/90 backdrop-blur-xl border border-white/80 shadow-glass-lg rounded-glass p-5 sm:p-6 z-10 my-auto`}
+        className={`relative overflow-hidden w-full ${maxWidthClasses} bg-white/90 backdrop-blur-xl border border-white/80 shadow-glass-lg rounded-glass p-5 sm:p-6 z-10 my-auto`}
       >
+        <InlineLoadingBar isLoading={isLoading || hasChildLoading} />
+
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             {title && (
