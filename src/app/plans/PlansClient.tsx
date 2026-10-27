@@ -112,9 +112,9 @@ interface PlansClientProps {
 const ACTION_LABELS: Record<PlanStatus, string> = {
   wishlist: 'Kembalikan ke Wishlist',
   po: 'Pesan & Lacak Resi',
-  dp: 'Lacak Pengiriman',
-  lunas: 'Lacak Pengiriman',
-  diterima: 'Selesaikan Pesanan',
+  dp: 'Lacak / Selesaikan',
+  lunas: 'Lacak / Selesaikan',
+  diterima: 'Lacak / Selesaikan Pesanan',
   batal: 'Batalkan Rencana',
 };
 
@@ -529,17 +529,7 @@ export function PlansClient({
                         );
                       })}
 
-                      {plan.status !== 'wishlist' && plan.status !== 'diterima' && plan.status !== 'batal' && (
-                        <button
-                          type="button"
-                          onClick={() => setTrackingPlan(plan)}
-                          title="Lacak paket / status pengiriman via Binderbyte"
-                          className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50/90 text-indigo-700 hover:bg-indigo-100 px-2.5 py-1 min-h-[36px] text-[11px] font-semibold transition-colors shadow-2xs"
-                        >
-                          <Truck className="h-3.5 w-3.5" />
-                          <span>Lacak Pesanan</span>
-                        </button>
-                      )}
+                      
 
                       <button
                         type="button"
