@@ -9,6 +9,8 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAuthPage = pathname.startsWith('/login');
   const isApiRoute = pathname.startsWith('/api');
+  const isPublicRoute =
+    pathname === '/' || pathname === '/katalog' || pathname.startsWith('/katalog/');
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -49,8 +51,8 @@ export async function updateSession(request: NextRequest) {
     return redirectTo(request, '/login', { error: 'unauthorized_email' });
   }
 
-  // Redirect unauthenticated requests to /login (allow API routes to handle their own tokens/auth)
-  if (!user && !isAuthPage && !isApiRoute) {
+  // Redirect unauthenticated requests to /login (izinkan halaman publik read-only & API routes)
+  if (!user && !isAuthPage && !isApiRoute && !isPublicRoute) {
     return redirectTo(request, '/login');
   }
 
