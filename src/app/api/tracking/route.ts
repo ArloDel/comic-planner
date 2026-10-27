@@ -210,6 +210,27 @@ export async function POST(request: Request) {
       },
       { onConflict: 'plan_id' }
     );
+
+    // Jika plan saat ini berstatus wishlist, otomatis naikkan ke 'po' (Sedang Dikirim)
+    const { data: currentPlan } = await supabaseAdmin
+      .from('plans')
+      .select('status')
+      .eq('id', plan_id)
+      .maybeSingle();
+
+    if (currentPlan && currentPlan.status === 'wishlist') {
+      await supabaseAdmin
+        .from('plans')
+        .update({
+          status: 'po',
+          updated_at: nowIso,
+        })
+        .eq('id', plan_id);
+
+      revalidatePath('/plans');
+      revalidatePath('/katalog');
+      revalidatePath('/');
+    }
   } catch {
     // Fallback handled via memoryTrackingStore
   }
@@ -225,14 +246,41 @@ export async function POST(request: Request) {
 
     try {
       const supabaseAdmin = createAdminClient();
-      // Update plan status to 'diterima'
-      await supabaseAdmin
+      const { data: currentPlan } = await supabaseAdmin
         .from('plans')
-        .update({
-          status: 'diterima',
-          updated_at: nowIso,
-        })
-        .eq('id', plan_id);
+        .select('status')
+        .eq('id', plan_id)
+        .maybeSingle();
+
+      if (currentPlan?.status === 'po') {
+        const { error: directErr } = await supabaseAdmin
+          .from('plans')
+          .update({
+            status: 'diterima',
+            updated_at: nowIso,
+          })
+          .eq('id', plan_id);
+
+        if (directErr) {
+          // Fallback legacy Postgres trigger: po -> lunas -> diterima
+          await supabaseAdmin.from('plans').update({ status: 'lunas' }).eq('id', plan_id);
+          await supabaseAdmin
+            .from('plans')
+            .update({
+              status: 'diterima',
+              updated_at: nowIso,
+            })
+            .eq('id', plan_id);
+        }
+      } else {
+        await supabaseAdmin
+          .from('plans')
+          .update({
+            status: 'diterima',
+            updated_at: nowIso,
+          })
+          .eq('id', plan_id);
+      }
 
       revalidatePath('/plans');
       revalidatePath('/katalog');
