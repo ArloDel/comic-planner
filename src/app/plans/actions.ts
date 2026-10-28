@@ -5,14 +5,9 @@ import { createClient } from '@/lib/supabase/server';
 import type { Database, PlanStatus } from '@/types/database';
 import {
   isPlanStatus,
-  isValidDateInput,
   isValidPriority,
-  requiresDeadline,
   transitionError,
-  transitionTransactionType,
 } from '@/lib/plans';
-import { todayISO } from '@/lib/budget';
-import { asArray } from '@/lib/supabase/embed';
 
 export interface PlanFormData {
   item_id: string;
@@ -26,20 +21,11 @@ export interface UpdatePlanInput {
   prioritas: number;
   estimasi_harga: number;
   listing_id?: string | null;
-  deadline_po?: string | null;
 }
 
 export interface TransitionInput {
   planId: string;
   to: PlanStatus;
-  /** Deadline PO `YYYY-MM-DD`. Kosongkan untuk memakai deadline listing. */
-  deadline_po?: string | null;
-  /** Nominal pembayaran opsional saat transisi ke `dp` atau `lunas`. */
-  jumlah_bayar?: number | null;
-  /** Tanggal pembayaran `YYYY-MM-DD` (default hari ini). */
-  tanggal_bayar?: string | null;
-  /** Catatan pembayaran opsional. */
-  catatan_bayar?: string | null;
 }
 
 export type ActionResult<T = Record<string, never>> = {
@@ -57,9 +43,6 @@ async function getClients() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Mutasi lewat client session user (bukan service role) supaya RLS tetap
-  // berlaku — policies `items_crud_policies.sql` sudah mengizinkan insert &
-  // update plans untuk user terautentikasi.
   return { supabase, user };
 }
 
@@ -97,7 +80,6 @@ export async function createPlan(data: PlanFormData): Promise<ActionResult<{ id:
       return { success: false, error: 'Estimasi harga harus angka nol atau lebih.' };
     }
 
-    // Listing opsional, tapi kalau diisi harus memang milik item tersebut.
     const listingId = data.listing_id?.trim() || null;
     if (listingId) {
       const { data: listing, error: listingError } = await supabase
@@ -119,7 +101,6 @@ export async function createPlan(data: PlanFormData): Promise<ActionResult<{ id:
       }
     }
 
-    // Insert dengan status wishlist; trigger DB mencatat status_history awal.
     const { data: created, error } = await supabase
       .from('plans')
       .insert({
@@ -150,15 +131,10 @@ export async function createPlan(data: PlanFormData): Promise<ActionResult<{ id:
 
 /**
  * Satu-satunya pintu untuk memindahkan status plan.
- *
- * Validasi transisi di sini (bukan cuma di UI) memakai `transitionError` dari
- * lib/plans.ts; trigger Postgres `plans_status_transition_guard` menangkap
- * penulisan yang datang dari jalur lain. Setiap perubahan status otomatis
- * tercatat di `status_history` lewat trigger `on_plan_status_changed`.
  */
 export async function transitionPlanStatus(
   input: TransitionInput
-): Promise<ActionResult<{ status: PlanStatus; deadline_po: string | null }>> {
+): Promise<ActionResult<{ status: PlanStatus }>> {
   try {
     const { supabase, user } = await getClients();
 
@@ -179,7 +155,7 @@ export async function transitionPlanStatus(
 
     const { data: plan, error: readError } = await supabase
       .from('plans')
-      .select('id, status, listing_id, listings(deadline_po)')
+      .select('id, status')
       .eq('id', planId)
       .maybeSingle();
 
@@ -193,36 +169,13 @@ export async function transitionPlanStatus(
 
     const from = plan.status;
 
-    // Deadline: pakai override kalau ada, else deadline listing, else wajib diisi.
-    const override = input.deadline_po?.trim() || null;
-    if (override && !isValidDateInput(override)) {
-      return { success: false, error: 'Format deadline tidak valid (harus YYYY-MM-DD).' };
-    }
-
-    const listingDeadline = asArray(plan.listings)[0]?.deadline_po ?? null;
-
-    const deadline = override || (requiresDeadline(to) ? listingDeadline : null);
-
-    // Gerbang state machine — inilah penolakan illegal di server.
-    const invalid = transitionError(from, to, { deadline });
+    const invalid = transitionError(from, to);
     if (invalid) {
       return { success: false, error: invalid };
     }
 
-    const txnType = transitionTransactionType(from, to);
-    const jumlahBayar = Number(input.jumlah_bayar ?? 0);
-    if (!Number.isFinite(jumlahBayar) || jumlahBayar < 0) {
-      return { success: false, error: 'Nominal pembayaran tidak valid.' };
-    }
-
-    const tanggalBayar = input.tanggal_bayar?.trim() || todayISO();
-    if (jumlahBayar > 0 && !isValidDateInput(tanggalBayar)) {
-      return { success: false, error: 'Format tanggal pembayaran tidak valid (harus YYYY-MM-DD).' };
-    }
-
     if (from === to) {
-      // Sudah di status tujuan: tidak ada perubahan, tidak ada riwayat baru.
-      return { success: true, status: to, deadline_po: deadline ?? null };
+      return { success: true, status: to };
     }
 
     const update: Database['public']['Tables']['plans']['Update'] = {
@@ -230,13 +183,6 @@ export async function transitionPlanStatus(
       updated_at: new Date().toISOString(),
     };
 
-    if (requiresDeadline(to)) {
-      update.deadline_po = deadline;
-    }
-
-    // `.eq('status', from)` menjaga update ini atomik terhadap status yang
-    // tervalidasi: kalau ada sesi lain yang sudah memindahkan plan, baris tidak
-    // akan tersentuh dan kita laporkan konflik alih-alih menimpa.
     const { data: updatedRows, error: updateError } = await supabase
       .from('plans')
       .update(update)
@@ -255,27 +201,9 @@ export async function transitionPlanStatus(
       };
     }
 
-    // Catat transaksi pembayaran dalam satu langkah bila diisi saat transisi ke dp/lunas.
-    if (txnType && jumlahBayar > 0) {
-      const { error: txnError } = await supabase.from('transactions').insert({
-        plan_id: planId,
-        jenis: txnType,
-        jumlah: jumlahBayar,
-        tanggal: tanggalBayar,
-        catatan: input.catatan_bayar?.trim() || null,
-      });
-
-      if (txnError) {
-        return {
-          success: false,
-          error: `Status berhasil diubah ke ${to.toUpperCase()}, tetapi gagal mencatat transaksi: ${txnError.message}`,
-        };
-      }
-    }
-
     revalidatePlanViews();
 
-    return { success: true, status: to, deadline_po: deadline ?? null };
+    return { success: true, status: to };
   } catch (err) {
     return {
       success: false,
@@ -285,7 +213,7 @@ export async function transitionPlanStatus(
 }
 
 /**
- * Perbarui prioritas (#1–#5), estimasi harga, listing referensi, atau deadline PO
+ * Perbarui prioritas (#1–#5), estimasi harga, atau listing referensi
  * pada plan yang sudah ada tanpa mengubah statusnya.
  */
 export async function updatePlanDetails(
@@ -313,11 +241,6 @@ export async function updatePlanDetails(
       return { success: false, error: 'Estimasi harga harus angka nol atau lebih.' };
     }
 
-    const deadline = input.deadline_po?.trim() || null;
-    if (deadline && !isValidDateInput(deadline)) {
-      return { success: false, error: 'Format deadline tidak valid (harus YYYY-MM-DD).' };
-    }
-
     const updatePayload: Database['public']['Tables']['plans']['Update'] = {
       prioritas,
       estimasi_harga: estimasiHarga,
@@ -326,10 +249,6 @@ export async function updatePlanDetails(
 
     if (input.listing_id !== undefined) {
       updatePayload.listing_id = input.listing_id?.trim() || null;
-    }
-
-    if (input.deadline_po !== undefined) {
-      updatePayload.deadline_po = deadline;
     }
 
     const { error } = await supabase
