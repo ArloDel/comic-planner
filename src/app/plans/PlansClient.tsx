@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import {
   ArrowUpDown,
@@ -22,11 +23,9 @@ import { SearchBar } from '@/components/ui/SearchBar';
 import { FilterChip } from '@/components/ui/FilterChip';
 import { Select } from '@/components/ui/Select';
 import { StatusPill } from '@/components/ui/StatusPill';
+import { CoverImage } from '@/components/ui/CoverImage';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { PlanModal } from '@/components/plans/PlanModal';
-import { TransitionModal } from '@/components/plans/TransitionModal';
-import { StatusTimeline } from '@/components/plans/StatusTimeline';
-import { OrderTrackingModal } from '@/components/plans/OrderTrackingModal';
+import { ModalSkeleton, PlanCardSkeleton, Skeleton } from '@/components/ui/Skeleton';
 import {
   comparePlans,
   isShippingStatus,
@@ -39,6 +38,32 @@ import {
 import { formatRupiah } from '@/lib/format';
 import { replaceQueryParams } from '@/lib/url';
 import type { ListingStatus, ItemType } from '@/types/database';
+
+const PlanModal = dynamic(
+  () => import('@/components/plans/PlanModal').then((m) => m.PlanModal),
+  { loading: () => <ModalSkeleton /> }
+);
+const TransitionModal = dynamic(
+  () => import('@/components/plans/TransitionModal').then((m) => m.TransitionModal),
+  { loading: () => <ModalSkeleton /> }
+);
+const OrderTrackingModal = dynamic(
+  () => import('@/components/plans/OrderTrackingModal').then((m) => m.OrderTrackingModal),
+  { loading: () => <ModalSkeleton /> }
+);
+const StatusTimeline = dynamic(
+  () => import('@/components/plans/StatusTimeline').then((m) => m.StatusTimeline),
+  {
+    loading: () => (
+      <div className="space-y-2 py-1">
+        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+    ),
+  }
+);
+
+const INITIAL_PLAN_BATCH = 15;
 
 export interface PlanListingRef {
   id: string;
@@ -135,6 +160,8 @@ export function PlansClient({
   const [search, setSearch] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<PlanStatusFilter>(initialStatus);
   const [sortBy, setSortBy] = useState<PlanSortBy>(initialSort);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_PLAN_BATCH);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<PlanWithDetails | null>(null);
@@ -238,6 +265,7 @@ export function PlansClient({
     setSearch(qVal);
     setStatusFilter(statusVal);
     setSortBy(sortVal);
+    setVisibleCount(INITIAL_PLAN_BATCH);
     replaceQueryParams({ q: qVal, status: statusVal, sort: sortVal });
   }
 
@@ -289,6 +317,32 @@ export function PlansClient({
 
     return result.sort(comparePlans(sortBy));
   }, [initialPlans, search, statusFilter, sortBy, trackingMap]);
+
+  const visiblePlans = useMemo(
+    () => filteredPlans.slice(0, visibleCount),
+    [filteredPlans, visibleCount]
+  );
+  const hasMore = visibleCount < filteredPlans.length;
+
+  useEffect(() => {
+    if (!hasMore) return;
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+
+    const el = loadMoreRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + INITIAL_PLAN_BATCH, filteredPlans.length));
+        }
+      },
+      { rootMargin: '250px 0px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, filteredPlans.length]);
 
   function handleRefresh() {
     router.refresh();
@@ -460,7 +514,7 @@ export function PlansClient({
         />
       ) : (
         <div className="space-y-3">
-          {filteredPlans.map((plan) => {
+          {visiblePlans.map((plan) => {
             const expanded = expandedId === plan.id;
             const inDelivery = isPlanInDelivery(plan);
             const effectiveStatus: PlanStatus = inDelivery && plan.status === 'wishlist' ? 'po' : plan.status;
@@ -489,14 +543,13 @@ export function PlansClient({
                       />
                     </div>
                   )}
-                  {/* Cover thumbnail */}
+                  {/* Cover thumbnail menggunakan CoverImage dengan lazy IntersectionObserver + shimmer */}
                   {plan.item?.cover_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <CoverImage
                       src={plan.item.cover_url}
                       alt={plan.item.judul}
-                      loading="lazy"
-                      className="h-20 w-14 shrink-0 rounded-lg object-cover border border-slate-200/70 bg-slate-100"
+                      title={plan.item.judul}
+                      className="h-20 w-14 shrink-0 rounded-lg"
                     />
                   )}
 
@@ -650,6 +703,25 @@ export function PlansClient({
               </GlassCard>
             );
           })}
+
+          {hasMore && (
+            <div ref={loadMoreRef} className="space-y-3 pt-1">
+              <PlanCardSkeleton />
+              <div className="flex justify-center pt-1">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    setVisibleCount((prev) =>
+                      Math.min(prev + INITIAL_PLAN_BATCH, filteredPlans.length)
+                    )
+                  }
+                >
+                  Muat Lebih Banyak ({filteredPlans.length - visibleCount} tersisa)
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
