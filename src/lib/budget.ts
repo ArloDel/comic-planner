@@ -1,5 +1,4 @@
-import type { PlanStatus, TransactionType } from '@/types/database';
-import { calculateCommitment } from './plans.ts';
+import type { TransactionType } from '@/types/database';
 import { toNum } from './format.ts';
 
 /** Periode disimpan sebagai 'YYYY-MM' (di DB: date 'YYYY-MM-01'). */
@@ -8,17 +7,7 @@ export type Periode = string;
 export interface BudgetSummary {
   totalBudget: number;
   realisasi: number;
-  komitmen: number;
   sisaAman: number;
-}
-
-/** Plan minimal yang dibutuhkan untuk hitung komitmen. */
-export interface PlanBudgetInput {
-  id: string;
-  status: PlanStatus;
-  estimasi_harga: number | string;
-  /** Net dibayar (sudah dikurangi refund) — hasil dari `summarizePayments`. */
-  sudah_dibayar: number;
 }
 
 /** Transaksi minimal untuk hitung realisasi. */
@@ -27,67 +16,34 @@ export interface TxnBudgetInput {
   jenis: TransactionType;
 }
 
-
-
 /**
- * Rumus PRD F4 (satu sumber kebenaran):
+ * Rumus Budget:
  *   Realisasi  = Σ transaksi (kecuali refund) pada bulan berjalan
- *   Komitmen   = Σ (estimasi − sudah dibayar) atas plan berstatus po/dp
- *   Sisa aman  = budget − realisasi − komitmen
- *
- * Komitmen sengaja DIDELegasikan ke `calculateCommitment` dari `lib/plans.ts`
- * (satu-satunya implementasi rumus hold) alih-alih dijumlahkan ulang di sini,
- * supaya halaman budget dan halaman rencana tidak pernah berbeda angka.
+ *   Sisa aman  = budget − realisasi
  */
 export function computeBudgetSummary(
   totalBudget: number | string,
-  periodTxns: TxnBudgetInput[],
-  holdingPlans: PlanBudgetInput[]
+  periodTxns: TxnBudgetInput[]
 ): BudgetSummary {
   const realisasi = periodTxns.reduce(
     (acc, t) => (t.jenis === 'refund' ? acc : acc + toNum(t.jumlah)),
     0
   );
 
-  const dibayarByPlan: Record<string, number> = {};
-  for (const plan of holdingPlans) dibayarByPlan[plan.id] = plan.sudah_dibayar;
-
-  const komitmen = calculateCommitment(
-    holdingPlans.map((plan) => ({
-      id: plan.id,
-      status: plan.status,
-      estimasi_harga: toNum(plan.estimasi_harga),
-    })),
-    dibayarByPlan
-  );
-
   const totalBudgetNum = toNum(totalBudget);
   return {
     totalBudget: totalBudgetNum,
     realisasi,
-    komitmen,
-    sisaAman: totalBudgetNum - realisasi - komitmen,
+    sisaAman: totalBudgetNum - realisasi,
   };
 }
 
-/** Proyeksi sisa aman bila ada perubahan (dipakai warning inline U5). */
+/** Proyeksi sisa aman bila ada perubahan. */
 export function projectSisaAman(
   summary: BudgetSummary,
-  deltaRealisasi: number,
-  deltaKomitmen: number
+  deltaRealisasi: number
 ): number {
-  return summary.sisaAman - deltaRealisasi - deltaKomitmen;
-}
-
-/** Saran lepas hold: prioritas paling rendah (angka terbesar) dulu, lalu estimasi terbesar. */
-export function sortReleaseSuggestions<T extends { prioritas: number; estimasi_harga: number | string }>(
-  plans: T[]
-): T[] {
-  return [...plans].sort(
-    (a, b) =>
-      b.prioritas - a.prioritas ||
-      toNum(b.estimasi_harga) - toNum(a.estimasi_harga)
-  );
+  return summary.sisaAman - deltaRealisasi;
 }
 
 // ── Periode helpers ──────────────────────────────────────────────
