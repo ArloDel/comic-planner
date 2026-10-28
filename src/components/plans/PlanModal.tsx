@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { createPlan, updatePlanDetails } from '@/app/plans/actions';
-import { PRIORITIES, priorityLabel, requiresDeadline } from '@/lib/plans';
+import { PRIORITIES, priorityLabel } from '@/lib/plans';
 import { formatRupiah } from '@/lib/format';
 import type { PlanItemOption, PlanWithDetails } from '@/app/plans/PlansClient';
 
@@ -20,11 +20,6 @@ export interface PlanModalProps {
   initialPlan?: PlanWithDetails | null;
 }
 
-/**
- * Remount komponen ini tiap kali dibuka (pemanggil me-render secara
- * kondisional), jadi form selalu mulai kosong / terisi sesuai initialPlan
- * tanpa perlu effect untuk mereset.
- */
 export function PlanModal({
   isOpen,
   onClose,
@@ -41,7 +36,6 @@ export function PlanModal({
   const [estimasiHarga, setEstimasiHarga] = useState(
     initialPlan && initialPlan.estimasi_harga > 0 ? String(initialPlan.estimasi_harga) : ''
   );
-  const [deadlinePo, setDeadlinePo] = useState(initialPlan?.deadline_po ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,13 +46,11 @@ export function PlanModal({
 
   function handleItemChange(value: string) {
     setItemId(value);
-    // Ganti item → listing ikut difilter ke listing milik item tersebut.
     setListingId('');
 
     const next = items.find((item) => item.id === value);
     const estimasi = next?.estimasi_harga;
 
-    // Pre-fill estimasi dari plan aktif item itu kalau ada, biar tidak ketik ulang.
     if (typeof estimasi === 'number' && estimasi > 0) {
       setEstimasiHarga(String(Math.round(estimasi)));
     }
@@ -82,12 +74,6 @@ export function PlanModal({
       return;
     }
 
-    const canEditDeadline = isEditing && initialPlan && requiresDeadline(initialPlan.status);
-    if (canEditDeadline && !deadlinePo.trim()) {
-      setError('Deadline PO wajib diisi untuk plan berstatus Pre-Order.');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -98,7 +84,6 @@ export function PlanModal({
             prioritas: Number(prioritas),
             estimasi_harga: estimasiHarga ? Number(estimasiHarga) : 0,
             listing_id: listingId || null,
-            deadline_po: canEditDeadline ? deadlinePo.trim() : undefined,
           })
         : await createPlan({
             item_id: itemId,
@@ -121,9 +106,6 @@ export function PlanModal({
   }
 
   const listingOptions = selectedItem?.listings ?? [];
-  const showDeadlineEdit = Boolean(
-    isEditing && initialPlan && requiresDeadline(initialPlan.status)
-  );
 
   return (
     <Modal
@@ -133,7 +115,7 @@ export function PlanModal({
       description={
         isEditing
           ? initialPlan?.item?.judul ?? 'Atur ulang prioritas dan estimasi harga plan ini.'
-          : 'Rencana baru selalu dimulai dari status Wishlist, lalu dimajukan lewat status.'
+          : 'Rencana baru selalu dimulai dari status Wishlist, lalu dilanjutkan ke pengiriman dan penerimaan.'
       }
       maxWidth="lg"
     >
@@ -178,9 +160,9 @@ export function PlanModal({
           hint={
             listingOptions.length === 0
               ? itemId
-                ? 'Item ini belum punya listing. Deadline PO nanti diisi manual saat masuk status PO.'
+                ? 'Item ini belum punya listing toko referensi.'
                 : 'Pilih item dulu untuk melihat listing yang tersedia.'
-              : 'Menautkan listing mengisi harga & deadline PO otomatis.'
+              : 'Menautkan listing mengisi estimasi harga otomatis.'
           }
           options={[
             { value: '', label: '— Tanpa listing —' },
@@ -212,19 +194,9 @@ export function PlanModal({
             placeholder="Contoh: 45000…"
             value={estimasiHarga}
             onChange={(e) => setEstimasiHarga(e.target.value)}
-            hint="Dipakai rumus komitmen begitu plan masuk PO/DP."
+            hint="Perkiraan harga beli untuk referensi anggaran."
           />
         </div>
-
-        {showDeadlineEdit && (
-          <Input
-            label="Deadline PO *"
-            type="date"
-            value={deadlinePo}
-            onChange={(e) => setDeadlinePo(e.target.value)}
-            hint="Ubah tanggal penutupan PO untuk plan ini."
-          />
-        )}
 
         <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
           <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
