@@ -63,8 +63,7 @@ export function SeriClient({
   const countByStatus = (statuses: string[]) =>
     items.filter((item) => statuses.includes(item.plan_status)).length;
   const punyaCount = countByStatus(['diterima']);
-  const poCount = countByStatus(['po', 'dp']);
-  const lunasCount = countByStatus(['lunas']);
+  const dikirimCount = countByStatus(['po', 'dp', 'lunas']);
   const wishlistCount = countByStatus(['wishlist']);
   const belumPunyaCount = Math.max(0, maxRange - items.length);
 
@@ -142,14 +141,9 @@ export function SeriClient({
             <Check className="h-3.5 w-3.5" />
             {punyaCount} Dimiliki
           </span>
-          {poCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 font-semibold">
-              {poCount} Pre-Order
-            </span>
-          )}
-          {lunasCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 px-3 py-1 font-semibold">
-              {lunasCount} Lunas
+          {dikirimCount > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200 px-3 py-1 font-semibold">
+              {dikirimCount} Sedang Dikirim
             </span>
           )}
           {wishlistCount > 0 && (
