@@ -8,15 +8,14 @@ import {
   Camera,
   Upload,
   AlertCircle,
-  ExternalLink,
   Sparkles,
   X,
   PackageCheck,
   RefreshCw,
 } from 'lucide-react';
-import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
 import { InlineLoadingBar } from '@/components/ui/TopLoadingBar';
+import { TrackingTimelineSkeleton } from '@/components/ui/Skeleton';
 import { COURIER_OPTIONS, type TrackingResult } from '@/lib/binderbyte';
 
 export interface BulkPlanItem {
@@ -444,9 +443,12 @@ export function OrderTrackingModal({
                     />
 
                     {item.cover_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={item.cover_url}
                         alt={item.judul}
+                        loading="lazy"
+                        decoding="async"
                         className="h-9 w-6.5 object-cover rounded border border-slate-200 shrink-0"
                       />
                     )}
@@ -628,6 +630,9 @@ export function OrderTrackingModal({
           </div>
         </div>
 
+        {/* Skeleton loading saat mengambil data kurir */}
+        {loading && !tracking && <TrackingTimelineSkeleton />}
+
         {/* Hasil Timeline Tracking */}
         {tracking && (
           <div className="mt-5 space-y-3.5">
@@ -744,9 +749,12 @@ export function OrderTrackingModal({
 
             {photoPreview && (
               <div className="flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photoPreview}
                   alt="Bukti Unboxing"
+                  loading="lazy"
+                  decoding="async"
                   className="h-12 w-12 object-cover rounded-lg border border-slate-200 shadow-2xs"
                 />
                 <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
