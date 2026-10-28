@@ -1,5 +1,4 @@
 import React from 'react';
-import type { ListingStatus } from '@/types/database';
 
 export type { ExtendedStatus } from '@/lib/catalog';
 import type { ExtendedStatus } from '@/lib/catalog';
@@ -69,23 +68,6 @@ export function StatusPill({ status, className = '', size = 'md' }: StatusPillPr
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
       <span>{config.label}</span>
-    </span>
-  );
-}
-
-export function ListingStatusDot({ status }: { status: ListingStatus }) {
-  if (status === 'ready') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
-        <span className="h-2 w-2 rounded-full bg-emerald-500" />
-        Ready
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700">
-      <span className="h-2 w-2 rounded-full bg-amber-500" />
-      PO
     </span>
   );
 }
