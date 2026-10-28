@@ -4,7 +4,6 @@ import { describe, it } from 'node:test';
 import {
   PLAN_STATUSES,
   TRANSITIONS,
-  calculateCommitment,
   canTransition,
   comparePlans,
   isPlanStatus,
@@ -12,10 +11,9 @@ import {
   isValidDateInput,
   isValidPriority,
   nextStatuses,
-  requiresDeadline,
   summarizePayments,
   transitionError,
-  transitionTransactionType,
+  txnAllowedForStatus,
 } from '../src/lib/plans.ts';
 import { daysUntil, formatRupiah } from '../src/lib/format.ts';
 import type { PlanStatus } from '../src/types/database.ts';
@@ -30,7 +28,7 @@ describe('state machine plans', () => {
       const to = MAIN_PATH[i + 1];
 
       assert.equal(canTransition(from, to), true, `${from} → ${to} harus legal`);
-      assert.equal(transitionError(from, to, { deadline: '2026-12-31' }), null);
+      assert.equal(transitionError(from, to), null);
     }
   });
 
@@ -49,7 +47,7 @@ describe('state machine plans', () => {
     for (const [from, to] of illegal) {
       assert.equal(canTransition(from, to), false, `${from} → ${to} harus ilegal`);
       assert.notEqual(
-        transitionError(from, to, { deadline: '2026-12-31' }),
+        transitionError(from, to),
         null,
         `${from} → ${to} harus ditolak dengan pesan`
       );
@@ -98,81 +96,26 @@ describe('state machine plans', () => {
       }
     }
   });
-
-  it('alur pesanan sederhana tidak membebani deadline wajib', () => {
-    assert.equal(requiresDeadline('po'), false);
-    assert.equal(requiresDeadline('dp'), false);
-    assert.equal(requiresDeadline('batal'), false);
-    // Masuk po tanpa deadline tetap diizinkan
-    assert.equal(transitionError('wishlist', 'po', { deadline: null }), null);
-  });
-});
-
-describe('komitmen / hold budget', () => {
-  const plans = [
-    { id: 'a', status: 'po' as PlanStatus, estimasi_harga: 100_000 },
-    { id: 'b', status: 'dp' as PlanStatus, estimasi_harga: 50_000 },
-    { id: 'c', status: 'wishlist' as PlanStatus, estimasi_harga: 999_000 },
-    { id: 'd', status: 'diterima' as PlanStatus, estimasi_harga: 70_000 },
-    { id: 'e', status: 'batal' as PlanStatus, estimasi_harga: 80_000 },
-  ];
-
-  it('hanya menghitung plan po/dp', () => {
-    assert.equal(calculateCommitment(plans), 150_000);
-  });
-
-  it('mengurangi yang sudah dibayar', () => {
-    assert.equal(calculateCommitment(plans, { a: 40_000 }), 110_000);
-    assert.equal(calculateCommitment(plans, { a: 40_000, b: 50_000 }), 60_000);
-  });
-
-  it('tidak menghasilkan komitmen negatif', () => {
-    assert.equal(calculateCommitment(plans, { a: 500_000 }), 50_000);
-  });
-
-  it('hold dilepas begitu plan jadi batal', () => {
-    const dibayar = { a: 40_000 };
-
-    const sebelum = calculateCommitment(plans, dibayar);
-    const sesudah = calculateCommitment(
-      plans.map((plan) =>
-        plan.id === 'a' ? { ...plan, status: 'batal' as PlanStatus } : plan
-      ),
-      dibayar
-    );
-
-    // Kontribusi plan 'a' (po, 100rb estimasi − 40rb dibayar = 60rb) hilang
-    // utuh, jadi komitmen turun tepat sebesar itu.
-    assert.equal(sebelum, 110_000);
-    assert.equal(sesudah, 50_000);
-    assert.equal(sebelum - sesudah, 60_000);
-  });
-
-  it('dp dan lunas melepas hold penuh setelah pembayaran', () => {
-    const plan = [{ id: 'x', status: 'dp' as PlanStatus, estimasi_harga: 80_000 }];
-
-    assert.equal(calculateCommitment(plan, { x: 20_000 }), 60_000);
-    assert.equal(
-      calculateCommitment(
-        [{ ...plan[0], status: 'lunas' }],
-        { x: 80_000 }
-      ),
-      0
-    );
-  });
 });
 
 describe('helper', () => {
   it('summarizePayments menjumlahkan dan mengurangi refund', () => {
     const result = summarizePayments([
-      { plan_id: 'a', jumlah: 20_000, jenis: 'dp' },
-      { plan_id: 'a', jumlah: 30_000, jenis: 'pelunasan' },
+      { plan_id: 'a', jumlah: 50_000, jenis: 'bayar_penuh' },
       { plan_id: 'a', jumlah: 5_000, jenis: 'refund' },
       { plan_id: 'b', jumlah: 10_000, jenis: 'bayar_penuh' },
     ]);
 
     assert.equal(result.a, 45_000);
     assert.equal(result.b, 10_000);
+  });
+
+  it('txnAllowedForStatus hanya mengizinkan bayar_penuh dan refund', () => {
+    assert.equal(txnAllowedForStatus('bayar_penuh', 'po'), true);
+    assert.equal(txnAllowedForStatus('bayar_penuh', 'diterima'), true);
+    assert.equal(txnAllowedForStatus('refund', 'po'), true);
+    assert.equal(txnAllowedForStatus('dp', 'po'), false);
+    assert.equal(txnAllowedForStatus('pelunasan', 'dp'), false);
   });
 
   it('validasi prioritas 1..5', () => {
@@ -184,7 +127,7 @@ describe('helper', () => {
     assert.equal(isValidPriority('3'), false);
   });
 
-  it('validasi tanggal deadline', () => {
+  it('validasi tanggal', () => {
     assert.equal(isValidDateInput('2026-12-31'), true);
     assert.equal(isValidDateInput('31-12-2026'), false);
     assert.equal(isValidDateInput(''), false);
@@ -211,54 +154,32 @@ describe('helper', () => {
     assert.equal(daysUntil(null), null);
   });
 
-  it('memetakan transisi ke jenis transaksi pembayaran yang tepat', () => {
-    assert.equal(transitionTransactionType('po', 'dp'), 'dp');
-    assert.equal(transitionTransactionType('dp', 'lunas'), 'pelunasan');
-    assert.equal(transitionTransactionType('po', 'lunas'), 'bayar_penuh');
-    assert.equal(transitionTransactionType('wishlist', 'po'), null);
-    assert.equal(transitionTransactionType('lunas', 'diterima'), null);
-    assert.equal(transitionTransactionType('dp', 'batal'), null);
-  });
-
-  it('comparePlans mengurutkan berdasarkan deadline terdekat, sisa tagihan, dan prioritas', () => {
+  it('comparePlans mengurutkan berdasarkan prioritas dan terbaru', () => {
     const list = [
       {
         id: 'p1',
         prioritas: 3,
-        deadline_po: null,
-        estimasi_harga: 50_000,
-        sudah_dibayar: 0,
         created_at: '2026-10-01T00:00:00Z',
       },
       {
         id: 'p2',
         prioritas: 1,
-        deadline_po: '2026-10-25',
-        estimasi_harga: 100_000,
-        sudah_dibayar: 80_000,
         created_at: '2026-10-02T00:00:00Z',
       },
       {
         id: 'p3',
         prioritas: 2,
-        deadline_po: '2026-10-21',
-        estimasi_harga: 120_000,
-        sudah_dibayar: 20_000,
         created_at: '2026-10-03T00:00:00Z',
       },
     ];
 
     assert.deepEqual(
-      [...list].sort(comparePlans('deadline')).map((p) => p.id),
-      ['p3', 'p2', 'p1']
-    );
-    assert.deepEqual(
-      [...list].sort(comparePlans('sisa_tagihan')).map((p) => p.id),
-      ['p3', 'p1', 'p2']
-    );
-    assert.deepEqual(
       [...list].sort(comparePlans('prioritas')).map((p) => p.id),
       ['p2', 'p3', 'p1']
+    );
+    assert.deepEqual(
+      [...list].sort(comparePlans('terbaru')).map((p) => p.id),
+      ['p3', 'p2', 'p1']
     );
   });
 
