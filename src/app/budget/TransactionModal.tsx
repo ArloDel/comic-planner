@@ -17,15 +17,10 @@ export interface TransactionPlanOption {
   label: string;
   status: PlanStatus;
   estimasi_harga: number;
-  sudah_dibayar: number;
 }
 
-const TXN_TYPES: TransactionType[] = ['dp', 'pelunasan', 'bayar_penuh', 'refund'];
+const TXN_TYPES: TransactionType[] = ['bayar_penuh', 'refund'];
 
-/**
- * Remount tiap kali dibuka (pemanggil me-render secara kondisional), jadi form
- * selalu mulai dari nilai props terbaru tanpa perlu effect untuk mereset.
- */
 export function TransactionModal({
   plans,
 }: {
@@ -35,7 +30,7 @@ export function TransactionModal({
 
   const [isOpen, setIsOpen] = useState(false);
   const [planId, setPlanId] = useState('');
-  const [jenis, setJenis] = useState<TransactionType>('dp');
+  const [jenis, setJenis] = useState<TransactionType>('bayar_penuh');
   const [jumlah, setJumlah] = useState('');
   const [tanggal, setTanggal] = useState(() => new Date().toISOString().slice(0, 10));
   const [catatan, setCatatan] = useState('');
@@ -43,12 +38,7 @@ export function TransactionModal({
   const [error, setError] = useState<string | null>(null);
 
   const selected = plans.find((plan) => plan.id === planId) ?? null;
-  const sisaTagihan = selected
-    ? Math.max(selected.estimasi_harga - selected.sudah_dibayar, 0)
-    : 0;
 
-  // Hanya jenis yang sah untuk status plan terpilih yang bisa dipilih — aturan
-  // yang sama divalidasi ulang di server action.
   const allowedTypes = selected ? TXN_TYPES.filter((t) => txnAllowedForStatus(t, selected.status)) : [];
 
   async function handleSubmit(event: React.FormEvent) {
@@ -99,7 +89,7 @@ export function TransactionModal({
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
           title="Catat Transaksi"
-          description="Pembayaran dan refund untuk plan yang sedang berjalan."
+          description="Pembayaran dan refund untuk pesanan komik."
           maxWidth="md"
         >
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -128,9 +118,7 @@ export function TransactionModal({
 
             {selected && (
               <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
-                Estimasi {formatRupiah(selected.estimasi_harga)} · sudah dibayar{' '}
-                {formatRupiah(selected.sudah_dibayar)} · sisa{' '}
-                <strong>{formatRupiah(sisaTagihan)}</strong>
+                Estimasi harga: <strong>{formatRupiah(selected.estimasi_harga)}</strong>
               </p>
             )}
 
@@ -167,7 +155,7 @@ export function TransactionModal({
               <Input
                 label="Catatan (opsional)"
                 type="text"
-                placeholder="mis. DP awal"
+                placeholder="mis. Beli di Shopee"
                 value={catatan}
                 onChange={(e) => setCatatan(e.target.value)}
               />
