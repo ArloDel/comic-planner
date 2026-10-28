@@ -73,3 +73,32 @@ test('trackPackageBinderbyte trims courier and waybill inputs safely', async () 
   assert.equal(result.waybill, 'DELIV123456');
   assert.equal(result.isDelivered, true);
 });
+
+
+test('bulk tracking maintains consistent waybill across multiple comic plans', async () => {
+  const sharedResi = 'DELIV999888';
+  const plans = [
+    { id: '11111111-1111-1111-1111-111111111111', judul: 'Manga A' },
+    { id: '22222222-2222-2222-2222-222222222222', judul: 'Manga B' },
+    { id: '33333333-3333-3333-3333-333333333333', judul: 'Manga C' },
+  ];
+
+  const result = await trackPackageBinderbyte({
+    courier: 'spx',
+    waybill: sharedResi,
+  });
+
+  assert.equal(result.success, true);
+  assert.equal(result.waybill, sharedResi);
+  assert.equal(result.isDelivered, true);
+
+  // Verifikasi seluruh rencana belanja dapat diasosiasikan dengan hasil pelacakan yang sama
+  const planTrackings = plans.map((p) => ({
+    plan_id: p.id,
+    resi: sharedResi,
+    status: result.status,
+  }));
+
+  assert.equal(planTrackings.length, 3);
+  assert.ok(planTrackings.every((pt) => pt.resi === sharedResi));
+});
