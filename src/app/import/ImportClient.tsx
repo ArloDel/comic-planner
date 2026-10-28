@@ -18,10 +18,8 @@ import {
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { ListingStatusDot } from '@/components/ui/StatusPill';
 import { ToastHost, useToast } from '@/components/ui/Toast';
-import { formatRupiah, formatTanggal, formatTanggalJam } from '@/lib/format';
-import type { ListingStatus } from '@/types/database';
+import { formatRupiah, formatTanggalJam } from '@/lib/format';
 
 export interface ImportedListingItem {
   id: string;
@@ -35,8 +33,6 @@ export interface ImportedListingItem {
   nama_toko: string | null;
   url: string | null;
   harga: number;
-  status: ListingStatus;
-  deadline_po: string | null;
   updated_at: string;
 }
 
@@ -54,8 +50,6 @@ const SAMPLE_PAYLOAD = `{
       "shopid": "555000111",
       "nama": "One Piece Vol. 105",
       "harga_raw": 4500000000,
-      "label_po": true,
-      "deadline_po": "2026-11-15",
       "nama_toko": "Manga Store ID",
       "seri": "One Piece",
       "volume": 105
@@ -195,7 +189,7 @@ export function ImportClient({
                 Cara Pakai Userscript Shopee
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Impor katalog &amp; status PO langsung saat scroll halaman toko Shopee
+                Impor katalog komik langsung saat scroll halaman toko Shopee
               </p>
             </div>
 
@@ -403,7 +397,6 @@ export function ImportClient({
                 >
                   <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                     <div className="min-w-0 flex items-center gap-2">
-                      <ListingStatusDot status={item.status} />
                       <span className="truncate font-semibold text-slate-900">
                         {item.judul}
                         {item.volume != null ? ` vol ${item.volume}` : ''}
@@ -420,14 +413,6 @@ export function ImportClient({
                         <Store className="h-3 w-3 shrink-0 text-slate-400" aria-hidden="true" />
                         <span className="truncate">{item.nama_toko || `Shop #${item.shop_id}`}</span>
                       </span>
-                      {item.deadline_po && (
-                        <>
-                          <span>·</span>
-                          <span className="tabular-nums text-amber-700">
-                            PO s/d {formatTanggal(item.deadline_po)}
-                          </span>
-                        </>
-                      )}
                       <span>·</span>
                       <span className="font-semibold tabular-nums text-slate-800">
                         {formatRupiah(item.harga)}
