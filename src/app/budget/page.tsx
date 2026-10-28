@@ -6,7 +6,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { WarningBanner } from '@/components/ui/WarningBanner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button, buttonClasses } from '@/components/ui/Button';
-import { Wallet, TrendingUp, ShieldCheck, Plus, Receipt } from 'lucide-react';
+import { TrendingUp, ShieldCheck, Plus, Receipt } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { BudgetFormCard } from './BudgetFormCard';
 import { DeleteTransactionButton } from './DeleteTransactionButton';
@@ -15,13 +15,9 @@ import {
   computeBudgetSummary,
   currentPeriode,
   shiftPeriode,
-  sortReleaseSuggestions,
 } from '@/lib/budget';
 import {
-  STATUS_LABELS,
   TXN_TYPE_LABELS,
-  summarizePayments,
-  type PaymentRow,
   type PlanStatus,
 } from '@/lib/plans';
 import { formatRupiah, formatTanggal } from '@/lib/format';
@@ -48,10 +44,9 @@ interface ActivePlanOption {
   status: PlanStatus;
   prioritas: number;
   estimasi_harga: number;
-  sudah_dibayar: number;
 }
 
-interface HoldingPlanRow {
+interface ActivePlanRow {
   id: string;
   status: string;
   prioritas: number | null;
@@ -69,9 +64,8 @@ export default async function BudgetPage({
 
   let userEmail: string | null = null;
   let txnRows: TxnRowWithRelations[] = [];
-  let holdingPlans: ActivePlanOption[] = [];
   let activePlans: ActivePlanOption[] = [];
-  let summary = computeBudgetSummary(0, [], []);
+  let summary = computeBudgetSummary(0, []);
 
   try {
     const supabase = await createClient();
@@ -80,7 +74,7 @@ export default async function BudgetPage({
     } = await supabase.auth.getUser();
     userEmail = user?.email ?? null;
 
-    const [{ data: budgetRow }, { data: txnData }, { data: holdingRows }, { data: allTxns }] =
+    const [{ data: budgetRow }, { data: txnData }, { data: planRows }] =
       await Promise.all([
         supabase
           .from('budgets')
@@ -95,36 +89,23 @@ export default async function BudgetPage({
         supabase
           .from('plans')
           .select('id, status, prioritas, estimasi_harga, items(judul)')
-          .in('status', ['po', 'dp'] as PlanStatus[])
-          .returns<HoldingPlanRow[]>(),
-        supabase.from('transactions').select('plan_id, jumlah, jenis').returns<PaymentRow[]>(),
+          .in('status', ['po', 'dp', 'lunas', 'diterima'] as PlanStatus[])
+          .returns<ActivePlanRow[]>(),
       ]);
 
-    // Realisasi hanya menghitung transaksi pada periode terpilih; transaksi
-    // bulan lain tetap dipakai untuk menghitung "sudah dibayar" per plan.
     txnRows = (txnData ?? []).filter((t) => t.tanggal.startsWith(periode));
 
-    const dibayar = summarizePayments(allTxns ?? []);
-    const mapPlan = (row: HoldingPlanRow): ActivePlanOption => ({
+    activePlans = (planRows ?? []).map((row) => ({
       id: row.id,
       label: row.items?.judul ?? 'Plan tanpa item',
       status: row.status as PlanStatus,
       prioritas: Number(row.prioritas ?? 3),
       estimasi_harga: Number(row.estimasi_harga ?? 0),
-      sudah_dibayar: dibayar[row.id] ?? 0,
-    });
-
-    holdingPlans = (holdingRows ?? []).map(mapPlan);
-    // Plan yang bisa ditransaksi: sudah ada pembayaran (untuk refund) atau
-    // masih punya sisa tagihan.
-    activePlans = holdingPlans.filter(
-      (p) => p.sudah_dibayar > 0 || p.estimasi_harga > p.sudah_dibayar
-    );
+    }));
 
     summary = computeBudgetSummary(
       Number(budgetRow?.total_budget ?? 0),
-      txnRows.map((t) => ({ jumlah: Number(t.jumlah), jenis: t.jenis })),
-      holdingPlans
+      txnRows.map((t) => ({ jumlah: Number(t.jumlah), jenis: t.jenis }))
     );
   } catch (err) {
     console.error('Error loading budget:', err);
@@ -132,16 +113,14 @@ export default async function BudgetPage({
 
   const persenTerpakai =
     summary.totalBudget > 0
-      ? ((summary.realisasi + summary.komitmen) / summary.totalBudget) * 100
+      ? (summary.realisasi / summary.totalBudget) * 100
       : 0;
-
-  const saranLepas = sortReleaseSuggestions(holdingPlans).slice(0, 3);
 
   return (
     <AppShell
       userEmail={userEmail}
       pageTitle="Budget & Transaksi"
-      pageSubtitle="Realisasi, komitmen, dan sisa aman tiap bulan"
+      pageSubtitle="Realisasi pengeluaran dan sisa aman tiap bulan"
     >
       <div className="space-y-6">
         <PeriodeNav periode={periode} />
@@ -149,28 +128,14 @@ export default async function BudgetPage({
         {summary.sisaAman < 0 && (
           <WarningBanner>
             <p>
-              Sisa aman minus <strong>{formatRupiah(summary.sisaAman)}</strong>. Realisasi +
-              komitmen sudah melampaui budget {formatRupiah(summary.totalBudget)} untuk periode
+              Sisa aman minus <strong>{formatRupiah(summary.sisaAman)}</strong>. Realisasi
+              pengeluaran sudah melampaui budget {formatRupiah(summary.totalBudget)} untuk periode
               ini.
             </p>
-            {saranLepas.length > 0 && (
-              <>
-                <p className="font-semibold">Saran lepas hold (prioritas terendah dulu):</p>
-                <ul className="list-disc list-inside space-y-0.5">
-                  {saranLepas.map((plan) => (
-                    <li key={plan.id}>
-                      {plan.label} — {STATUS_LABELS[plan.status]}{' '}
-                      {formatRupiah(Math.max(plan.estimasi_harga - plan.sudah_dibayar, 0))}
-                    </li>
-                  ))}
-                </ul>
-                <p>Batalkan plan tersebut di halaman Rencana untuk melepas hold-nya.</p>
-              </>
-            )}
           </WarningBanner>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <BudgetFormCard
             key={periode}
             periode={periode}
@@ -187,15 +152,6 @@ export default async function BudgetPage({
           </StatCard>
 
           <StatCard
-            label="Komitmen"
-            value={formatRupiah(summary.komitmen)}
-            icon={<Wallet className="h-4 w-4" />}
-            iconTone="sky"
-          >
-            <p className="text-[11px] text-slate-500">Sisa tagihan plan berstatus PO/DP</p>
-          </StatCard>
-
-          <StatCard
             label="Sisa Aman"
             value={formatRupiah(summary.sisaAman)}
             icon={<ShieldCheck className="h-4 w-4" />}
@@ -204,9 +160,9 @@ export default async function BudgetPage({
           >
             <ProgressBar
               percent={persenTerpakai}
-              tone={summary.sisaAman < 0 ? 'rose' : summary.komitmen > 0 ? 'amber' : 'emerald'}
+              tone={summary.sisaAman < 0 ? 'rose' : 'emerald'}
               leftLabel={`${Math.round(persenTerpakai)}% terpakai`}
-              rightLabel={formatRupiah(summary.realisasi + summary.komitmen)}
+              rightLabel={formatRupiah(summary.realisasi)}
             />
           </StatCard>
         </div>
@@ -217,7 +173,7 @@ export default async function BudgetPage({
             {activePlans.length > 0 ? (
               <TransactionModal plans={activePlans} />
             ) : (
-              <Button variant="primary" size="sm" disabled title="Belum ada plan aktif">
+              <Button variant="primary" size="sm" disabled title="Belum ada pesanan aktif">
                 <Plus className="h-4 w-4 mr-1.5" />
                 <span>Catat Transaksi</span>
               </Button>
@@ -228,7 +184,7 @@ export default async function BudgetPage({
             <EmptyState
               icon={<Receipt className="h-8 w-8 text-primary-400" />}
               title="Belum Ada Transaksi"
-              description="Catat DP, pelunasan, atau refund dari plan yang sedang berjalan untuk melihat realisasi bulan ini."
+              description="Catat pembayaran atau refund dari pesanan komik untuk melihat realisasi bulan ini."
             />
           ) : (
             <ul className="space-y-2">
