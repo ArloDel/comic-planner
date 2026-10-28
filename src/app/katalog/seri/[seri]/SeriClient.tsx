@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -16,10 +17,18 @@ import { Button } from '@/components/ui/Button';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { StatusPill, statusStyle } from '@/components/ui/StatusPill';
 import { CoverImage } from '@/components/ui/CoverImage';
-import { ItemModal } from '@/components/katalog/ItemModal';
-import { DeleteModal } from '@/components/katalog/DeleteModal';
+import { ModalSkeleton } from '@/components/ui/Skeleton';
 import { formatRupiahOrNull } from '@/lib/format';
 import type { KatalogItemWithDetails } from '@/lib/catalog';
+
+const ItemModal = dynamic(
+  () => import('@/components/katalog/ItemModal').then((m) => m.ItemModal),
+  { loading: () => <ModalSkeleton /> }
+);
+const DeleteModal = dynamic(
+  () => import('@/components/katalog/DeleteModal').then((m) => m.DeleteModal),
+  { loading: () => <ModalSkeleton /> }
+);
 
 /** Grid minimal saat seri belum punya volume, supaya ada tempat quick-add. */
 const MIN_EMPTY_GRID = 12;
