@@ -9,10 +9,7 @@ import {
   type PlanWithDetails,
 } from './PlansClient';
 import {
-  calculateCommitment,
   isPlanStatus,
-  summarizePayments,
-  type PaymentRow,
   type PlanSortBy,
   type PlanStatus,
 } from '@/lib/plans';
@@ -21,7 +18,7 @@ import { asArray } from '@/lib/supabase/embed';
 export const metadata = {
   title: 'Rencana Belanja — ComicPlan',
   description:
-    'Kelola rencana pembelian komik: alur status Wishlist, PO, DP, Lunas, Diterima, sampai Batal',
+    'Kelola rencana pembelian komik: alur status Wishlist, Sedang Dikirim, Selesai, sampai Batal',
 };
 
 interface PlanItemEmbed {
@@ -39,7 +36,6 @@ interface PlanListingEmbed {
   nama_toko: string | null;
   url: string | null;
   harga: number | null;
-  deadline_po: string | null;
   status: string;
 }
 
@@ -51,7 +47,6 @@ interface PlanRowWithRelations {
   prioritas: number | null;
   estimasi_harga: number | null;
   status: string;
-  deadline_po: string | null;
   created_at: string;
   updated_at: string;
   items: PlanItemEmbed | PlanItemEmbed[] | null;
@@ -73,15 +68,14 @@ interface HistoryRow {
   changed_at: string;
 }
 
-function parsePlanStatusFilter(raw?: string): PlanStatus | 'semua' | 'hold' {
-  if (raw === 'hold') return 'hold';
+function parsePlanStatusFilter(raw?: string): PlanStatus | 'semua' {
   if (raw === 'dikirim') return 'po';
   if (raw && isPlanStatus(raw)) return raw;
   return 'semua';
 }
 
 function parsePlanSortBy(raw?: string): PlanSortBy {
-  if (raw === 'deadline' || raw === 'sisa_tagihan' || raw === 'terbaru' || raw === 'prioritas') {
+  if (raw === 'terbaru' || raw === 'prioritas') {
     return raw;
   }
   return 'prioritas';
@@ -100,7 +94,6 @@ export default async function PlansPage({
   let userEmail: string | null = null;
   let plans: PlanWithDetails[] = [];
   let items: PlanItemOption[] = [];
-  let commitment = 0;
 
   try {
     const supabase = await createClient();
@@ -113,7 +106,7 @@ export default async function PlansPage({
     const { data: planRows } = await supabase
       .from('plans')
       .select(
-        'id, item_id, listing_id, prioritas, estimasi_harga, status, deadline_po, created_at, updated_at, items(id, judul, seri, volume, cover_url, tipe), listings(id, marketplace, nama_toko, url, harga, deadline_po, status)'
+        'id, item_id, listing_id, prioritas, estimasi_harga, status, created_at, updated_at, items(id, judul, seri, volume, cover_url, tipe), listings(id, marketplace, nama_toko, url, harga, status)'
       )
       .order('prioritas', { ascending: true })
       .order('created_at', { ascending: false })
@@ -121,29 +114,18 @@ export default async function PlansPage({
 
     const planIds = (planRows ?? []).map((plan) => plan.id);
 
-    // Riwayat & transaksi diambil sekali untuk semua plan, lalu dikelompokkan,
-    // supaya tidak ada query per plan (N+1).
-    const [{ data: historyRows }, { data: transactionRows }] = await Promise.all([
-      planIds.length
-        ? supabase
-            .from('status_history')
-            .select('plan_id, status_lama, status_baru, changed_at')
-            .in('plan_id', planIds)
-            .order('changed_at', { ascending: false })
-            .returns<HistoryRow[]>()
-        : Promise.resolve({ data: [] as HistoryRow[] }),
-      planIds.length
-        ? supabase
-            .from('transactions')
-            .select('plan_id, jumlah, jenis')
-            .in('plan_id', planIds)
-            .returns<PaymentRow[]>()
-        : Promise.resolve({ data: [] as PaymentRow[] }),
-    ]);
+    const { data: historyRows } = planIds.length
+      ? await supabase
+          .from('status_history')
+          .select('plan_id, status_lama, status_baru, changed_at')
+          .in('plan_id', planIds)
+          .order('changed_at', { ascending: false })
+          .returns<HistoryRow[]>()
+      : { data: [] as HistoryRow[] };
 
     const { data: itemRows } = await supabase
       .from('items')
-      .select('id, judul, seri, volume, listings(id, marketplace, nama_toko, url, harga, deadline_po, status)')
+      .select('id, judul, seri, volume, listings(id, marketplace, nama_toko, url, harga, status)')
       .order('judul', { ascending: true })
       .returns<ItemRowWithListings[]>();
 
@@ -158,8 +140,6 @@ export default async function PlansPage({
       historyByPlan.set(row.plan_id, list);
     }
 
-    const dibayar = summarizePayments(transactionRows ?? []);
-
     plans = (planRows ?? []).map((row) => {
       const item = asArray(row.items)[0];
       const listing = asArray(row.listings)[0];
@@ -171,7 +151,6 @@ export default async function PlansPage({
         prioritas: Number(row.prioritas ?? 3),
         estimasi_harga: Number(row.estimasi_harga ?? 0),
         status: row.status as PlanWithDetails['status'],
-        deadline_po: row.deadline_po ?? null,
         created_at: row.created_at,
         updated_at: row.updated_at,
         item: item
@@ -191,28 +170,13 @@ export default async function PlansPage({
               nama_toko: listing.nama_toko,
               url: listing.url,
               harga: Number(listing.harga ?? 0),
-              deadline_po: listing.deadline_po,
               status: listing.status as PlanListingRef['status'],
             } satisfies PlanListingRef)
           : null,
         history: historyByPlan.get(row.id) ?? [],
-        sudah_dibayar: dibayar[row.id] ?? 0,
       } satisfies PlanWithDetails;
     });
 
-    // Rumus komitmen (dipakai juga F4): Σ (estimasi − sudah dibayar) atas
-    // plan po/dp. Plan batal tidak termasuk, jadi hold-nya lepas reaktif.
-    commitment = calculateCommitment(
-      plans.map((plan) => ({
-        id: plan.id,
-        status: plan.status,
-        estimasi_harga: plan.estimasi_harga,
-      })),
-      dibayar
-    );
-
-    // Opsi item untuk form "Tambah Rencana". Estimasi diambil dari plan aktif
-    // item tersebut supaya form bisa pre-fill harga.
     const activePlanByItem = new Map<string, PlanWithDetails>();
     for (const plan of plans) {
       if (plan.status === 'batal') continue;
@@ -230,7 +194,6 @@ export default async function PlansPage({
         nama_toko: listing.nama_toko,
         url: listing.url,
         harga: Number(listing.harga ?? 0),
-        deadline_po: listing.deadline_po,
         status: listing.status as PlanListingRef['status'],
       }));
 
@@ -251,12 +214,11 @@ export default async function PlansPage({
     <AppShell
       userEmail={userEmail}
       pageTitle="Rencana Belanja"
-      pageSubtitle="Alur status Wishlist → PO → DP → Lunas → Diterima, dengan riwayat tiap perubahan"
+      pageSubtitle="Alur status Wishlist → Sedang Dikirim → Selesai, dengan riwayat tiap perubahan"
     >
       <PlansClient
         initialPlans={plans}
         items={items}
-        commitment={commitment}
         initialSearch={initialSearch}
         initialStatus={initialStatus}
         initialSort={initialSort}
