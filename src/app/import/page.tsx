@@ -2,14 +2,13 @@ import React from 'react';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { redirect } from 'next/navigation';
-import { Clock, Download, Package, Store } from 'lucide-react';
+import { Download, Package, Store } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { StatCard } from '@/components/ui/StatCard';
 import { asArray } from '@/lib/supabase/embed';
 import { createClient } from '@/lib/supabase/server';
 import { formatTanggalJam } from '@/lib/format';
 import { maskSecretToken } from '@/lib/settings';
-import type { ListingStatus } from '@/types/database';
 import { ImportClient, type ImportedListingItem } from './ImportClient';
 
 export const metadata = {
@@ -33,8 +32,6 @@ interface ListingRowWithItem {
   nama_toko: string | null;
   url: string | null;
   harga: number | null;
-  status: ListingStatus;
-  deadline_po: string | null;
   updated_at: string;
   items: ListingItemEmbed | ListingItemEmbed[] | null;
 }
@@ -63,7 +60,7 @@ export default async function ImportPage() {
     const { data: rows } = await supabase
       .from('listings')
       .select(
-        'id, item_id, shop_id, item_id_shopee, nama_toko, url, harga, status, deadline_po, updated_at, items(id, judul, seri, volume, cover_url)'
+        'id, item_id, shop_id, item_id_shopee, nama_toko, url, harga, updated_at, items(id, judul, seri, volume, cover_url)'
       )
       .order('updated_at', { ascending: false })
       .limit(100)
@@ -83,8 +80,6 @@ export default async function ImportPage() {
         nama_toko: row.nama_toko,
         url: row.url,
         harga: Number(row.harga ?? 0),
-        status: row.status,
-        deadline_po: row.deadline_po,
         updated_at: row.updated_at,
       };
     });
@@ -100,8 +95,6 @@ export default async function ImportPage() {
   const maskedToken = maskSecretToken(rawToken);
   const userscriptSource = await readUserscriptFile();
 
-  const poCount = listings.filter((l) => l.status === 'po').length;
-  const readyCount = listings.length - poCount;
   const uniqueShops = new Set(listings.map((l) => l.shop_id)).size;
   const lastSync = listings[0]?.updated_at ?? null;
 
@@ -109,10 +102,10 @@ export default async function ImportPage() {
     <AppShell
       userEmail={userEmail}
       pageTitle="Impor Shopee"
-      pageSubtitle="Sinkronisasi katalog & status PO sekali klik lewat userscript Tampermonkey"
+      pageSubtitle="Sinkronisasi katalog komik sekali klik lewat userscript Tampermonkey"
     >
       <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
           <StatCard
             label="Total Listing"
             value={listings.length}
@@ -120,15 +113,6 @@ export default async function ImportPage() {
             iconTone="primary"
           >
             <p className="text-[11px] text-slate-500">Produk Shopee tersinkron</p>
-          </StatCard>
-
-          <StatCard
-            label="Listing PO"
-            value={poCount}
-            icon={<Clock className="h-4 w-4" />}
-            iconTone="amber"
-          >
-            <p className="text-[11px] text-slate-500">{readyCount} produk berstatus Ready</p>
           </StatCard>
 
           <StatCard
