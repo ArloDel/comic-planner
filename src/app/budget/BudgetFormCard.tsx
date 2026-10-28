@@ -7,7 +7,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Button } from '@/components/ui/Button';
 import { ToastHost, useToast } from '@/components/ui/Toast';
 import { formatPeriode } from '@/lib/budget';
-import { formatRupiah } from '@/lib/format';
+import { formatRupiah, formatNumberInput, parseNumberInput } from '@/lib/format';
 import { upsertBudget } from './actions';
 
 interface BudgetFormCardProps {
@@ -22,14 +22,14 @@ interface BudgetFormCardProps {
 export function BudgetFormCard({ periode, initialBudget }: BudgetFormCardProps) {
   const router = useRouter();
   const { toast, showToast, dismissToast } = useToast();
-  const [amount, setAmount] = useState(String(initialBudget));
+  const [displayAmount, setDisplayAmount] = useState(() => formatNumberInput(initialBudget));
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaving(true);
     try {
-      const numeric = Math.max(0, Number(amount) || 0);
+      const numeric = Math.max(0, parseNumberInput(displayAmount));
       const res = await upsertBudget(periode, numeric);
       if (!res.success) {
         showToast({
@@ -62,18 +62,22 @@ export function BudgetFormCard({ periode, initialBudget }: BudgetFormCardProps) 
           iconTone="primary"
         >
           <div className="flex items-center gap-1.5">
-            <input
-              type="number"
-              name="total_budget"
-              inputMode="numeric"
-              autoComplete="off"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              min="0"
-              step="10000"
-              aria-label={`Total budget periode ${formatPeriode(periode)}`}
-              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white/80 px-2.5 py-2 text-xs tabular-nums text-slate-900 focus-visible:border-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20"
-            />
+            <div className="relative flex min-w-0 flex-1 items-center">
+              <span className="pointer-events-none absolute left-2.5 text-xs font-medium text-slate-400">
+                Rp
+              </span>
+              <input
+                type="text"
+                name="total_budget"
+                inputMode="numeric"
+                autoComplete="off"
+                value={displayAmount}
+                onChange={(e) => setDisplayAmount(formatNumberInput(e.target.value))}
+                placeholder="0"
+                aria-label={`Total budget periode ${formatPeriode(periode)}`}
+                className="w-full rounded-lg border border-slate-200 bg-white/80 pl-8 pr-2.5 py-2 text-xs tabular-nums text-slate-900 focus-visible:border-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20"
+              />
+            </div>
             <Button type="submit" size="sm" variant="secondary" isLoading={saving} disabled={saving}>
               <span>{saving ? 'Menyimpan…' : 'Simpan'}</span>
             </Button>
