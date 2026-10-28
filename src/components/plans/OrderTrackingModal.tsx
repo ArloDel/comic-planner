@@ -19,29 +19,63 @@ import { Button } from '@/components/ui/Button';
 import { InlineLoadingBar } from '@/components/ui/TopLoadingBar';
 import { COURIER_OPTIONS, type TrackingResult } from '@/lib/binderbyte';
 
+export interface BulkPlanItem {
+  id: string;
+  judul: string;
+  volume?: number | null;
+  estimasi_harga?: number;
+  nama_toko?: string | null;
+  cover_url?: string | null;
+  currentStatus?: string;
+}
+
 interface OrderTrackingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  planId: string;
-  itemTitle: string;
+  planId?: string;
+  itemTitle?: string;
   volume?: number | null;
-  currentStatus: string;
+  currentStatus?: string;
   initialCourier?: string;
   initialResi?: string;
   onOrderCompleted?: () => void;
+  bulkPlans?: BulkPlanItem[];
 }
 
 export function OrderTrackingModal({
   isOpen,
   onClose,
-  planId,
-  itemTitle,
-  volume,
-  currentStatus,
+  planId: singlePlanId,
+  itemTitle: singleItemTitle,
+  volume: singleVolume,
+  currentStatus: singleCurrentStatus = 'wishlist',
   initialCourier = 'spx',
   initialResi = '',
   onOrderCompleted,
+  bulkPlans,
 }: OrderTrackingModalProps) {
+  const isBulk = Boolean(bulkPlans && bulkPlans.length > 0);
+  const effectivePlans = bulkPlans || (singlePlanId ? [{
+    id: singlePlanId,
+    judul: singleItemTitle || 'Komik',
+    volume: singleVolume,
+    currentStatus: singleCurrentStatus,
+  }] : []);
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    () => new Set(effectivePlans.map((p) => p.id))
+  );
+
+  const planId = singlePlanId || (effectivePlans[0]?.id ?? '');
+  const itemTitle = isBulk ? `${selectedIds.size} Komik Terpilih` : (singleItemTitle || effectivePlans[0]?.judul || 'Komik');
+  const volume = isBulk ? null : (singleVolume ?? effectivePlans[0]?.volume);
+  const currentStatus = isBulk ? 'wishlist' : (singleCurrentStatus || effectivePlans[0]?.currentStatus || 'wishlist');
+
+  useEffect(() => {
+    if (bulkPlans && bulkPlans.length > 0) {
+      setSelectedIds(new Set(bulkPlans.map((p) => p.id)));
+    }
+  }, [bulkPlans]);
   const [courier, setCourier] = useState(initialCourier);
   const [resi, setResi] = useState(initialResi);
   const [loading, setLoading] = useState(false);
@@ -200,7 +234,8 @@ export function OrderTrackingModal({
           ...(keyToSend ? { 'x-binderbyte-key': keyToSend } : {}),
         },
         body: JSON.stringify({
-          plan_id: planId,
+          plan_id: isBulk ? undefined : planId,
+          plan_ids: isBulk ? Array.from(selectedIds) : [planId],
           courier: targetCourier,
           resi: targetResi,
           foto_bukti_url: photoPreview,
@@ -216,32 +251,36 @@ export function OrderTrackingModal({
       }
 
       setTracking(data.tracking);
+      const countUpdated = isBulk ? selectedIds.size : 1;
       setSuccessMsg(
-        currentStatus === 'wishlist'
+        isBulk
+          ? `Pesanan berhasil dicatat untuk ${countUpdated} komik sekaligus! Status kini Sedang Dikirim.`
+          : currentStatus === 'wishlist'
           ? 'Pesanan berhasil dicatat! Status komik kini Sedang Dikirim.'
           : 'Informasi pelacakan berhasil diperbarui!'
       );
 
       // Jika berpindah dari wishlist ke sedang dikirim, perbarui view di halaman induk
-      if (currentStatus === 'wishlist') {
-        onOrderCompleted?.();
-      }
+      onOrderCompleted?.();
 
-      // Simpan nomor resi & kurir ke LocalStorage agar user tidak perlu input lagi
+      // Simpan nomor resi & kurir ke LocalStorage untuk semua plan yang dipilih
       if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(
-            `comicplan_tracking_${planId}`,
-            JSON.stringify({
-              courier: targetCourier,
-              resi: targetResi,
-              photoUrl: photoPreview,
-              tracking: data.tracking,
-              savedAt: new Date().toISOString(),
-            })
-          );
-        } catch {
-          // Ignored
+        const idsToSave = isBulk ? Array.from(selectedIds) : [planId];
+        for (const pId of idsToSave) {
+          try {
+            localStorage.setItem(
+              `comicplan_tracking_${pId}`,
+              JSON.stringify({
+                courier: targetCourier,
+                resi: targetResi,
+                photoUrl: photoPreview,
+                tracking: data.tracking,
+                savedAt: new Date().toISOString(),
+              })
+            );
+          } catch {
+            // Ignored
+          }
         }
       }
     } catch (err) {
@@ -289,7 +328,8 @@ export function OrderTrackingModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          plan_id: planId,
+          plan_id: isBulk ? undefined : planId,
+          plan_ids: isBulk ? Array.from(selectedIds) : [planId],
           courier,
           resi: resi.trim(),
           foto_bukti_url: photoPreview,
@@ -304,7 +344,10 @@ export function OrderTrackingModal({
       }
 
       if (typeof window !== 'undefined') {
-        localStorage.removeItem(`comicplan_tracking_${planId}`);
+        const idsToRemove = isBulk ? Array.from(selectedIds) : [planId];
+        for (const pId of idsToRemove) {
+          localStorage.removeItem(`comicplan_tracking_${pId}`);
+        }
       }
 
       onOrderCompleted?.();
@@ -351,6 +394,82 @@ export function OrderTrackingModal({
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {/* Daftar Komik Terpilih untuk Bulk Tracking */}
+        {isBulk && bulkPlans && (
+          <div className="mt-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-800">
+                Komik dalam Pesanan Ini ({selectedIds.size} dari {bulkPlans.length} dipilih)
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedIds.size === bulkPlans.length) {
+                    setSelectedIds(new Set());
+                  } else {
+                    setSelectedIds(new Set(bulkPlans.map((p) => p.id)));
+                  }
+                }}
+                className="text-[11px] font-semibold text-primary-600 hover:text-primary-700"
+              >
+                {selectedIds.size === bulkPlans.length ? 'Batal Semua' : 'Pilih Semua'}
+              </button>
+            </div>
+
+            <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
+              {bulkPlans.map((item) => {
+                const checked = selectedIds.has(item.id);
+                return (
+                  <label
+                    key={item.id}
+                    className={`flex items-center gap-2.5 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
+                      checked
+                        ? 'border-primary-200 bg-white shadow-2xs'
+                        : 'border-slate-200/60 bg-slate-100/60 opacity-60'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(item.id);
+                          else next.delete(item.id);
+                          return next;
+                        });
+                      }}
+                      className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                    />
+
+                    {item.cover_url && (
+                      <img
+                        src={item.cover_url}
+                        alt={item.judul}
+                        className="h-9 w-6.5 object-cover rounded border border-slate-200 shrink-0"
+                      />
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-800 truncate">{item.judul}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                        {item.volume != null && <span>Vol {item.volume}</span>}
+                        {item.nama_toko && <span className="truncate">· Toko: {item.nama_toko}</span>}
+                      </div>
+                    </div>
+
+                    {item.estimasi_harga ? (
+                      <span className="font-semibold text-slate-700 tabular-nums shrink-0">
+                        Rp {item.estimasi_harga.toLocaleString('id-ID')}
+                      </span>
+                    ) : null}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {errorMsg && (
           <div className="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
