@@ -81,3 +81,27 @@ export const toNum = (v: number | string | null | undefined): number => {
   }
   return 0;
 };
+
+
+/**
+ * Format string angka mentah ke format angka ribuan Indonesia (pemisah titik).
+ * Contoh: "500000" -> "500.000", "1250000" -> "1.250.000".
+ * Menghapus semua karakter non-digit agar input user bersih saat mengetik.
+ */
+export const formatNumberInput = (value: string | number | null | undefined): string => {
+  if (value === null || value === undefined || value === '') return '';
+  const clean = String(value).replace(/\D/g, '');
+  if (!clean) return '';
+  return new Intl.NumberFormat('id-ID').format(Number(clean));
+};
+
+/**
+ * Mengubah string berformat ribuan kembali menjadi angka integer murni.
+ * Contoh: "500.000" -> 500000, "Rp 1.250.000" -> 1250000.
+ */
+export const parseNumberInput = (value: string | number | null | undefined): number => {
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'number') return isNaN(value) ? 0 : Math.round(value);
+  const clean = String(value).replace(/\D/g, '');
+  return clean ? parseInt(clean, 10) : 0;
+};
