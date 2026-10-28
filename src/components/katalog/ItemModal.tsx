@@ -30,11 +30,6 @@ export interface ItemModalProps {
   defaultVolume?: number;
 }
 
-/**
- * State form diinisialisasi sekali dari props — pemanggil wajib meng-remount
- * lewat `key` kalau target yang diedit berubah, jadi tidak perlu effect yang
- * menyalin props ke state (dan memicu render berlapis).
- */
 export function ItemModal({
   isOpen,
   onClose,
@@ -210,7 +205,7 @@ export function ItemModal({
           />
         </div>
 
-        {/* Wishlist Toggle & Estimasi Harga (Progres Status Satu Pintu di /plans) */}
+        {/* Wishlist Toggle & Estimasi Harga */}
         <div className="space-y-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
           {hasAdvancedPlan ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -239,7 +234,7 @@ export function ItemModal({
                   Masukkan ke Wishlist Rencana Belanja
                 </strong>
                 <span className="block text-[11px] text-slate-500 mt-0.5">
-                  Progres ke Pre-Order, DP, Lunas, dan Diterima dilanjutkan satu pintu di menu
+                  Progres pengiriman dan penyelesaian pesanan dilanjutkan satu pintu di menu
                   Rencana.
                 </span>
               </span>
@@ -256,7 +251,7 @@ export function ItemModal({
               placeholder="Contoh: 45000…"
               value={estimasiHarga}
               onChange={(e) => setEstimasiHarga(e.target.value)}
-              hint="Digunakan untuk estimasi dan kalkulasi komitmen anggaran."
+              hint="Digunakan untuk referensi estimasi harga."
             />
           )}
         </div>
