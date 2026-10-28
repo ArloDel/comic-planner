@@ -7,9 +7,7 @@ export type { PlanStatus, TransactionType };
  *
  * Modul ini murni (tanpa React / tanpa I/O) supaya state machine yang sama
  * dipakai oleh tiga pihak: server action (enforcement), UI (tombol transisi),
- * dan unit test. Postgres punya salinan aturan yang sama di
- * `supabase/migrations/20261006000000_plan_status_machine.sql` sebagai jaring
- * pengaman terakhir bila ada penulisan yang lolos dari server action.
+ * dan unit test.
  */
 
 export const PLAN_STATUSES: readonly PlanStatus[] = [
@@ -39,13 +37,6 @@ export const STATUS_HINTS: Record<PlanStatus, string> = {
   batal: 'Rencana belanja dibatalkan.',
 };
 
-/**
- * Status yang Hold budget. Rumus komitmen F4 hanya menghitung plan pada status
- * ini, sehingga begitu status plan jadi `batal` komitmennya langsung turun
- * tanpa ada job/event terpisah.
- */
-export const HOLDS_BUDGET: readonly PlanStatus[] = ['po', 'dp', 'lunas'];
-
 /** Status yang tidak punya jalan keluar lagi. */
 export const TERMINAL_STATUSES: readonly PlanStatus[] = ['diterima', 'batal'];
 
@@ -65,9 +56,6 @@ export const TRANSITIONS: Record<PlanStatus, readonly PlanStatus[]> = {
   batal: [],
 };
 
-/** Status yang wajib punya deadline PO saat plan masuk ke status tersebut (kosong pada alur sederhana). */
-export const STATUS_REQUIRES_DEADLINE: readonly PlanStatus[] = [];
-
 /** Daftar status aktif utama yang disederhanakan untuk UI */
 export const SIMPLIFIED_STATUSES: readonly PlanStatus[] = [
   'wishlist',
@@ -82,12 +70,6 @@ export interface PlanHistoryEntry {
   changed_at: string;
 }
 
-export interface CommitmentPlan {
-  id: string;
-  status: PlanStatus;
-  estimasi_harga: number | null;
-}
-
 export interface PaymentRow {
   plan_id: string;
   jumlah: number | null;
@@ -98,10 +80,6 @@ export function isPlanStatus(value: unknown): value is PlanStatus {
   return typeof value === 'string' && (PLAN_STATUSES as readonly string[]).includes(value);
 }
 
-export function isHoldingBudget(status: PlanStatus): boolean {
-  return HOLDS_BUDGET.includes(status);
-}
-
 /** Cek apakah status termasuk kategori 'Sedang Dikirim' (po, dp, lunas). */
 export function isShippingStatus(status: unknown): boolean {
   return status === 'po' || status === 'dp' || status === 'lunas';
@@ -109,10 +87,6 @@ export function isShippingStatus(status: unknown): boolean {
 
 export function isTerminal(status: PlanStatus): boolean {
   return TERMINAL_STATUSES.includes(status);
-}
-
-export function requiresDeadline(status: PlanStatus): boolean {
-  return STATUS_REQUIRES_DEADLINE.includes(status);
 }
 
 /** Semua status yang boleh dituju dari `from`. */
@@ -127,13 +101,10 @@ export function canTransition(from: PlanStatus, to: PlanStatus): boolean {
 
 /**
  * Alasan penolakan dalam bahasa user, atau `null` bila transisi legal.
- * `deadline` hanya relevan untuk status yang mewajibkannya (lihat
- * `requiresDeadline`) dan dipakai untuk pesan error yang informatif.
  */
 export function transitionError(
   from: PlanStatus,
-  to: unknown,
-  opts: { deadline?: string | null } = {}
+  to: unknown
 ): string | null {
   if (!isPlanStatus(to)) {
     return `Status "${String(to)}" tidak dikenal.`;
@@ -160,10 +131,6 @@ export function transitionError(
     return `Transisi ${STATUS_LABELS[from]} → ${STATUS_LABELS[to]} tidak diperbolehkan. Dari status ini hanya bisa ke: ${opsi}.`;
   }
 
-  if (requiresDeadline(to) && !opts.deadline) {
-    return 'Deadline PO wajib diisi saat masuk status Pre-Order.';
-  }
-
   return null;
 }
 
@@ -181,74 +148,28 @@ export function summarizePayments(rows: readonly PaymentRow[]): Record<string, n
   return result;
 }
 
-/**
- * Komitmen = Σ (estimasi − sudah dibayar) atas plan berstatus po/dp.
- *
- * F4 memakai fungsi ini untuk budget. Karena `batal` tidak termasuk
- * HOLDS_BUDGET, hold budget langsung hilang begitu status berubah — itulah yang
- * membuat pembatalan plan bersifat reaktif tanpa side effect tambahan.
- */
-export function calculateCommitment(
-  plans: readonly CommitmentPlan[],
-  dibayarByPlan: Readonly<Record<string, number>> = {}
-): number {
-  let total = 0;
-
-  for (const plan of plans) {
-    if (!isHoldingBudget(plan.status)) continue;
-
-    const estimasi = Number(plan.estimasi_harga ?? 0);
-    const dibayar = Number(dibayarByPlan[plan.id] ?? 0);
-    const sisa = Math.max(estimasi - dibayar, 0);
-
-    if (Number.isFinite(sisa)) total += sisa;
-  }
-
-  return total;
-}
-
 /** Label jenis transaksi untuk UI. */
 export const TXN_TYPE_LABELS: Record<TransactionType, string> = {
-  dp: 'DP',
-  pelunasan: 'Pelunasan',
+  dp: 'Pembayaran',
+  pelunasan: 'Pembayaran',
   bayar_penuh: 'Bayar Penuh',
   refund: 'Refund',
 };
 
 /**
  * Jenis transaksi yang sah untuk status plan tertentu.
- *
- * DP hanya bisa dicatat saat plan sudah PO atau DP; pelunasan hanya dari DP;
- * bayar penuh hanya dari PO (pembelian tanpa DP). Refund selalu boleh karena
- * bisa terjadi kapan saja setelah ada pembayaran.
+ * Hanya mendukung pembayaran penuh dan refund (tanpa DP / pelunasan bertahap).
  */
 export function txnAllowedForStatus(jenis: TransactionType, status: PlanStatus): boolean {
   switch (jenis) {
-    case 'dp':
-      return status === 'po' || status === 'dp';
-    case 'pelunasan':
-      return status === 'dp';
     case 'bayar_penuh':
-      return status === 'po';
+      return isShippingStatus(status) || status === 'diterima';
     case 'refund':
       return true;
+    case 'dp':
+    case 'pelunasan':
+      return false;
   }
-}
-
-/**
- * Jenis transaksi pembayaran otomatis saat plan maju ke `dp` atau `lunas`:
- * - `po -> dp`    = `'dp'`
- * - `dp -> lunas` = `'pelunasan'`
- * - `po -> lunas` = `'bayar_penuh'`
- */
-export function transitionTransactionType(
-  from: PlanStatus,
-  to: PlanStatus
-): TransactionType | null {
-  if (from === 'po' && to === 'dp') return 'dp';
-  if (from === 'dp' && to === 'lunas') return 'pelunasan';
-  if (from === 'po' && to === 'lunas') return 'bayar_penuh';
-  return null;
 }
 
 /** Label prioritas 1..5, 1 = paling tinggi. */
@@ -270,7 +191,7 @@ export function isValidPriority(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 5;
 }
 
-/** Validasi tanggal `YYYY-MM-DD` yang dipakai untuk deadline PO. */
+/** Validasi tanggal `YYYY-MM-DD`. */
 export function isValidDateInput(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
 
@@ -278,38 +199,20 @@ export function isValidDateInput(value: string): boolean {
   return !Number.isNaN(date.getTime());
 }
 
-export type PlanSortBy = 'prioritas' | 'deadline' | 'sisa_tagihan' | 'terbaru';
+export type PlanSortBy = 'prioritas' | 'terbaru';
 
 export interface SortablePlan {
   prioritas: number;
-  deadline_po: string | null;
-  estimasi_harga: number;
-  sudah_dibayar: number;
   created_at: string;
 }
 
 export function comparePlans(sortBy: PlanSortBy) {
   return (a: SortablePlan, b: SortablePlan): number => {
     switch (sortBy) {
-      case 'deadline': {
-        if (a.deadline_po && b.deadline_po) {
-          const cmp = a.deadline_po.localeCompare(b.deadline_po);
-          if (cmp !== 0) return cmp;
-        } else if (a.deadline_po) {
-          return -1;
-        } else if (b.deadline_po) {
-          return 1;
-        }
-        return a.prioritas - b.prioritas;
-      }
-      case 'sisa_tagihan': {
-        const sisaA = Math.max(a.estimasi_harga - a.sudah_dibayar, 0);
-        const sisaB = Math.max(b.estimasi_harga - b.sudah_dibayar, 0);
-        return sisaB - sisaA || a.prioritas - b.prioritas;
-      }
       case 'terbaru':
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       case 'prioritas':
+      default:
         return (
           a.prioritas - b.prioritas ||
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
