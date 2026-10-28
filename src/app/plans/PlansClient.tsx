@@ -4,21 +4,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowUpDown,
-  CalendarClock,
   CheckSquare,
-  Check,
   ChevronDown,
   ChevronRight,
   ListChecks,
   Pencil,
   Plus,
-  ShoppingCart,
-  Wallet,
   XCircle,
   PackageCheck,
   History,
   Link2,
-  TrendingDown,
   Truck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -33,10 +28,7 @@ import { TransitionModal } from '@/components/plans/TransitionModal';
 import { StatusTimeline } from '@/components/plans/StatusTimeline';
 import { OrderTrackingModal } from '@/components/plans/OrderTrackingModal';
 import {
-  PLAN_STATUSES,
-  STATUS_LABELS,
   comparePlans,
-  isHoldingBudget,
   isShippingStatus,
   nextStatuses,
   priorityLabel,
@@ -44,7 +36,7 @@ import {
   type PlanSortBy,
   type PlanStatus,
 } from '@/lib/plans';
-import { countdownTone, formatCountdown, formatRupiah, formatTanggal } from '@/lib/format';
+import { formatRupiah } from '@/lib/format';
 import { replaceQueryParams } from '@/lib/url';
 import type { ListingStatus, ItemType } from '@/types/database';
 
@@ -54,7 +46,6 @@ export interface PlanListingRef {
   nama_toko: string | null;
   url: string | null;
   harga: number;
-  deadline_po: string | null;
   status: ListingStatus;
 }
 
@@ -74,13 +65,11 @@ export interface PlanWithDetails {
   prioritas: number;
   estimasi_harga: number;
   status: PlanStatus;
-  deadline_po: string | null;
   created_at: string;
   updated_at: string;
   item: PlanItemRef | null;
   listing: PlanListingRef | null;
   history: PlanHistoryEntry[];
-  sudah_dibayar: number;
 }
 
 export interface PlanItemOption {
@@ -93,19 +82,16 @@ export interface PlanItemOption {
   estimasi_harga?: number;
 }
 
-export type PlanStatusFilter = PlanStatus | 'semua' | 'hold';
+export type PlanStatusFilter = PlanStatus | 'semua';
 
 const PLAN_SORT_OPTIONS: { value: PlanSortBy; label: string }[] = [
   { value: 'prioritas', label: 'Prioritas Tertinggi (P1–P5)' },
-  { value: 'deadline', label: 'Deadline PO Terdekat' },
-  { value: 'sisa_tagihan', label: 'Sisa Tagihan Terbesar' },
   { value: 'terbaru', label: 'Terbaru Ditambahkan' },
 ];
 
 interface PlansClientProps {
   initialPlans: PlanWithDetails[];
   items: PlanItemOption[];
-  commitment: number;
   initialSearch?: string;
   initialStatus?: PlanStatusFilter;
   initialSort?: PlanSortBy;
@@ -119,13 +105,6 @@ const ACTION_LABELS: Record<PlanStatus, string> = {
   diterima: 'Lacak / Selesaikan Pesanan',
   batal: 'Batalkan Rencana',
 };
-
-/** Kelas chip deadline mengikuti `countdownTone` (satu sumber aturan, spec §6.2). */
-const DEADLINE_TONE_CLASSES = {
-  rose: 'border-rose-200 bg-rose-50 text-rose-700',
-  amber: 'border-amber-200 bg-amber-50 text-amber-800',
-  slate: 'border-slate-200 bg-slate-50 text-slate-600',
-} as const;
 
 const ACTION_ICONS: Record<PlanStatus, React.ComponentType<{ className?: string }>> = {
   wishlist: ListChecks,
@@ -147,7 +126,6 @@ function priorityTone(prioritas: number): string {
 export function PlansClient({
   initialPlans,
   items,
-  commitment,
   initialSearch = '',
   initialStatus = 'semua',
   initialSort = 'prioritas',
@@ -189,6 +167,7 @@ export function PlansClient({
     const stores = Array.from(new Set(selectedPlansList.map((p) => p.listing?.nama_toko).filter(Boolean)));
     return stores.length === 1 ? stores[0] : null;
   }, [selectedPlansList]);
+
   const [trackingMap, setTrackingMap] = useState<
     Record<string, { courier: string; resi: string; statusText?: string; isDelivered?: boolean }>
   >({});
@@ -228,7 +207,6 @@ export function PlansClient({
     return isShippingStatus(plan.status) || Boolean(trackingMap[plan.id]?.resi);
   }
 
-  // Sinkronisasi otomatis ke server jika ada item yang punya resi tapi di database masih wishlist
   useEffect(() => {
     if (typeof window === 'undefined') return;
     for (const plan of initialPlans) {
@@ -266,7 +244,6 @@ export function PlansClient({
   const counts = useMemo(() => {
     const result: Record<string, number> = {
       semua: initialPlans.length,
-      hold: initialPlans.filter((plan) => isHoldingBudget(plan.status)).length,
       wishlist: 0,
       po: 0,
       diterima: 0,
@@ -302,9 +279,7 @@ export function PlansClient({
       );
     }
 
-    if (statusFilter === 'hold') {
-      result = result.filter((plan) => isHoldingBudget(plan.status));
-    } else if (statusFilter === 'po') {
+    if (statusFilter === 'po') {
       result = result.filter((plan) => isPlanInDelivery(plan));
     } else if (statusFilter === 'wishlist') {
       result = result.filter((plan) => plan.status === 'wishlist' && !trackingMap[plan.id]?.resi);
@@ -359,33 +334,6 @@ export function PlansClient({
         </div>
       </div>
 
-      {/* Ringkasan hold budget */}
-      <GlassCard className="p-4" solid>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-start gap-2.5">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-              <Wallet className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Hold Budget (Komitmen)
-              </p>
-              <p className="text-xl font-bold text-slate-900 tabular-nums">
-                {formatRupiah(commitment)}
-              </p>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Σ (estimasi − sudah dibayar) untuk {counts.hold} plan berstatus PO atau DP.
-              </p>
-            </div>
-          </div>
-
-          <p className="text-[11px] text-slate-500 sm:text-right sm:max-w-[15rem] leading-relaxed">
-            Hold dilepas otomatis saat plan dibatalkan, karena komitmen hanya menghitung status PO
-            dan DP.
-          </p>
-        </div>
-      </GlassCard>
-
       {/* Filter chips & Sorting */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -412,12 +360,6 @@ export function PlansClient({
             active={statusFilter === 'diterima'}
             onClick={() => updateFilters({ status: 'diterima' })}
             count={counts.diterima}
-          />
-          <FilterChip
-            label="Hold Budget"
-            active={statusFilter === 'hold'}
-            onClick={() => updateFilters({ status: 'hold' })}
-            count={counts.hold}
           />
           <FilterChip
             label="Batal"
@@ -502,7 +444,7 @@ export function PlansClient({
           }
           description={
             initialPlans.length === 0
-              ? 'Tambahkan rencana pertama dari item katalog, lalu majukan statusnya dari Wishlist sampai Diterima.'
+              ? 'Tambahkan rencana pertama dari item katalog, lalu majukan statusnya dari Wishlist sampai Selesai.'
               : 'Coba ubah kata kunci pencarian atau pilih filter status lain.'
           }
           actionLabel={
@@ -523,9 +465,6 @@ export function PlansClient({
             const inDelivery = isPlanInDelivery(plan);
             const effectiveStatus: PlanStatus = inDelivery && plan.status === 'wishlist' ? 'po' : plan.status;
             const legal = nextStatuses(effectiveStatus);
-            const deadlineCountdown =
-              plan.status === 'po' ? formatCountdown(plan.deadline_po) : null;
-            const deadlineTone = countdownTone(plan.deadline_po) ?? 'slate';
 
             return (
               <GlassCard
@@ -552,8 +491,6 @@ export function PlansClient({
                   )}
                   {/* Cover thumbnail */}
                   {plan.item?.cover_url && (
-                    // Marketplace images come from arbitrary hosts, so plain
-                    // <img> is intentional here (same reasoning as CoverImage).
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={plan.item.cover_url}
@@ -589,13 +526,6 @@ export function PlansClient({
                           {priorityLabel(plan.prioritas)}
                         </span>
                       </button>
-
-                      {isHoldingBudget(plan.status) && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                          <Wallet className="h-3 w-3" />
-                          <span>Hold</span>
-                        </span>
-                      )}
                     </div>
 
                     <h3 className="text-sm font-bold text-slate-900 leading-snug truncate">
@@ -628,35 +558,6 @@ export function PlansClient({
                         <span className="text-slate-400">Tanpa listing</span>
                       )}
                     </div>
-
-                    {/* Deadline PO */}
-                    {plan.status === 'po' && (
-                      <div
-                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[11px] font-semibold ${DEADLINE_TONE_CLASSES[deadlineTone]}`}
-                      >
-                        <CalendarClock className="h-3.5 w-3.5" />
-                        <span>
-                          Deadline {formatTanggal(plan.deadline_po)}
-                          {deadlineCountdown && (
-                            <span className="font-bold"> · {deadlineCountdown}</span>
-                          )}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Sisa komitmen */}
-                    {isHoldingBudget(plan.status) && (
-                      <p className="text-[11px] text-slate-500">
-                        Sisa komitmen:{' '}
-                        <span className="font-bold text-slate-700 tabular-nums">
-                          {formatRupiah(Math.max(plan.estimasi_harga - plan.sudah_dibayar, 0))}
-                        </span>{' '}
-                        <span className="text-slate-400">
-                          (estimasi {formatRupiah(plan.estimasi_harga)} − dibayar{' '}
-                          {formatRupiah(plan.sudah_dibayar)})
-                        </span>
-                      </p>
-                    )}
                   </div>
 
                   {/* Harga & aksi */}
@@ -707,8 +608,6 @@ export function PlansClient({
                         );
                       })}
 
-                      
-
                       <button
                         type="button"
                         onClick={() => setEditingPlan(plan)}
@@ -754,18 +653,6 @@ export function PlansClient({
         </div>
       )}
 
-      {/* Terminal state hint */}
-      {initialPlans.some((plan) => plan.status === 'batal') && (
-        <p className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-[11px] text-emerald-800">
-          <TrendingDown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>
-            Plan batal tetap tersimpan sebagai riwayat, tapi tidak lagi menahan budget karena
-            di luar status PO/DP.
-          </span>
-        </p>
-      )}
-
-      {/* Dirender hanya saat terbuka supaya form me-remount dengan state baru. */}
       {isCreateOpen && (
         <PlanModal
           key="create-plan"
@@ -796,9 +683,6 @@ export function PlansClient({
           judul={transition.plan.item?.judul ?? 'Rencana'}
           from={transition.plan.status}
           to={transition.to}
-          defaultDeadline={transition.plan.listing?.deadline_po ?? null}
-          estimasiHarga={transition.plan.estimasi_harga}
-          sudahDibayar={transition.plan.sudah_dibayar}
         />
       )}
 
