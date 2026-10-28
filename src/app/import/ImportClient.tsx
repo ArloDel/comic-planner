@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -20,6 +20,8 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ToastHost, useToast } from '@/components/ui/Toast';
 import { formatRupiah, formatTanggalJam } from '@/lib/format';
+
+const INITIAL_IMPORT_BATCH = 20;
 
 export interface ImportedListingItem {
   id: string;
@@ -68,8 +70,36 @@ export function ImportClient({
   const [copiedField, setCopiedField] = useState<'token' | 'endpoint' | 'script' | null>(null);
   const [jsonInput, setJsonInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_IMPORT_BATCH);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const todayPrefix = new Date().toISOString().slice(0, 10);
+
+  const visibleListings = useMemo(
+    () => listings.slice(0, visibleCount),
+    [listings, visibleCount]
+  );
+  const hasMore = visibleCount < listings.length;
+
+  useEffect(() => {
+    if (!hasMore) return;
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+
+    const el = loadMoreRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + INITIAL_IMPORT_BATCH, listings.length));
+        }
+      },
+      { rootMargin: '200px 0px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, listings.length]);
 
   async function copyText(value: string, field: 'token' | 'endpoint' | 'script', label: string) {
     try {
@@ -384,61 +414,79 @@ export function ImportClient({
             description="Gunakan userscript Tampermonkey di halaman toko Shopee atau form JSON manual di atas untuk mengimpor komik pertama Anda."
           />
         ) : (
-          <GlassCard className="divide-y divide-slate-100 overflow-hidden p-0">
-            {listings.map((item) => {
-              const isToday = item.updated_at.startsWith(todayPrefix);
+          <>
+            <GlassCard className="divide-y divide-slate-100 overflow-hidden p-0">
+              {visibleListings.map((item) => {
+                const isToday = item.updated_at.startsWith(todayPrefix);
 
-              return (
-                <div
-                  key={item.id}
-                  className={`flex items-center justify-between gap-3 px-4 py-2.5 text-xs transition-colors hover:bg-slate-50/70 ${
-                    isToday ? 'bg-primary-50/30' : ''
-                  }`}
-                >
-                  <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                    <div className="min-w-0 flex items-center gap-2">
-                      <span className="truncate font-semibold text-slate-900">
-                        {item.judul}
-                        {item.volume != null ? ` vol ${item.volume}` : ''}
-                      </span>
-                      {isToday && (
-                        <span className="shrink-0 rounded-full bg-primary-600/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary-700">
-                          Baru
+                return (
+                  <div
+                    key={item.id}
+                    className={`flex items-center justify-between gap-3 px-4 py-2.5 text-xs transition-colors hover:bg-slate-50/70 ${
+                      isToday ? 'bg-primary-50/30' : ''
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                      <div className="min-w-0 flex items-center gap-2">
+                        <span className="truncate font-semibold text-slate-900">
+                          {item.judul}
+                          {item.volume != null ? ` vol ${item.volume}` : ''}
                         </span>
-                      )}
+                        {isToday && (
+                          <span className="shrink-0 rounded-full bg-primary-600/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary-700">
+                            Baru
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500 sm:ml-auto">
+                        <span className="inline-flex items-center gap-1 truncate max-w-40">
+                          <Store className="h-3 w-3 shrink-0 text-slate-400" aria-hidden="true" />
+                          <span className="truncate">{item.nama_toko || `Shop #${item.shop_id}`}</span>
+                        </span>
+                        <span>·</span>
+                        <span className="font-semibold tabular-nums text-slate-800">
+                          {formatRupiah(item.harga)}
+                        </span>
+                        <span>·</span>
+                        <time dateTime={item.updated_at} className="tabular-nums text-slate-400">
+                          {formatTanggalJam(item.updated_at)}
+                        </time>
+                      </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500 sm:ml-auto">
-                      <span className="inline-flex items-center gap-1 truncate max-w-40">
-                        <Store className="h-3 w-3 shrink-0 text-slate-400" aria-hidden="true" />
-                        <span className="truncate">{item.nama_toko || `Shop #${item.shop_id}`}</span>
-                      </span>
-                      <span>·</span>
-                      <span className="font-semibold tabular-nums text-slate-800">
-                        {formatRupiah(item.harga)}
-                      </span>
-                      <span>·</span>
-                      <time dateTime={item.updated_at} className="tabular-nums text-slate-400">
-                        {formatTanggalJam(item.updated_at)}
-                      </time>
-                    </div>
+                    {item.url && (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Buka ${item.judul} di Shopee`}
+                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-primary-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                      </a>
+                    )}
                   </div>
+                );
+              })}
+            </GlassCard>
 
-                  {item.url && (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Buka ${item.judul} di Shopee`}
-                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-primary-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                    </a>
-                  )}
-                </div>
-              );
-            })}
-          </GlassCard>
+            {hasMore && (
+              <div ref={loadMoreRef} className="flex justify-center pt-1">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    setVisibleCount((prev) =>
+                      Math.min(prev + INITIAL_IMPORT_BATCH, listings.length)
+                    )
+                  }
+                >
+                  Muat Lebih Banyak ({listings.length - visibleCount} tersisa)
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </section>
     </div>
