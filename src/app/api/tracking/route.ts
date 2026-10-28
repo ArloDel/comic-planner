@@ -147,7 +147,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   let body: {
-    plan_id: string;
+    plan_id?: string;
+    plan_ids?: string[];
     courier: string;
     resi: string;
     foto_bukti_url?: string | null;
@@ -162,18 +163,42 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Body JSON tidak valid' }, { status: 400 });
   }
 
-  const { plan_id, courier, resi, foto_bukti_url, force_status, complete_order, custom_api_key } = body;
+  const {
+    plan_id,
+    plan_ids,
+    courier,
+    resi,
+    foto_bukti_url,
+    force_status,
+    complete_order,
+    custom_api_key,
+  } = body;
 
-  if (!plan_id || !resi) {
-    return NextResponse.json({ error: 'plan_id dan nomor resi wajib diisi' }, { status: 400 });
+  let targetPlanIds: string[] = [];
+  if (Array.isArray(plan_ids) && plan_ids.length > 0) {
+    targetPlanIds = plan_ids.map((id: unknown) => String(id).trim()).filter(Boolean);
+  } else if (plan_id && typeof plan_id === 'string' && plan_id.trim()) {
+    targetPlanIds = [plan_id.trim()];
   }
 
-  if (!UUID_REGEX.test(plan_id)) {
-    return NextResponse.json({ error: 'Format plan_id tidak valid' }, { status: 400 });
+  if (targetPlanIds.length === 0 || !resi) {
+    return NextResponse.json(
+      { error: 'Minimal satu plan_id dan nomor resi wajib diisi' },
+      { status: 400 }
+    );
+  }
+
+  for (const id of targetPlanIds) {
+    if (!UUID_REGEX.test(id)) {
+      return NextResponse.json({ error: `Format plan_id tidak valid: ${id}` }, { status: 400 });
+    }
   }
 
   if (resi.length > 100) {
-    return NextResponse.json({ error: 'Nomor resi terlalu panjang (maksimal 100 karakter)' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Nomor resi terlalu panjang (maksimal 100 karakter)' },
+      { status: 400 }
+    );
   }
 
   if (foto_bukti_url && !isValidPhotoUrl(foto_bukti_url)) {
@@ -188,7 +213,6 @@ export async function POST(request: Request) {
     request.headers.get('x-binderbyte-key') ||
     process.env.BINDERBYTE_API_KEY ||
     null;
-  const apiKeyConfigured = Boolean(process.env.BINDERBYTE_API_KEY || custom_api_key);
   const tracking = await trackPackageBinderbyte({
     courier: courier || 'spx',
     waybill: resi,
@@ -210,54 +234,58 @@ export async function POST(request: Request) {
 
   const nowIso = new Date().toISOString();
 
-  // Simpan ke in-memory store
-  memoryTrackingStore.set(plan_id, {
-    plan_id,
-    courier: courier || 'spx',
-    resi,
-    status_pengiriman: tracking.status,
-    foto_bukti_url: foto_bukti_url || null,
-    tracking_result: tracking,
-    updated_at: nowIso,
-  });
+  // Simpan ke in-memory store untuk seluruh targetPlanIds
+  for (const id of targetPlanIds) {
+    memoryTrackingStore.set(id, {
+      plan_id: id,
+      courier: courier || 'spx',
+      resi,
+      status_pengiriman: tracking.status,
+      foto_bukti_url: foto_bukti_url || null,
+      tracking_result: tracking,
+      updated_at: nowIso,
+    });
+  }
 
   // Coba simpan ke Supabase jika tabel tersedia
   try {
     const supabaseAdmin = createAdminClient();
-    await supabaseAdmin.from('order_trackings').upsert(
-      {
-        plan_id,
-        kurir: courier || 'spx',
-        resi,
-        status_pengiriman: tracking.status,
-        foto_bukti_url: foto_bukti_url || null,
-        delivered_at: tracking.isDelivered ? nowIso : null,
-        tracking_payload: tracking as unknown as Json,
-        updated_at: nowIso,
-      },
-      { onConflict: 'plan_id' }
-    );
+    const rowsToUpsert = targetPlanIds.map((id) => ({
+      plan_id: id,
+      kurir: courier || 'spx',
+      resi,
+      status_pengiriman: tracking.status,
+      foto_bukti_url: foto_bukti_url || null,
+      delivered_at: tracking.isDelivered ? nowIso : null,
+      tracking_payload: tracking as unknown as Json,
+      updated_at: nowIso,
+    }));
 
-    // Jika plan saat ini berstatus wishlist, otomatis naikkan ke 'po' (Sedang Dikirim)
-    const { data: currentPlan } = await supabaseAdmin
+    await supabaseAdmin.from('order_trackings').upsert(rowsToUpsert, { onConflict: 'plan_id' });
+
+    // Jika ada plan yang berstatus wishlist, otomatis naikkan ke 'po' (Sedang Dikirim)
+    const { data: currentPlans } = await supabaseAdmin
       .from('plans')
-      .select('status')
-      .eq('id', plan_id)
-      .maybeSingle();
+      .select('id, status')
+      .in('id', targetPlanIds);
 
-    if (currentPlan && currentPlan.status === 'wishlist') {
+    const wishlistIds = (currentPlans || [])
+      .filter((p) => p.status === 'wishlist')
+      .map((p) => p.id);
+
+    if (wishlistIds.length > 0) {
       await supabaseAdmin
         .from('plans')
         .update({
           status: 'po',
           updated_at: nowIso,
         })
-        .eq('id', plan_id);
-
-      revalidatePath('/plans');
-      revalidatePath('/katalog');
-      revalidatePath('/');
+        .in('id', wishlistIds);
     }
+
+    revalidatePath('/plans');
+    revalidatePath('/katalog');
+    revalidatePath('/');
   } catch {
     // Fallback handled via memoryTrackingStore
   }
@@ -273,40 +301,35 @@ export async function POST(request: Request) {
 
     try {
       const supabaseAdmin = createAdminClient();
-      const { data: currentPlan } = await supabaseAdmin
+      const { data: currentPlans } = await supabaseAdmin
         .from('plans')
-        .select('status')
-        .eq('id', plan_id)
-        .maybeSingle();
+        .select('id, status')
+        .in('id', targetPlanIds);
 
-      if (currentPlan?.status === 'po') {
+      const toCompleteIds = (currentPlans || [])
+        .filter((p) => p.status !== 'diterima' && p.status !== 'batal')
+        .map((p) => p.id);
+
+      if (toCompleteIds.length > 0) {
         const { error: directErr } = await supabaseAdmin
           .from('plans')
           .update({
             status: 'diterima',
             updated_at: nowIso,
           })
-          .eq('id', plan_id);
+          .in('id', toCompleteIds);
 
         if (directErr) {
           // Fallback legacy Postgres trigger: po -> lunas -> diterima
-          await supabaseAdmin.from('plans').update({ status: 'lunas' }).eq('id', plan_id);
+          await supabaseAdmin.from('plans').update({ status: 'lunas' }).in('id', toCompleteIds);
           await supabaseAdmin
             .from('plans')
             .update({
               status: 'diterima',
               updated_at: nowIso,
             })
-            .eq('id', plan_id);
+            .in('id', toCompleteIds);
         }
-      } else {
-        await supabaseAdmin
-          .from('plans')
-          .update({
-            status: 'diterima',
-            updated_at: nowIso,
-          })
-          .eq('id', plan_id);
       }
 
       revalidatePath('/plans');
@@ -322,7 +345,9 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     success: true,
-    planId: plan_id,
+    planIds: targetPlanIds,
+    planId: targetPlanIds[0],
+    totalPlans: targetPlanIds.length,
     status: tracking.status,
     isDelivered: tracking.isDelivered,
     tracking,
