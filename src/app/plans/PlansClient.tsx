@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowUpDown,
   CalendarClock,
+  CheckSquare,
   Check,
   ChevronDown,
   ChevronRight,
@@ -163,6 +164,31 @@ export function PlansClient({
     null
   );
   const [trackingPlan, setTrackingPlan] = useState<PlanWithDetails | null>(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedPlanIds, setSelectedPlanIds] = useState<Set<string>>(new Set());
+  const [bulkModalPlans, setBulkModalPlans] = useState<PlanWithDetails[] | null>(null);
+
+  function toggleSelectPlan(id: string) {
+    setSelectedPlanIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const selectedPlansList = useMemo(() => {
+    return initialPlans.filter((p) => selectedPlanIds.has(p.id));
+  }, [initialPlans, selectedPlanIds]);
+
+  const selectedTotalPrice = useMemo(() => {
+    return selectedPlansList.reduce((sum, p) => sum + (p.estimasi_harga || 0), 0);
+  }, [selectedPlansList]);
+
+  const commonStoreName = useMemo(() => {
+    const stores = Array.from(new Set(selectedPlansList.map((p) => p.listing?.nama_toko).filter(Boolean)));
+    return stores.length === 1 ? stores[0] : null;
+  }, [selectedPlansList]);
   const [trackingMap, setTrackingMap] = useState<
     Record<string, { courier: string; resi: string; statusText?: string; isDelivered?: boolean }>
   >({});
@@ -306,14 +332,31 @@ export function PlansClient({
           />
         </div>
 
-        <Button
-          variant="primary"
-          onClick={() => setIsCreateOpen(true)}
-          className="w-full sm:w-auto shadow-glass"
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          <span>Tambah Rencana</span>
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            variant={isSelectionMode ? 'primary' : 'secondary'}
+            onClick={() => {
+              setIsSelectionMode((prev) => !prev);
+              if (isSelectionMode) setSelectedPlanIds(new Set());
+            }}
+            title="Pilih beberapa buku sekaligus untuk memesan & melacak dengan 1 nomor resi bersama"
+            className={`w-full sm:w-auto shadow-glass ${
+              isSelectionMode ? 'bg-primary-600 text-white border-primary-600' : ''
+            }`}
+          >
+            <CheckSquare className="h-4 w-4 mr-1.5" />
+            <span>{isSelectionMode ? 'Selesai Memilih' : 'Pilih Beberapa'}</span>
+          </Button>
+
+          <Button
+            variant="primary"
+            onClick={() => setIsCreateOpen(true)}
+            className="w-full sm:w-auto shadow-glass"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            <span>Tambah Rencana</span>
+          </Button>
+        </div>
       </div>
 
       {/* Ringkasan hold budget */}
@@ -399,6 +442,55 @@ export function PlansClient({
         </div>
       </div>
 
+      {/* Toolbar Mode Pemilihan Massal */}
+      {isSelectionMode && (
+        <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200/90 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-indigo-950 flex items-center gap-1.5">
+              <CheckSquare className="h-4 w-4 text-indigo-600" />
+              <span>Mode Pilih Massal: {selectedPlanIds.size} komik dipilih</span>
+            </span>
+            {selectedPlanIds.size > 0 && (
+              <span className="text-indigo-700">
+                · Estimasi: <strong>{formatRupiah(selectedTotalPrice)}</strong>
+                {commonStoreName && <span className="ml-1 text-indigo-600 font-semibold">(Toko: {commonStoreName})</span>}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const visibleIds = filteredPlans.map((p) => p.id);
+                const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedPlanIds.has(id));
+                if (allSelected) {
+                  setSelectedPlanIds(new Set());
+                } else {
+                  setSelectedPlanIds(new Set(visibleIds));
+                }
+              }}
+              className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline cursor-pointer"
+            >
+              {filteredPlans.length > 0 && filteredPlans.every((p) => selectedPlanIds.has(p.id))
+                ? 'Batal Pilih Semua'
+                : 'Pilih Semua di Tampilan Ini'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsSelectionMode(false);
+                setSelectedPlanIds(new Set());
+              }}
+              className="px-2.5 py-1 rounded-lg bg-white border border-indigo-200 text-indigo-800 font-bold hover:bg-indigo-100/60 transition-colors cursor-pointer text-xs"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Daftar plan */}
       {filteredPlans.length === 0 ? (
         <EmptyState
@@ -438,10 +530,26 @@ export function PlansClient({
             return (
               <GlassCard
                 key={plan.id}
-                className="overflow-hidden transition-shadow duration-200 hover:shadow-glass-lg"
+                className={`overflow-hidden transition-all duration-200 hover:shadow-glass-lg ${
+                  selectedPlanIds.has(plan.id)
+                    ? 'ring-2 ring-primary-500 bg-primary-50/20 border-primary-300 shadow-glass-md'
+                    : ''
+                }`}
               >
                 {/* Baris utama */}
                 <div className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-start gap-3.5">
+                  {/* Checkbox jika mode seleksi aktif */}
+                  {isSelectionMode && (
+                    <div className="pt-1 shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={selectedPlanIds.has(plan.id)}
+                        onChange={() => toggleSelectPlan(plan.id)}
+                        aria-label={`Pilih ${plan.item?.judul ?? 'rencana'}`}
+                        className="h-5 w-5 rounded-md border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                      />
+                    </div>
+                  )}
                   {/* Cover thumbnail */}
                   {plan.item?.cover_url && (
                     // Marketplace images come from arbitrary hosts, so plain
@@ -694,6 +802,48 @@ export function PlansClient({
         />
       )}
 
+      {/* Floating Bottom Action Bar saat ada komik yang dipilih */}
+      {selectedPlanIds.size > 0 && (
+        <div className="fixed bottom-5 left-4 right-4 z-40 max-w-2xl mx-auto rounded-2xl bg-slate-900/95 text-white backdrop-blur-xl border border-slate-700/80 p-3.5 sm:px-5 shadow-2xl flex flex-wrap items-center justify-between gap-3 animate-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-3">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary-500/20 text-primary-400 font-bold text-sm">
+              {selectedPlanIds.size}
+            </span>
+            <div>
+              <p className="text-xs font-bold text-white leading-tight">
+                {selectedPlanIds.size} Komik Terpilih
+              </p>
+              <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                Total Estimasi: <span className="text-emerald-400 font-semibold">{formatRupiah(selectedTotalPrice)}</span>
+                {commonStoreName && <span className="ml-1">· Toko: {commonStoreName}</span>}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedPlanIds(new Set())}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              Kosongkan
+            </button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                const selectedPlans = initialPlans.filter((p) => selectedPlanIds.has(p.id));
+                setBulkModalPlans(selectedPlans);
+              }}
+              className="shadow-glass text-xs font-bold bg-primary-600 hover:bg-primary-500"
+            >
+              <Truck className="h-3.5 w-3.5 mr-1.5" />
+              <span>Pesan &amp; Lacak Bersama ({selectedPlanIds.size})</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
       {trackingPlan && (
         <OrderTrackingModal
           isOpen
@@ -703,6 +853,29 @@ export function PlansClient({
           volume={trackingPlan.item?.volume}
           currentStatus={trackingPlan.status}
           onOrderCompleted={() => {
+            refreshTrackingMap();
+            handleRefresh();
+          }}
+        />
+      )}
+
+      {bulkModalPlans && (
+        <OrderTrackingModal
+          isOpen
+          onClose={() => setBulkModalPlans(null)}
+          bulkPlans={bulkModalPlans.map((p) => ({
+            id: p.id,
+            judul: p.item?.judul ?? 'Komik',
+            volume: p.item?.volume,
+            estimasi_harga: p.estimasi_harga,
+            nama_toko: p.listing?.nama_toko || p.listing?.marketplace,
+            cover_url: p.item?.cover_url,
+            currentStatus: p.status,
+          }))}
+          onOrderCompleted={() => {
+            setBulkModalPlans(null);
+            setIsSelectionMode(false);
+            setSelectedPlanIds(new Set());
             refreshTrackingMap();
             handleRefresh();
           }}
