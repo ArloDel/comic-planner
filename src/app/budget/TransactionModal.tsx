@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { createTransaction } from './actions';
 import { STATUS_LABELS, TXN_TYPE_LABELS, txnAllowedForStatus, type PlanStatus } from '@/lib/plans';
-import { formatRupiah } from '@/lib/format';
+import { formatRupiah, formatNumberInput, parseNumberInput } from '@/lib/format';
 import type { TransactionType } from '@/types/database';
 
 export interface TransactionPlanOption {
@@ -58,7 +58,9 @@ export function TransactionModal({
       setError('Plan wajib dipilih.');
       return;
     }
-    if (!jumlah || Number(jumlah) <= 0) {
+
+    const numericJumlah = parseNumberInput(jumlah);
+    if (!numericJumlah || numericJumlah <= 0) {
       setError('Jumlah transaksi harus lebih dari 0.');
       return;
     }
@@ -69,7 +71,7 @@ export function TransactionModal({
     const result = await createTransaction({
       plan_id: planId,
       jenis,
-      jumlah: Number(jumlah),
+      jumlah: numericJumlah,
       tanggal,
       catatan: catatan.trim() || null,
     });
@@ -146,12 +148,11 @@ export function TransactionModal({
 
               <Input
                 label="Jumlah (Rp) *"
-                type="number"
-                min="1"
-                step="1000"
-                placeholder="Contoh: 45000"
+                type="text"
+                inputMode="numeric"
+                placeholder="Contoh: 45.000"
                 value={jumlah}
-                onChange={(e) => setJumlah(e.target.value)}
+                onChange={(e) => setJumlah(formatNumberInput(e.target.value))}
               />
             </div>
 
