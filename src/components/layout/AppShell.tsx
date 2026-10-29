@@ -88,6 +88,7 @@ export function AppShell({
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={true}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                     active
                       ? 'bg-primary-600/10 text-primary-700 font-semibold shadow-2xs'
@@ -196,6 +197,7 @@ export function AppShell({
               <Link
                 key={tab.href}
                 href={tab.href}
+                prefetch={true}
                 className={`flex flex-col items-center justify-center gap-1 py-1 text-center transition-transform ${
                   active ? 'text-primary-600 scale-105' : 'text-slate-500 hover:text-slate-800'
                 }`}
