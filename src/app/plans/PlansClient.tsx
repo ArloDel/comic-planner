@@ -355,7 +355,7 @@ export function PlansClient({
         <div className="flex-1 max-w-md">
           <SearchBar
             value={search}
-            onChange={(e) => updateFilters({ q: e.target.value })}
+            onDebouncedChange={(val) => updateFilters({ q: val })}
             onClear={() => updateFilters({ q: '' })}
             placeholder="Cari judul, seri, atau toko…"
           />
