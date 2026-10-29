@@ -56,7 +56,7 @@ export async function GET(request: Request) {
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from('order_trackings')
-        .select('*')
+        .select('kurir, resi, foto_bukti_url')
         .eq('plan_id', planId)
         .maybeSingle();
 
@@ -355,3 +355,4 @@ export async function POST(request: Request) {
     completed: Boolean(complete_order),
   });
 }
+
