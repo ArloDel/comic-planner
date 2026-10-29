@@ -257,13 +257,18 @@ export default async function DashboardPage() {
               />
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-                {recentItems.map((item) => (
+                {recentItems.map((item, idx) => (
                   <GlassCard
                     key={item.id}
                     className="flex flex-col p-2.5 sm:p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glass"
                   >
                     <div className="relative w-full">
-                      <CoverImage src={item.cover_url} alt={item.judul} title={item.judul} />
+                      <CoverImage
+                        src={item.cover_url}
+                        alt={item.judul}
+                        title={item.judul}
+                        priority={idx < 5}
+                      />
                       <div className="absolute top-2 left-2 z-10">
                         <StatusPill
                           status={item.plan_status}
