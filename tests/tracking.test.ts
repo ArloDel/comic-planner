@@ -102,3 +102,19 @@ test('bulk tracking maintains consistent waybill across multiple comic plans', a
   assert.equal(planTrackings.length, 3);
   assert.ok(planTrackings.every((pt) => pt.resi === sharedResi));
 });
+
+test('trackPackageBinderbyte respects caching mechanism', async () => {
+  const testResi = 'DELIVCACHE123';
+  const first = await trackPackageBinderbyte({
+    courier: 'jne',
+    waybill: testResi,
+  });
+  assert.equal(first.success, true);
+
+  const second = await trackPackageBinderbyte({
+    courier: 'jne',
+    waybill: testResi,
+  });
+  assert.equal(second.success, true);
+  assert.equal(second.waybill, testResi);
+});
