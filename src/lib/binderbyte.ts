@@ -5,6 +5,7 @@
  * JNE, SiCepat, Anteraja, Pos Indonesia, TIKI, Wahana, Ninja, Lion Parcel, ID Express.
  *
  * Menyediakan mode Mock/Sandbox otomatis untuk pengujian tanpa perlu API key.
+ * Dilengkapi in-memory cache TTL untuk mencegah pemanggilan berulang ke Binderbyte API.
  */
 
 export interface CourierOption {
@@ -55,6 +56,18 @@ export interface TrackPackageOptions {
   waybill: string;
   apiKey?: string | null;
   forceMockStatus?: 'ON_PROCESS' | 'DELIVERED' | null;
+  bypassCache?: boolean;
+}
+
+// In-memory cache untuk hasil pelacakan resi real (TTL 10 menit untuk on_process, 24 jam untuk delivered)
+interface CacheEntry {
+  data: TrackingResult;
+  expiresAt: number;
+}
+const trackingCache = new Map<string, CacheEntry>();
+
+export function clearTrackingCache() {
+  trackingCache.clear();
 }
 
 export function getCourierName(code: string): string {
@@ -120,6 +133,7 @@ export async function trackPackageBinderbyte({
   waybill,
   apiKey,
   forceMockStatus,
+  bypassCache = false,
 }: TrackPackageOptions): Promise<TrackingResult> {
   const cleanCourier = courier.trim().toLowerCase();
   const cleanWaybill = waybill.trim();
@@ -147,6 +161,15 @@ export async function trackPackageBinderbyte({
   ) {
     const isDeliv = forceMockStatus ? forceMockStatus === 'DELIVERED' : cleanWaybill.toUpperCase().startsWith('DELIV');
     return generateMockTracking(cleanCourier, cleanWaybill, isDeliv);
+  }
+
+  // Cek cache terlebih dahulu jika tidak dipaksa bypass
+  const cacheKey = `${cleanCourier}:${cleanWaybill}`;
+  if (!bypassCache) {
+    const cached = trackingCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.data;
+    }
   }
 
   // Jika API key belum dikonfigurasi, beri tahu user secara eksplisit
@@ -195,7 +218,7 @@ export async function trackPackageBinderbyte({
     const rawStatus = String(summary.status ?? '').toUpperCase();
     const isDelivered = rawStatus === 'DELIVERED';
 
-    return {
+    const result: TrackingResult = {
       success: true,
       courier: cleanCourier,
       courierName: summary.courier || getCourierName(cleanCourier),
@@ -214,6 +237,15 @@ export async function trackPackageBinderbyte({
       isDelivered,
       isMock: false,
     };
+
+    // Simpan ke cache: paket yang sudah sampai (delivered) disimpan selama 24 jam, yang sedang jalan 10 menit
+    const ttlMs = isDelivered ? 24 * 60 * 60 * 1000 : 10 * 60 * 1000;
+    trackingCache.set(cacheKey, {
+      data: result,
+      expiresAt: Date.now() + ttlMs,
+    });
+
+    return result;
   } catch (err) {
     return {
       success: false,
