@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
+import Image from 'next/image';
 import { BookOpen } from 'lucide-react';
 
 interface CoverImageProps {
@@ -8,11 +9,16 @@ interface CoverImageProps {
   alt: string;
   title?: string;
   className?: string;
+  priority?: boolean;
 }
 
-export function CoverImage({ src, alt, title, className = '' }: CoverImageProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [inView, setInView] = useState(false);
+export function CoverImage({
+  src,
+  alt,
+  title,
+  className = '',
+  priority = false,
+}: CoverImageProps) {
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -20,30 +26,7 @@ export function CoverImage({ src, alt, title, className = '' }: CoverImageProps)
   const aspectClass = /\b(aspect-|h-)\S+/.test(className) ? '' : 'aspect-[2/3]';
   const isCompact = /\bw-(10|12|14|16)\b/.test(className);
 
-  useEffect(() => {
-    if (!src || inView) return;
-
-    const el = containerRef.current;
-    if (!el || typeof IntersectionObserver === 'undefined') {
-      setInView(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setInView(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '200px 0px' }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [src, inView]);
-
-  // If no source or error occurred, render styled fallback
+  // Jika URL tidak valid, belum diatur, atau terjadi error load
   if (!src || error) {
     const initials = title
       ? title
@@ -73,31 +56,36 @@ export function CoverImage({ src, alt, title, className = '' }: CoverImageProps)
     );
   }
 
+  // Cek apakah gambar merupakan data URI atau blob lokal (unoptimized)
+  const isLocalOrData = src.startsWith('data:') || src.startsWith('blob:');
+
   return (
     <div
-      ref={containerRef}
       className={`relative ${aspectClass} ${widthClass} overflow-hidden rounded-xl bg-slate-100 border border-slate-200/60 ${className}`}
     >
       {!loaded && (
         <div
           aria-hidden="true"
-          className="absolute inset-0 skeleton-shimmer bg-slate-200/70"
+          className="absolute inset-0 skeleton-shimmer bg-slate-200/70 z-10"
         />
       )}
-      {inView && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={src}
-          alt={alt}
-          loading="lazy"
-          decoding="async"
-          onLoad={() => setLoaded(true)}
-          onError={() => setError(true)}
-          className={`h-full w-full object-cover transition-all duration-300 ${
-            loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.02]'
-          }`}
-        />
-      )}
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes={
+          isCompact
+            ? '64px'
+            : '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw'
+        }
+        priority={priority}
+        unoptimized={isLocalOrData}
+        onLoad={() => setLoaded(true)}
+        onError={() => setError(true)}
+        className={`object-cover transition-all duration-300 ${
+          loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.02]'
+        }`}
+      />
     </div>
   );
 }
