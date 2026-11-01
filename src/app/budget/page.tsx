@@ -6,6 +6,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { WarningBanner } from '@/components/ui/WarningBanner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button, buttonClasses } from '@/components/ui/Button';
+import { YearlySpendingChart } from '@/components/budget/YearlySpendingChart';
 import { TrendingUp, ShieldCheck, Plus, Receipt } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { BudgetFormCard } from './BudgetFormCard';
@@ -13,6 +14,7 @@ import { DeleteTransactionButton } from './DeleteTransactionButton';
 import { TransactionModal } from './TransactionModal';
 import {
   computeBudgetSummary,
+  computeYearlySummary,
   currentPeriode,
   shiftPeriode,
 } from '@/lib/budget';
@@ -25,8 +27,13 @@ import type { TransactionType } from '@/types/database';
 
 export const metadata = {
   title: 'Budget — ComicPlan',
-  description: 'Atur budget bulanan, catat transaksi, dan pantau sisa aman',
+  description: 'Atur budget bulanan, catat transaksi, pantau sisa aman, dan evaluasi grafik tahunan',
 };
+
+interface BudgetYearRow {
+  periode: string;
+  total_budget: number;
+}
 
 interface TxnRowWithRelations {
   id: string;
@@ -61,11 +68,13 @@ export default async function BudgetPage({
 }) {
   const { periode: periodeParam } = await searchParams;
   const periode = /^\d{4}-\d{2}$/.test(periodeParam ?? '') ? periodeParam! : currentPeriode();
+  const selectedYear = Number(periode.slice(0, 4));
 
   let userEmail: string | null = null;
   let txnRows: TxnRowWithRelations[] = [];
   let activePlans: ActivePlanOption[] = [];
   let summary = computeBudgetSummary(0, []);
+  let yearlySummary = computeYearlySummary(selectedYear, [], []);
 
   try {
     const supabase = await createClient();
@@ -74,13 +83,14 @@ export default async function BudgetPage({
     } = await supabase.auth.getUser();
     userEmail = user?.email ?? null;
 
-    const [{ data: budgetRow }, { data: txnData }, { data: planRows }] =
+    const [{ data: budgetRows }, { data: txnData }, { data: planRows }] =
       await Promise.all([
         supabase
           .from('budgets')
-          .select('total_budget')
-          .eq('periode', `${periode}-01`)
-          .maybeSingle(),
+          .select('periode, total_budget')
+          .gte('periode', `${selectedYear}-01-01`)
+          .lte('periode', `${selectedYear}-12-01`)
+          .returns<BudgetYearRow[]>(),
         supabase
           .from('transactions')
           .select('id, plan_id, jenis, jumlah, tanggal, catatan, plans(id, items(judul))')
@@ -93,7 +103,11 @@ export default async function BudgetPage({
           .returns<ActivePlanRow[]>(),
       ]);
 
-    txnRows = (txnData ?? []).filter((t) => t.tanggal.startsWith(periode));
+    const allTxns = txnData ?? [];
+    const yearBudgets = budgetRows ?? [];
+    const activeBudgetRow = yearBudgets.find((b) => b.periode.startsWith(periode));
+
+    txnRows = allTxns.filter((t) => t.tanggal.startsWith(periode));
 
     activePlans = (planRows ?? []).map((row) => ({
       id: row.id,
@@ -104,9 +118,11 @@ export default async function BudgetPage({
     }));
 
     summary = computeBudgetSummary(
-      Number(budgetRow?.total_budget ?? 0),
+      Number(activeBudgetRow?.total_budget ?? 0),
       txnRows.map((t) => ({ jumlah: Number(t.jumlah), jenis: t.jenis }))
     );
+
+    yearlySummary = computeYearlySummary(selectedYear, yearBudgets, allTxns);
   } catch (err) {
     console.error('Error loading budget:', err);
   }
@@ -120,7 +136,7 @@ export default async function BudgetPage({
     <AppShell
       userEmail={userEmail}
       pageTitle="Budget & Transaksi"
-      pageSubtitle="Realisasi pengeluaran dan sisa aman tiap bulan"
+      pageSubtitle="Realisasi pengeluaran, sisa aman tiap bulan, dan rekapitulasi tahunan"
     >
       <div className="space-y-6">
         <PeriodeNav periode={periode} />
@@ -166,6 +182,9 @@ export default async function BudgetPage({
             />
           </StatCard>
         </div>
+
+        {/* Grafik & Rekapitulasi Pengeluaran Tahunan */}
+        <YearlySpendingChart summary={yearlySummary} activePeriode={periode} />
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
