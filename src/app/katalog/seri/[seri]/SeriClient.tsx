@@ -105,7 +105,7 @@ export function SeriClient({
       <div>
         <Link
           href="/katalog"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-primary-600 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-primary-600 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Kembali ke Katalog</span>
@@ -117,17 +117,17 @@ export function SeriClient({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-primary-600 bg-primary-50 px-2 py-0.5 rounded-md">
+              <span className="text-xs font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-md">
                 Koleksi Seri
               </span>
               {penerbit && (
-                <span className="text-xs font-medium text-slate-500">• Penerbit {penerbit}</span>
+                <span className="text-xs font-medium text-neutral-500">• Penerbit {penerbit}</span>
               )}
             </div>
-            <h1 className="mt-1.5 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+            <h1 className="mt-1.5 text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
               {seriName}
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-slate-500">
+            <p className="mt-1 text-xs sm:text-sm text-neutral-500">
               {items.length} volume tercatat di katalog • Target volume maks: {maxRange}
             </p>
           </div>
@@ -138,14 +138,14 @@ export function SeriClient({
               <span>Tambah Volume {maxVolumeFound + 1}</span>
             </Button>
           ) : (
-            <span className="inline-flex items-center self-start sm:self-auto rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-600">
+            <span className="inline-flex items-center self-start sm:self-auto rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-600">
               Mode Publik · Hanya Baca
             </span>
           )}
         </div>
 
         {/* Stats summary pills */}
-        <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-2 text-xs">
+        <div className="mt-5 pt-4 border-t border-neutral-100 flex flex-wrap items-center gap-2 text-xs">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 font-semibold">
             <Check className="h-3.5 w-3.5" />
             {punyaCount} Dimiliki
@@ -156,12 +156,12 @@ export function SeriClient({
             </span>
           )}
           {wishlistCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 font-semibold">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 text-neutral-700 border border-neutral-200 px-3 py-1 font-semibold">
               {wishlistCount} Wishlist
             </span>
           )}
           {belumPunyaCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 text-slate-500 border border-dashed border-slate-300 px-3 py-1 font-semibold">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-50 text-neutral-500 border border-dashed border-neutral-300 px-3 py-1 font-semibold">
               {belumPunyaCount} Belum Ada
             </span>
           )}
@@ -171,11 +171,11 @@ export function SeriClient({
       {/* Volume Visual Tracker Grid */}
       <div className="space-y-3">
         <div>
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+          <h2 className="text-base font-bold text-neutral-900 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary-500" />
             Tracker Volume Visual
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-neutral-500">
             {readOnly
               ? 'Status kelengkapan nomor volume untuk seri ini.'
               : 'Klik nomor untuk mengedit atau mengisi volume yang bolong.'}
@@ -195,15 +195,15 @@ export function SeriClient({
                   disabled={readOnly}
                   onClick={() => handleVolumeBoxClick(volNum)}
                   title={`Vol. ${volNum}: ${existingItem.judul} (${style.label})`}
-                  className={`relative aspect-square rounded-xl border flex flex-col items-center justify-center font-bold text-sm transition-all duration-150 select-none ${
-                    readOnly ? 'cursor-default' : 'hover:scale-105 hover:shadow-md cursor-pointer'
+                  className={`relative aspect-square rounded-md border flex flex-col items-center justify-center font-bold text-sm transition-all duration-150 select-none ${
+                    readOnly ? 'cursor-default' : 'hover:scale-105 hover:cursor-pointer'
                   } ${style.boxClasses}`}
                 >
                   <span>{volNum}</span>
                   {existingItem.plan_status === 'diterima' && (
                     <Check className="h-3 w-3 text-emerald-600 mt-0.5" />
                   )}
-                  <span className="text-[9px] uppercase font-semibold tracking-tighter opacity-80 mt-0.5">
+                  <span className="text-[10px] opacity-70 mt-0.5">
                     {style.label}
                   </span>
                 </button>
@@ -218,7 +218,7 @@ export function SeriClient({
                       ? `Volume ${volNum} belum ada di koleksi.`
                       : `Volume ${volNum} belum ada. Klik untuk menambahkan.`
                   }
-                  className={`aspect-square rounded-xl border-2 border-dashed border-slate-300 bg-white/40 text-slate-400 flex flex-col items-center justify-center font-semibold text-xs transition-all duration-150 select-none ${
+                  className={`aspect-square rounded-md border-2 border-dashed border-neutral-300 bg-white text-neutral-400 flex flex-col items-center justify-center font-semibold text-xs transition-all duration-150 select-none ${
                     readOnly
                       ? 'cursor-default'
                       : 'hover:bg-primary-50/60 hover:border-primary-400 hover:text-primary-700 cursor-pointer group'
@@ -228,7 +228,7 @@ export function SeriClient({
                   {!readOnly && (
                     <Plus className="h-4 w-4 hidden group-hover:block text-primary-600" />
                   )}
-                  <span className="text-[8px] text-slate-400 group-hover:text-primary-600">
+                  <span className="text-[8px] text-neutral-400 group-hover:text-primary-600">
                     Kosong
                   </span>
                 </button>
@@ -240,8 +240,8 @@ export function SeriClient({
 
       {/* Detailed Volumes List */}
       <div className="space-y-3">
-        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-          <BookOpen className="h-4 w-4 text-slate-500" />
+        <h2 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+          <BookOpen className="h-4 w-4 text-neutral-500" />
           Daftar Volume Terdaftar ({items.length})
         </h2>
 
@@ -249,7 +249,7 @@ export function SeriClient({
           {items.map((item) => (
             <GlassCard
               key={item.id}
-              className="p-3.5 flex items-center gap-3.5 hover:shadow-glass transition-all"
+              className="p-3.5 flex items-center gap-3.5 hover:transition-all"
             >
               <div className="w-14 shrink-0">
                 <CoverImage
@@ -268,15 +268,15 @@ export function SeriClient({
                   <StatusPill status={item.plan_status} size="sm" />
                 </div>
 
-                <h3 className="mt-1 text-xs sm:text-sm font-bold text-slate-900 line-clamp-1">
+                <h3 className="mt-1 text-xs sm:text-sm font-bold text-neutral-900 line-clamp-1">
                   {item.judul}
                 </h3>
 
                 {!readOnly && (
                   <>
-                    <p className="mt-0.5 text-xs font-semibold text-slate-700 tabular-nums">
+                    <p className="mt-0.5 text-xs font-semibold text-neutral-700 tabular-nums">
                       {formatRupiahOrNull(item.estimasi_harga) ?? (
-                        <span className="text-[11px] font-normal text-slate-400">
+                        <span className="text-[11px] font-normal text-neutral-400">
                           Belum ada estimasi
                         </span>
                       )}
@@ -297,7 +297,7 @@ export function SeriClient({
                         onClick={() => setDeletingItem(item)}
                         aria-label={`Hapus ${item.judul}`}
                         title={`Hapus ${item.judul}`}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
