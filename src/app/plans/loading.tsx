@@ -11,10 +11,10 @@ export default function PlansLoading() {
       <div className="space-y-6" role="status" aria-label="Memuat rencana belanja">
         {/* Header: search + action buttons */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-          <Skeleton className="h-10 w-full max-w-md rounded-xl" />
+          <Skeleton className="h-10 w-full max-w-md rounded-md" />
           <div className="flex items-center gap-2">
-            <Skeleton className="h-10 w-36 rounded-xl" />
-            <Skeleton className="h-10 w-40 rounded-xl" />
+            <Skeleton className="h-10 w-36 rounded-md" />
+            <Skeleton className="h-10 w-40 rounded-md" />
           </div>
         </div>
 
