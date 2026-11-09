@@ -143,7 +143,7 @@ export function AppShell({
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
           <header className="sticky top-0 z-30 bg-white border-b border-neutral-200 px-4 sm:px-6 lg:px-10 py-4 lg:py-5">
-            <div className="max-w-6xl mx-auto flex items-end justify-between gap-4">
+            <div className="max-w-6xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
               <div>
                 <h1 className="text-xl sm:text-[1.75rem] font-bold text-neutral-900 leading-tight">
                   {pageTitle || 'ComicPlan'}
@@ -156,7 +156,7 @@ export function AppShell({
               </div>
 
               {headerAction && (
-                <div className="flex items-center gap-2">{headerAction}</div>
+                <div className="flex flex-wrap items-center gap-2">{headerAction}</div>
               )}
             </div>
           </header>
