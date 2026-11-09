@@ -11,7 +11,7 @@ interface ProgressBarProps {
 }
 
 const toneClasses: Record<NonNullable<ProgressBarProps['tone']>, string> = {
-  primary: 'bg-primary-600',
+  primary: 'bg-neutral-900',
   emerald: 'bg-emerald-600',
   rose: 'bg-rose-600',
   amber: 'bg-amber-500',
@@ -33,7 +33,7 @@ export function ProgressBar({
         aria-valuenow={Math.round(clamped)}
         aria-valuemin={0}
         aria-valuemax={100}
-        className="h-2 w-full overflow-hidden rounded-full bg-slate-200/70"
+        className="h-1 w-full overflow-hidden rounded-full bg-neutral-100"
       >
         <div
           className={`h-full rounded-full transition-all duration-300 ${toneClasses[tone]}`}
@@ -41,7 +41,7 @@ export function ProgressBar({
         />
       </div>
       {(leftLabel || rightLabel) && (
-        <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
+        <div className="mt-1 flex items-center justify-between text-xs text-neutral-500">
           <span>{leftLabel}</span>
           <span className="tabular-nums">{rightLabel}</span>
         </div>
