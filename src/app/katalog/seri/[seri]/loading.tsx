@@ -20,10 +20,10 @@ export default function SeriLoading() {
               <Skeleton className="h-8 w-56 rounded-lg" />
               <Skeleton className="h-4 w-48 rounded-md" />
             </div>
-            <Skeleton className="h-10 w-40 rounded-xl" />
+            <Skeleton className="h-10 w-40 rounded-md" />
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center gap-2">
+          <div className="pt-4 border-t border-neutral-100 flex flex-wrap items-center gap-2">
             {[1, 2, 3, 4].map((i) => (
               <Skeleton key={i} className="h-7 w-28 rounded-full" />
             ))}
@@ -39,7 +39,7 @@ export default function SeriLoading() {
           <GlassCard className="p-4 sm:p-5">
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 sm:gap-2.5">
               {Array.from({ length: 12 }, (_, i) => (
-                <Skeleton key={i} className="aspect-square rounded-xl" />
+                <Skeleton key={i} className="aspect-square rounded-md" />
               ))}
             </div>
           </GlassCard>
@@ -51,7 +51,7 @@ export default function SeriLoading() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {Array.from({ length: 6 }, (_, i) => (
               <GlassCard key={i} className="p-3.5 flex items-center gap-3.5">
-                <Skeleton className="w-14 aspect-[2/3] shrink-0 rounded-xl" />
+                <Skeleton className="w-14 aspect-[2/3] shrink-0 rounded-md" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-24 rounded-md" />
                   <Skeleton className="h-4 w-3/4 rounded-md" />
