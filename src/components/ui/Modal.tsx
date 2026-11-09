@@ -116,7 +116,7 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm"
+        className="fixed inset-0 bg-neutral-900/25"
         onClick={() => onCloseRef.current()}
         aria-hidden="true"
       />
@@ -124,26 +124,26 @@ export function Modal({
       {/* Modal Card */}
       <div
         ref={panelRef}
-        className={`relative overflow-hidden w-full ${maxWidthClasses} bg-white/90 backdrop-blur-xl border border-white/80 shadow-glass-lg rounded-glass p-5 sm:p-6 z-10 my-auto`}
+        className={`relative overflow-hidden w-full ${maxWidthClasses} bg-white border border-neutral-200 shadow-glass-lg rounded-glass p-5 sm:p-7 z-10 my-auto`}
       >
         <InlineLoadingBar isLoading={isLoading || hasChildLoading} />
 
-        <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex items-start justify-between gap-4 mb-5">
           <div>
             {title && (
-              <h2 className="text-lg font-bold tracking-tight text-slate-900 leading-tight">
+              <h2 className="text-lg font-bold text-neutral-900 leading-snug">
                 {title}
               </h2>
             )}
             {description && (
-              <p className="mt-1 text-xs text-slate-500 leading-normal">{description}</p>
+              <p className="mt-1 text-sm text-neutral-500 leading-relaxed">{description}</p>
             )}
           </div>
           <button
             type="button"
             onClick={() => onCloseRef.current()}
             aria-label="Tutup"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            className="inline-flex h-9 w-9 items-center justify-center -mr-2 -mt-1 rounded-card text-neutral-400 hover:text-neutral-900 transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
