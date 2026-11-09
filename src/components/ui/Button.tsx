@@ -26,7 +26,7 @@ export function buttonClasses(
   size: ButtonSize = 'md',
   className = ''
 ): string {
-  return `relative overflow-hidden inline-flex items-center justify-center font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-50 disabled:cursor-not-allowed select-none ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`;
+  return `relative overflow-hidden inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-50 disabled:cursor-not-allowed select-none ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`;
 }
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
