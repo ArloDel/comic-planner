@@ -215,10 +215,10 @@ export function ImportClient({
         <GlassCard className="p-5 lg:col-span-7 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-base font-semibold text-slate-900 text-balance">
+              <h2 className="text-base font-semibold text-neutral-900 text-balance">
                 Cara Pakai Userscript Shopee
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-neutral-500 mt-0.5">
                 Impor katalog komik langsung saat scroll halaman toko Shopee
               </p>
             </div>
@@ -240,7 +240,7 @@ export function ImportClient({
             </span>
           </div>
 
-          <ol className="space-y-2.5 text-sm text-slate-600 list-decimal list-inside">
+          <ol className="space-y-2.5 text-sm text-neutral-600 list-decimal list-inside">
             <li>
               Pasang ekstensi <strong>Tampermonkey</strong> di browser desktop atau Kiwi Browser (HP).
             </li>
@@ -289,14 +289,14 @@ export function ImportClient({
         <GlassCard className="p-5 lg:col-span-5 space-y-4">
           <div className="flex items-center gap-2">
             <KeyRound className="h-4 w-4 text-primary-600 shrink-0" aria-hidden="true" />
-            <h2 className="text-base font-semibold text-slate-900">Kredensial Koneksi</h2>
+            <h2 className="text-base font-semibold text-neutral-900">Kredensial Koneksi</h2>
           </div>
 
           <div className="space-y-3">
             <div>
-              <p className="text-xs font-semibold text-slate-700 mb-1">Import Token</p>
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
-                <code className="text-xs font-mono text-slate-800 truncate">
+              <p className="text-xs font-semibold text-neutral-700 mb-1">Import Token</p>
+              <div className="flex items-center justify-between gap-2 rounded-md border border-neutral-200 bg-white px-3 py-2">
+                <code className="text-xs font-mono text-neutral-800 truncate">
                   {maskedToken ?? 'Belum diatur di .env.local'}
                 </code>
                 <Button
@@ -317,9 +317,9 @@ export function ImportClient({
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-slate-700 mb-1">Endpoint Impor</p>
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
-                <code className="text-xs font-mono text-slate-800 truncate">/api/import</code>
+              <p className="text-xs font-semibold text-neutral-700 mb-1">Endpoint Impor</p>
+              <div className="flex items-center justify-between gap-2 rounded-md border border-neutral-200 bg-white px-3 py-2">
+                <code className="text-xs font-mono text-neutral-800 truncate">/api/import</code>
                 <Button
                   type="button"
                   variant="secondary"
@@ -344,7 +344,7 @@ export function ImportClient({
       {/* Impor JSON Manual / Uji Coba Cepat */}
       <GlassCard className="p-4 sm:p-5">
         <details className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-lg">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-lg">
             <span className="inline-flex items-center gap-2">
               <FileJson className="h-4 w-4 text-primary-600" aria-hidden="true" />
               <span>Impor JSON Manual / Uji Coba Endpoint</span>
@@ -352,14 +352,14 @@ export function ImportClient({
             <span className="text-xs font-medium text-primary-600 group-open:hidden">
               Buka form ▾
             </span>
-            <span className="hidden text-xs font-medium text-slate-500 group-open:inline">
+            <span className="hidden text-xs font-medium text-neutral-500 group-open:inline">
               Tutup ▴
             </span>
           </summary>
 
-          <form onSubmit={handleManualImport} className="mt-4 space-y-3 border-t border-slate-100 pt-4">
+          <form onSubmit={handleManualImport} className="mt-4 space-y-3 border-t border-neutral-100 pt-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <label htmlFor="manual-json-input" className="text-xs font-semibold text-slate-700">
+              <label htmlFor="manual-json-input" className="text-xs font-semibold text-neutral-700">
                 Payload JSON (format array atau objek <code>{`{ "items": [...] }`}</code>)
               </label>
               <button
@@ -380,7 +380,7 @@ export function ImportClient({
               value={jsonInput}
               onChange={(e) => setJsonInput(e.target.value)}
               placeholder={`{\n  "items": [\n    { "itemid": "123", "shopid": "456", "nama": "Judul Komik", "harga_raw": 4500000000 }\n  ]\n}…`}
-              className="w-full rounded-xl border border-slate-200 bg-white/80 p-3 font-mono text-xs text-slate-900 focus-visible:border-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20"
+              className="w-full rounded-md border border-neutral-200 bg-white p-3 font-mono text-xs text-neutral-900 focus-visible:border-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20"
             />
 
             <div className="flex justify-end">
@@ -396,7 +396,7 @@ export function ImportClient({
       {/* Daftar Listing Hasil Impor (§6.8 — ringkas tanpa gambar besar) */}
       <section className="space-y-2.5">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-slate-900">
+          <h2 className="text-base font-semibold text-neutral-900">
             Riwayat Listing Terimpor ({listings.length})
           </h2>
           <Link
@@ -415,20 +415,20 @@ export function ImportClient({
           />
         ) : (
           <>
-            <GlassCard className="divide-y divide-slate-100 overflow-hidden p-0">
+            <GlassCard className="divide-y divide-neutral-100 overflow-hidden p-0">
               {visibleListings.map((item) => {
                 const isToday = item.updated_at.startsWith(todayPrefix);
 
                 return (
                   <div
                     key={item.id}
-                    className={`flex items-center justify-between gap-3 px-4 py-2.5 text-xs transition-colors hover:bg-slate-50/70 ${
+                    className={`flex items-center justify-between gap-3 px-4 py-2.5 text-xs transition-colors hover:bg-neutral-50/70 ${
                       isToday ? 'bg-primary-50/30' : ''
                     }`}
                   >
                     <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                       <div className="min-w-0 flex items-center gap-2">
-                        <span className="truncate font-semibold text-slate-900">
+                        <span className="truncate font-semibold text-neutral-900">
                           {item.judul}
                           {item.volume != null ? ` vol ${item.volume}` : ''}
                         </span>
@@ -439,17 +439,17 @@ export function ImportClient({
                         )}
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500 sm:ml-auto">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-neutral-500 sm:ml-auto">
                         <span className="inline-flex items-center gap-1 truncate max-w-40">
-                          <Store className="h-3 w-3 shrink-0 text-slate-400" aria-hidden="true" />
+                          <Store className="h-3 w-3 shrink-0 text-neutral-400" aria-hidden="true" />
                           <span className="truncate">{item.nama_toko || `Shop #${item.shop_id}`}</span>
                         </span>
                         <span>·</span>
-                        <span className="font-semibold tabular-nums text-slate-800">
+                        <span className="font-semibold tabular-nums text-neutral-800">
                           {formatRupiah(item.harga)}
                         </span>
                         <span>·</span>
-                        <time dateTime={item.updated_at} className="tabular-nums text-slate-400">
+                        <time dateTime={item.updated_at} className="tabular-nums text-neutral-400">
                           {formatTanggalJam(item.updated_at)}
                         </time>
                       </div>
@@ -461,7 +461,7 @@ export function ImportClient({
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={`Buka ${item.judul} di Shopee`}
-                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-primary-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-primary-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                       >
                         <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                       </a>
