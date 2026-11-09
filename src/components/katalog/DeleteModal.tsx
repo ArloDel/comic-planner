@@ -43,19 +43,19 @@ export function DeleteModal({ isOpen, onClose, onSuccess, item }: DeleteModalPro
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="sm">
       <div className="text-center pt-2">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 mb-3 shadow-sm">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-rose-100 text-rose-600 mb-3">
           <AlertTriangle className="h-6 w-6" />
         </div>
 
-        <h3 className="text-base font-bold text-slate-900 leading-tight">
+        <h3 className="text-base font-bold text-neutral-900 leading-tight">
           Hapus Item Komik?
         </h3>
 
-        <p className="mt-2 text-xs text-slate-500 leading-relaxed">
-          Apakah Anda yakin ingin menghapus <strong className="text-slate-800 font-semibold">{item.judul}</strong> dari katalog?
+        <p className="mt-2 text-xs text-neutral-500 leading-relaxed">
+          Apakah Anda yakin ingin menghapus <strong className="text-neutral-800 font-semibold">{item.judul}</strong> dari katalog?
         </p>
 
-        <div className="mt-3 p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/80 text-[11px] text-amber-800 text-left">
+        <div className="mt-3 p-2.5 rounded-md bg-amber-50/80 border border-amber-200/80 text-[11px] text-amber-800 text-left">
           <strong>Perhatian:</strong> Menghapus item ini juga akan menghapus data rencana (plan) dan tautan listing toko marketplace yang terhubung.
         </div>
 
