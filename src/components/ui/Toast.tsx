@@ -37,7 +37,7 @@ export function ToastHost({
   return (
     <div
       role={toast.tone === 'error' ? 'alert' : 'status'}
-      className="fixed top-4 inset-x-4 lg:left-auto lg:right-4 lg:w-80 z-[60] flex items-start gap-2.5 rounded-xl border border-white/60 bg-white/90 backdrop-blur-xl p-3.5 shadow-glass-lg"
+      className="fixed top-4 inset-x-4 lg:left-auto lg:right-4 lg:w-80 z-[60] flex items-start gap-2.5 rounded-glass border border-neutral-200 bg-white p-3.5 shadow-glass-lg"
     >
       {toast.tone === 'success' ? (
         <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
@@ -45,16 +45,16 @@ export function ToastHost({
         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" aria-hidden="true" />
       )}
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-slate-900">{toast.title}</p>
+        <p className="text-sm font-medium text-neutral-900">{toast.title}</p>
         {toast.description && (
-          <p className="mt-0.5 text-xs text-slate-500">{toast.description}</p>
+          <p className="mt-0.5 text-xs text-neutral-500">{toast.description}</p>
         )}
       </div>
       <button
         type="button"
         onClick={onClose}
         aria-label="Tutup notifikasi"
-        className="rounded-lg p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+        className="rounded-card p-1 text-neutral-400 hover:text-neutral-900 transition-colors"
       >
         <X className="h-4 w-4" />
       </button>
