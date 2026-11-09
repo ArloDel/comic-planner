@@ -112,7 +112,7 @@ export default async function ImportPage() {
             icon={<Download className="h-4 w-4" />}
             iconTone="primary"
           >
-            <p className="text-[11px] text-slate-500">Produk Shopee tersinkron</p>
+            <p className="text-[11px] text-neutral-500">Produk Shopee tersinkron</p>
           </StatCard>
 
           <StatCard
@@ -121,7 +121,7 @@ export default async function ImportPage() {
             icon={<Store className="h-4 w-4" />}
             iconTone="emerald"
           >
-            <p className="text-[11px] text-slate-500">Unik berdasarkan shop_id</p>
+            <p className="text-[11px] text-neutral-500">Unik berdasarkan shop_id</p>
           </StatCard>
 
           <StatCard
@@ -130,7 +130,7 @@ export default async function ImportPage() {
             icon={<Package className="h-4 w-4" />}
             iconTone="sky"
           >
-            <p className="text-[11px] text-slate-500">Waktu update listing terbaru</p>
+            <p className="text-[11px] text-neutral-500">Waktu update listing terbaru</p>
           </StatCard>
         </div>
 
