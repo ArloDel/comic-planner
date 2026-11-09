@@ -67,26 +67,26 @@ export function TransitionModal({
         {error && (
           <div
             role="alert"
-            className="rounded-xl bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200 font-medium"
+            className="rounded-md bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200 font-medium"
           >
             {error}
           </div>
         )}
 
         {/* Transisi dari → ke */}
-        <div className="flex items-center justify-center gap-3 rounded-xl bg-slate-50 border border-slate-200/80 p-3.5">
+        <div className="flex items-center justify-center gap-3 rounded-md bg-neutral-50 border border-neutral-200/80 p-3.5">
           <StatusPill status={from} size="sm" />
-          <span aria-hidden="true" className="text-slate-300">
+          <span aria-hidden="true" className="text-neutral-300">
             &rarr;
           </span>
           <StatusPill status={to} size="sm" />
         </div>
 
-        <p className="text-xs text-slate-600 leading-relaxed">
+        <p className="text-xs text-neutral-600 leading-relaxed">
           {STATUS_HINTS[to]}
         </p>
 
-        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-neutral-100">
           <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
             Batal
           </Button>
