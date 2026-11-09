@@ -217,17 +217,14 @@ export function TopLoadingBar() {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-hidden={!visible}
-        className={`pointer-events-none fixed top-0 left-0 right-0 z-[100] h-[3px] overflow-hidden transition-opacity duration-200 ${
+        className={`pointer-events-none fixed top-0 left-0 right-0 z-[100] h-[2px] overflow-hidden transition-opacity duration-200 ${
           visible ? 'opacity-100' : 'opacity-0'
         }`}
       >
         <div
           className="h-full yt-indeterminate-bar yt-loading-bar-glow transition-all duration-200 ease-out relative"
           style={{ width: `${progress}%` }}
-        >
-          {/* Ujung kanan bercahaya (YouTube tip flare) */}
-          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-r from-transparent via-indigo-300/70 to-white opacity-90 blur-[1px]" />
-        </div>
+        />
       </div>
     </>
   );
@@ -272,16 +269,14 @@ export function InlineLoadingBar({ isLoading }: { isLoading: boolean }) {
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none absolute top-0 left-0 right-0 z-20 h-[3px] overflow-hidden transition-opacity duration-200 ${
+      className={`pointer-events-none absolute top-0 left-0 right-0 z-20 h-[2px] overflow-hidden transition-opacity duration-200 ${
         visible ? 'opacity-100' : 'opacity-0'
       }`}
     >
       <div
         className="h-full yt-indeterminate-bar yt-loading-bar-glow transition-all duration-200 ease-out relative"
         style={{ width: `${progress}%` }}
-      >
-        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-white/90" />
-      </div>
+      />
     </div>
   );
 }
