@@ -5,10 +5,14 @@ interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
+/**
+ * Panel dasar. Nama dipertahankan demi kompatibilitas; tampilannya kini datar:
+ * putih, garis rambut netral, tanpa blur maupun bayangan.
+ */
 export function GlassCard({ solid = false, className = '', children, ...props }: GlassCardProps) {
   const baseClasses = solid
-    ? 'bg-white/85 backdrop-blur-xl border border-white/60 shadow-glass-lg rounded-glass'
-    : 'bg-white/70 backdrop-blur-xl border border-white/60 shadow-glass rounded-2xl';
+    ? 'bg-white border border-neutral-200 rounded-glass'
+    : 'bg-white border border-neutral-200 rounded-lg';
 
   return (
     <div className={`${baseClasses} ${className}`} {...props}>
