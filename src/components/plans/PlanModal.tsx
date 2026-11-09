@@ -122,14 +122,14 @@ export function PlanModal({
       {error && (
         <div
           role="alert"
-          className="mb-4 rounded-xl bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200 font-medium"
+          className="mb-4 rounded-md bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200 font-medium"
         >
           {error}
         </div>
       )}
 
       {!isEditing && items.length === 0 ? (
-        <p className="mb-4 rounded-xl bg-amber-50 p-3 text-xs text-amber-800 border border-amber-200">
+        <p className="mb-4 rounded-md bg-amber-50 p-3 text-xs text-amber-800 border border-amber-200">
           Belum ada item di katalog. Tambahkan komik dulu di halaman Katalog sebelum membuat
           rencana.
         </p>
@@ -173,7 +173,7 @@ export function PlanModal({
           ]}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-md bg-neutral-50 border border-neutral-200/80">
           <Select
             label="Prioritas (#1–#5)"
             value={prioritas}
@@ -198,7 +198,7 @@ export function PlanModal({
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-neutral-100">
           <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
             Batal
           </Button>
