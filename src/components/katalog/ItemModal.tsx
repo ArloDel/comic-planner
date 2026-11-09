@@ -123,7 +123,7 @@ export function ItemModal({
       {error && (
         <div
           role="alert"
-          className="mb-4 rounded-xl bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200 font-medium"
+          className="mb-4 rounded-md bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200 font-medium"
         >
           {error}
         </div>
@@ -133,7 +133,7 @@ export function ItemModal({
         {/* Cover Preview & URL */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-start">
           <div className="sm:col-span-1">
-            <span className="block text-xs font-semibold text-slate-700 mb-1.5">
+            <span className="block text-xs font-semibold text-neutral-700 mb-1.5">
               Pratinjau Cover
             </span>
             <div className="w-24 sm:w-full max-w-[120px] mx-auto">
@@ -206,11 +206,11 @@ export function ItemModal({
         </div>
 
         {/* Wishlist Toggle & Estimasi Harga */}
-        <div className="space-y-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+        <div className="space-y-3 p-3.5 rounded-md bg-neutral-50 border border-neutral-200/80">
           {hasAdvancedPlan ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-700">Status Rencana:</span>
+                <span className="text-xs font-semibold text-neutral-700">Status Rencana:</span>
                 <StatusPill status={currentStatus} size="sm" />
               </div>
               <Link
@@ -227,13 +227,13 @@ export function ItemModal({
                 type="checkbox"
                 checked={masukWishlist}
                 onChange={(e) => setMasukWishlist(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
               />
-              <span className="text-xs text-slate-700">
-                <strong className="font-semibold text-slate-900">
+              <span className="text-xs text-neutral-700">
+                <strong className="font-semibold text-neutral-900">
                   Masukkan ke Wishlist Rencana Belanja
                 </strong>
-                <span className="block text-[11px] text-slate-500 mt-0.5">
+                <span className="block text-[11px] text-neutral-500 mt-0.5">
                   Progres pengiriman dan penyelesaian pesanan dilanjutkan satu pintu di menu
                   Rencana.
                 </span>
@@ -257,7 +257,7 @@ export function ItemModal({
         </div>
 
         {/* Form Actions */}
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-neutral-100">
           <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
             Batal
           </Button>
