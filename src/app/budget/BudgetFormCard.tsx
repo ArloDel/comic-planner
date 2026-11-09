@@ -63,7 +63,7 @@ export function BudgetFormCard({ periode, initialBudget }: BudgetFormCardProps) 
         >
           <div className="flex items-center gap-1.5">
             <div className="relative flex min-w-0 flex-1 items-center">
-              <span className="pointer-events-none absolute left-2.5 text-xs font-medium text-slate-400">
+              <span className="pointer-events-none absolute left-2.5 text-xs font-medium text-neutral-400">
                 Rp
               </span>
               <input
@@ -75,7 +75,7 @@ export function BudgetFormCard({ periode, initialBudget }: BudgetFormCardProps) 
                 onChange={(e) => setDisplayAmount(formatNumberInput(e.target.value))}
                 placeholder="0"
                 aria-label={`Total budget periode ${formatPeriode(periode)}`}
-                className="w-full rounded-lg border border-slate-200 bg-white/80 pl-8 pr-2.5 py-2 text-xs tabular-nums text-slate-900 focus-visible:border-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20"
+                className="w-full rounded-lg border border-neutral-200 bg-white pl-8 pr-2.5 py-2 text-xs tabular-nums text-neutral-900 focus-visible:border-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20"
               />
             </div>
             <Button type="submit" size="sm" variant="secondary" isLoading={saving} disabled={saving}>
