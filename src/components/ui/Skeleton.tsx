@@ -12,7 +12,7 @@ export function Skeleton({ className = '' }: SkeletonProps) {
   return (
     <div
       aria-hidden="true"
-      className={`skeleton-shimmer rounded-lg bg-slate-200/70 ${className}`}
+      className={`skeleton-shimmer rounded-card ${className}`}
     />
   );
 }
@@ -47,7 +47,7 @@ export function ComicCardSkeleton() {
         <Skeleton className="h-4 w-11/12 rounded-md" />
         <Skeleton className="h-3.5 w-2/3 rounded-md" />
       </div>
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+      <div className="pt-2 border-t border-neutral-100 flex items-center justify-between gap-2">
         <Skeleton className="h-4 w-20 rounded-md" />
         <div className="flex items-center gap-1">
           <Skeleton className="h-7 w-7 rounded-lg" />
@@ -95,7 +95,7 @@ export function PlanCardSkeleton() {
  */
 export function TransactionRowSkeleton() {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 backdrop-blur">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3">
       <div className="space-y-1.5 flex-1 min-w-0">
         <Skeleton className="h-4 w-48 max-w-full rounded-md" />
         <Skeleton className="h-3 w-32 rounded-md" />
@@ -111,7 +111,7 @@ export function TransactionRowSkeleton() {
 export function TrackingTimelineSkeleton() {
   return (
     <div role="status" aria-label="Memuat informasi pelacakan" className="mt-5 space-y-3.5">
-      <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between gap-3">
+      <div className="p-3.5 rounded-xl border border-neutral-200 bg-white flex items-center justify-between gap-3">
         <div className="space-y-1.5">
           <Skeleton className="h-3 w-32 rounded-md" />
           <Skeleton className="h-4 w-44 rounded-md" />
@@ -119,7 +119,7 @@ export function TrackingTimelineSkeleton() {
         <Skeleton className="h-6 w-36 rounded-md" />
       </div>
 
-      <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-white border border-slate-200">
+      <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-white border border-neutral-200">
         <div className="space-y-1.5">
           <Skeleton className="h-2.5 w-20 rounded" />
           <Skeleton className="h-3.5 w-28 rounded" />
@@ -134,7 +134,7 @@ export function TrackingTimelineSkeleton() {
 
       <div className="space-y-2">
         <Skeleton className="h-3 w-40 rounded-md" />
-        <div className="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden bg-white">
+        <div className="divide-y divide-neutral-100 border border-neutral-200/80 rounded-xl overflow-hidden bg-white">
           {[1, 2, 3].map((i) => (
             <div key={i} className="p-2.5 space-y-1.5">
               <div className="flex items-center justify-between">
@@ -158,10 +158,10 @@ export function ModalSkeleton() {
     <div
       role="status"
       aria-label="Memuat dialog"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/35 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/25"
     >
-      <div className="w-full max-w-lg rounded-2xl bg-white/95 backdrop-blur-xl border border-white/80 p-5 sm:p-6 shadow-glass-lg space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div className="w-full max-w-lg rounded-glass bg-white border border-neutral-200 p-5 sm:p-7 shadow-glass-lg space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
           <div className="space-y-1.5">
             <Skeleton className="h-5 w-44 rounded-md" />
             <Skeleton className="h-3.5 w-64 rounded-md" />
@@ -176,7 +176,7 @@ export function ModalSkeleton() {
           </div>
           <Skeleton className="h-20 w-full rounded-xl" />
         </div>
-        <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+        <div className="flex justify-end gap-2 pt-3 border-t border-neutral-100">
           <Skeleton className="h-9 w-20 rounded-xl" />
           <Skeleton className="h-9 w-32 rounded-xl" />
         </div>
