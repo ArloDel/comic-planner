@@ -70,8 +70,8 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
 const STATUS_FILTERS: { value: ExtendedStatus; label: string }[] = [
   { value: 'belum ada', label: 'Belum Ada' },
   { value: 'wishlist', label: 'Wishlist' },
-  { value: 'po', label: '🚚 Sedang Dikirim' },
-  { value: 'diterima', label: '🎉 Selesai' },
+  { value: 'po', label: 'Sedang Dikirim' },
+  { value: 'diterima', label: 'Selesai' },
   { value: 'batal', label: 'Batal' },
 ];
 
@@ -313,13 +313,13 @@ export function KatalogClient({
           <Button
             variant="primary"
             onClick={() => setIsCreateOpen(true)}
-            className="w-full sm:w-auto shadow-glass"
+            className="w-full sm:w-auto"
           >
             <Plus className="h-4 w-4 mr-1.5" />
             <span>Tambah Item</span>
           </Button>
         ) : (
-          <span className="inline-flex items-center self-start sm:self-auto rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-600">
+          <span className="inline-flex items-center self-start sm:self-auto rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-600">
             Mode Publik · Hanya Baca
           </span>
         )}
@@ -328,7 +328,7 @@ export function KatalogClient({
       {/* Series Summary Bar */}
       {seriesSummaries.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <span className="inline-flex items-center gap-1.5 shrink-0 text-xs font-semibold text-slate-700 mr-1">
+          <span className="inline-flex items-center gap-1.5 shrink-0 text-xs font-semibold text-neutral-700 mr-1">
             <Layers className="h-3.5 w-3.5 text-primary-500" aria-hidden="true" />
             Seri Koleksi:
           </span>
@@ -337,10 +337,10 @@ export function KatalogClient({
               key={seri}
               href={`/katalog/seri/${encodeURIComponent(seri)}`}
               title={`Buka tracker volume seri ${seri}`}
-              className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-slate-200/80 bg-white/80 hover:bg-primary-50 hover:border-primary-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:text-primary-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+              className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-neutral-200/80 bg-white hover:bg-primary-50 hover:border-primary-300 px-3 py-1 text-xs font-semibold text-neutral-700 hover:text-primary-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
             >
               <span className="truncate max-w-[160px]">{seri}</span>
-              <span className="text-[11px] font-medium text-slate-500 tabular-nums">
+              <span className="text-[11px] font-medium text-neutral-500 tabular-nums">
                 ({totalVolumes} vol)
               </span>
             </Link>
@@ -369,10 +369,10 @@ export function KatalogClient({
         </div>
 
         {/* Secondary Filters (Tipe & Sorting) */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1 text-xs text-neutral-500">
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 font-semibold text-slate-700">
-              <Filter className="h-3.5 w-3.5 text-slate-400" />
+            <span className="flex items-center gap-1 font-semibold text-neutral-700">
+              <Filter className="h-3.5 w-3.5 text-neutral-400" />
               Tipe:
             </span>
             <Select
@@ -385,8 +385,8 @@ export function KatalogClient({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 font-semibold text-slate-700">
-              <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
+            <span className="flex items-center gap-1 font-semibold text-neutral-700">
+              <ArrowUpDown className="h-3.5 w-3.5 text-neutral-400" />
               Urutkan:
             </span>
             <Select
@@ -439,7 +439,7 @@ export function KatalogClient({
             {visibleItems.map((item, idx) => (
               <GlassCard
                 key={item.id}
-                className="group relative flex flex-col p-2.5 sm:p-3 transition-all duration-200 hover:-translate-y-1 hover:shadow-glass-lg"
+                className="group relative flex flex-col p-2.5 sm:p-3 transition-colors duration-150 hover:border-neutral-400"
               >
                 <div className="relative w-full">
                   <CoverImage
@@ -454,14 +454,14 @@ export function KatalogClient({
                     <StatusPill
                       status={item.plan_status}
                       size="sm"
-                      className="backdrop-blur-md bg-white/90 shadow-2xs"
+                      className="bg-white"
                     />
                   </div>
 
                   {/* Tipe tag overlay on top-right */}
                   {item.tipe && (
                     <div className="absolute top-2 right-2 z-10">
-                      <span className="rounded-md bg-slate-900/60 backdrop-blur-xs px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+                      <span className="rounded-md bg-neutral-900/60 px-1.5 py-0.5 text-[9px] font-bold text-white">
                         {item.tipe}
                       </span>
                     </div>
@@ -470,7 +470,7 @@ export function KatalogClient({
                   {/* Tracking Badge overlay on bottom */}
                   {item.plan_id && trackingMap[item.plan_id] && (
                     <div className="absolute bottom-1.5 left-1.5 right-1.5 z-10">
-                      <span className="inline-flex items-center gap-1 w-full justify-center rounded-lg bg-indigo-950/85 backdrop-blur-md px-1.5 py-0.5 text-[9px] font-bold text-indigo-200 border border-indigo-400/30 shadow-xs">
+                      <span className="inline-flex items-center gap-1 w-full justify-center rounded-lg bg-indigo-950/85 px-1.5 py-0.5 text-[9px] font-bold text-indigo-200 border border-indigo-400/30">
                         <Truck className="h-2.5 w-2.5 text-indigo-400 shrink-0 animate-pulse" />
                         <span className="truncate">
                           {trackingMap[item.plan_id].isDelivered ? 'Paket Tiba' : 'Dalam Pengiriman'}
@@ -483,17 +483,17 @@ export function KatalogClient({
                 <div className="mt-2.5 flex-1 flex flex-col justify-between">
                   <div>
                     <h3
-                      className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-2 leading-snug group-hover:text-primary-700 transition-colors"
+                      className="text-xs sm:text-sm font-bold text-neutral-900 line-clamp-2 leading-snug group-hover:text-primary-700 transition-colors"
                       title={item.judul}
                     >
                       {item.judul}
                     </h3>
 
-                    <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[11px] text-slate-500 font-medium">
+                    <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[11px] text-neutral-500 font-medium">
                       {item.seri ? (
                         <Link
                           href={`/katalog/seri/${encodeURIComponent(item.seri)}`}
-                          className="hover:text-primary-600 hover:underline flex items-center gap-1 text-slate-600 font-semibold truncate max-w-[130px]"
+                          className="hover:text-primary-600 hover:underline flex items-center gap-1 text-neutral-600 font-semibold truncate max-w-[130px]"
                           title={`Lihat seluruh volume seri ${item.seri}`}
                         >
                           <Layers className="h-3 w-3 shrink-0 text-primary-500" />
@@ -504,14 +504,14 @@ export function KatalogClient({
                       )}
 
                       {item.volume !== null && (
-                        <span className="rounded bg-slate-100 px-1 py-0.2 text-[10px] font-bold text-slate-700">
+                        <span className="rounded bg-neutral-100 px-1 py-0.2 text-[10px] font-bold text-neutral-700">
                           Vol {item.volume}
                         </span>
                       )}
                     </div>
 
                     {item.penerbit && (
-                      <p className="mt-0.5 text-[10px] text-slate-400 truncate">{item.penerbit}</p>
+                      <p className="mt-0.5 text-[10px] text-neutral-400 truncate">{item.penerbit}</p>
                     )}
 
                     {/* Tombol Lacak Pesanan Langsung jika Item Memiliki Tracking Aktif */}
@@ -520,7 +520,7 @@ export function KatalogClient({
                         type="button"
                         onClick={() => setTrackingModalItem(item)}
                         title="Klik untuk melihat detail pelacakan kurir Binderbyte"
-                        className="mt-2 w-full inline-flex items-center justify-between gap-1 px-2 py-1 rounded-lg bg-indigo-50/90 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 transition-colors text-[10px] font-bold shadow-2xs group/btn cursor-pointer"
+                        className="mt-2 w-full inline-flex items-center justify-between gap-1 px-2 py-1 rounded-lg bg-indigo-50/90 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 transition-colors text-[10px] font-bold group/btn cursor-pointer"
                       >
                         <span className="flex items-center gap-1 truncate">
                           <Truck className="h-3 w-3 shrink-0 text-indigo-600 group-hover/btn:scale-110 transition-transform" />
@@ -529,7 +529,7 @@ export function KatalogClient({
                           </span>
                         </span>
                         <span
-                          className={`shrink-0 text-[8px] px-1 py-0.2 rounded font-bold uppercase tracking-wider ${
+                          className={`shrink-0 text-[8px] px-1 py-0.2 rounded font-bold ${
                             trackingMap[item.plan_id].isDelivered
                               ? 'bg-emerald-600 text-white'
                               : 'bg-indigo-600 text-white'
@@ -542,10 +542,10 @@ export function KatalogClient({
                   </div>
 
                   {!readOnly && (
-                    <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between gap-1">
-                      <span className="text-xs font-bold text-slate-900 tabular-nums">
+                    <div className="mt-3 pt-2 border-t border-neutral-100 flex items-center justify-between gap-1">
+                      <span className="text-xs font-bold text-neutral-900 tabular-nums">
                         {displayPrice(item) ?? (
-                          <span className="text-[10px] font-normal text-slate-400">
+                          <span className="text-[10px] font-normal text-neutral-400">
                             Belum ada harga
                           </span>
                         )}
@@ -690,8 +690,8 @@ interface IconActionProps {
 function IconAction({ label, onClick, tone = 'default', children }: IconActionProps) {
   const toneClasses =
     tone === 'danger'
-      ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-      : 'text-slate-400 hover:text-primary-600 hover:bg-primary-50';
+      ? 'text-neutral-400 hover:text-rose-600 hover:bg-rose-50'
+      : 'text-neutral-400 hover:text-primary-600 hover:bg-primary-50';
 
   return (
     <button
