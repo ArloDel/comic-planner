@@ -12,9 +12,9 @@ export default function BudgetLoading() {
       <div className="space-y-6" role="status" aria-label="Memuat budget dan transaksi">
         {/* Periode nav skeleton */}
         <div className="flex items-center justify-between gap-3">
-          <Skeleton className="h-9 w-36 rounded-xl" />
+          <Skeleton className="h-9 w-36 rounded-md" />
           <Skeleton className="h-5 w-32 rounded-md" />
-          <Skeleton className="h-9 w-36 rounded-xl" />
+          <Skeleton className="h-9 w-36 rounded-md" />
         </div>
 
         {/* 3 Budget summary cards */}
@@ -31,21 +31,21 @@ export default function BudgetLoading() {
               <Skeleton className="h-5 w-56 rounded-md" />
               <Skeleton className="h-3.5 w-72 rounded-md" />
             </div>
-            <Skeleton className="h-8 w-40 rounded-xl" />
+            <Skeleton className="h-8 w-40 rounded-md" />
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-20 w-full rounded-xl" />
+              <Skeleton key={i} className="h-20 w-full rounded-md" />
             ))}
           </div>
-          <Skeleton className="h-56 w-full rounded-2xl" />
+          <Skeleton className="h-56 w-full rounded-lg" />
         </GlassCard>
 
         {/* Transactions list */}
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <Skeleton className="h-5 w-36 rounded-md" />
-            <Skeleton className="h-9 w-36 rounded-xl" />
+            <Skeleton className="h-9 w-36 rounded-md" />
           </div>
           <div className="space-y-2">
             {[1, 2, 3, 4].map((i) => (
