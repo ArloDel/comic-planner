@@ -363,22 +363,22 @@ export function OrderTrackingModal({
   const isDelivered = tracking?.isDelivered ?? false;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white/95 backdrop-blur-xl border border-white/80 p-5 sm:p-6 shadow-glass-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/40 animate-in fade-in duration-150">
+      <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-lg bg-white border border-neutral-200 p-5 sm:p-6">
         <InlineLoadingBar isLoading={loading || completing} />
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+        <div className="flex items-start justify-between gap-3 pb-3 border-b border-neutral-100">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-primary-100 text-primary-700">
+            <div className="p-2 rounded-md bg-primary-100 text-primary-700">
               <Truck className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-base font-bold text-neutral-900">
                 {currentStatus === 'wishlist'
                   ? 'Pesan & Lacak Pengiriman'
                   : 'Lacak Pengiriman Pesanan'}
               </h2>
-              <p className="text-xs text-slate-500 line-clamp-1">
+              <p className="text-xs text-neutral-500 line-clamp-1">
                 {itemTitle} {volume != null ? `(Vol. ${volume})` : ''}
                 {currentStatus === 'wishlist' ? ' · Memindahkan komik ke status Sedang Dikirim' : ''}
               </p>
@@ -388,7 +388,7 @@ export function OrderTrackingModal({
             type="button"
             onClick={onClose}
             aria-label="Tutup"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100"
           >
             <X className="h-5 w-5" />
           </button>
@@ -396,9 +396,9 @@ export function OrderTrackingModal({
 
         {/* Daftar Komik Terpilih untuk Bulk Tracking */}
         {isBulk && bulkPlans && (
-          <div className="mt-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+          <div className="mt-4 p-3.5 rounded-md bg-neutral-50 border border-neutral-200/80 space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-800">
+              <span className="font-bold text-neutral-800">
                 Komik dalam Pesanan Ini ({selectedIds.size} dari {bulkPlans.length} dipilih)
               </span>
               <button
@@ -424,8 +424,8 @@ export function OrderTrackingModal({
                     key={item.id}
                     className={`flex items-center gap-2.5 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
                       checked
-                        ? 'border-primary-200 bg-white shadow-2xs'
-                        : 'border-slate-200/60 bg-slate-100/60 opacity-60'
+                        ? 'border-primary-200 bg-white'
+                        : 'border-neutral-200/60 bg-neutral-100/60 opacity-60'
                     }`}
                   >
                     <input
@@ -439,7 +439,7 @@ export function OrderTrackingModal({
                           return next;
                         });
                       }}
-                      className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                      className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
                     />
 
                     {item.cover_url && (
@@ -449,20 +449,20 @@ export function OrderTrackingModal({
                         alt={item.judul}
                         loading="lazy"
                         decoding="async"
-                        className="h-9 w-6.5 object-cover rounded border border-slate-200 shrink-0"
+                        className="h-9 w-6.5 object-cover rounded border border-neutral-200 shrink-0"
                       />
                     )}
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-slate-800 truncate">{item.judul}</p>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                      <p className="font-bold text-neutral-800 truncate">{item.judul}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-neutral-500">
                         {item.volume != null && <span>Vol {item.volume}</span>}
                         {item.nama_toko && <span className="truncate">· Toko: {item.nama_toko}</span>}
                       </div>
                     </div>
 
                     {item.estimasi_harga ? (
-                      <span className="font-semibold text-slate-700 tabular-nums shrink-0">
+                      <span className="font-semibold text-neutral-700 tabular-nums shrink-0">
                         Rp {item.estimasi_harga.toLocaleString('id-ID')}
                       </span>
                     ) : null}
@@ -474,14 +474,14 @@ export function OrderTrackingModal({
         )}
 
         {errorMsg && (
-          <div className="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+          <div className="mt-4 p-3 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 flex items-center gap-2">
+          <div className="mt-4 p-3 rounded-md bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>{successMsg}</span>
           </div>
@@ -497,7 +497,7 @@ export function OrderTrackingModal({
                   apiKeyConfigured || customApiKey ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'
                 }`}
               />
-              <span className="text-slate-600 font-medium">
+              <span className="text-neutral-600 font-medium">
                 {apiKeyConfigured || customApiKey
                   ? 'Koneksi Binderbyte: Aktif'
                   : 'API Key Server Belum Terdeteksi'}
@@ -513,8 +513,8 @@ export function OrderTrackingModal({
           </div>
 
           {showApiKeyInput && (
-            <div className="p-3 rounded-xl bg-slate-100/90 border border-slate-200 text-xs space-y-2">
-              <label className="block text-[11px] font-bold text-slate-700">
+            <div className="p-3 rounded-md bg-neutral-100/90 border border-neutral-200 text-xs space-y-2">
+              <label className="block text-[11px] font-bold text-neutral-700">
                 Binderbyte API Key (Tersimpan aman di browser Anda)
               </label>
               <div className="flex gap-2">
@@ -523,17 +523,17 @@ export function OrderTrackingModal({
                   value={customApiKey}
                   onChange={(e) => handleSaveCustomKey(e.target.value)}
                   placeholder="sk_..."
-                  className="flex-1 text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 text-xs bg-white border border-neutral-200 rounded-lg px-2.5 py-1.5 font-mono text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <button
                   type="button"
                   onClick={() => setShowApiKeyInput(false)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800"
+                  className="px-3 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800"
                 >
                   Simpan
                 </button>
               </div>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-[10px] text-neutral-500">
                 Gunakan ini jika di dashboard Vercel belum diset environment variable <code>BINDERBYTE_API_KEY</code>.
               </p>
             </div>
@@ -541,13 +541,13 @@ export function OrderTrackingModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+              <label className="block text-[11px] font-bold text-neutral-700 mb-1">
                 Jasa Kurir
               </label>
               <select
                 value={courier}
                 onChange={(e) => setCourier(e.target.value)}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                className="w-full text-xs bg-neutral-50 border border-neutral-200 rounded-md px-3 py-2.5 font-medium text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
               >
                 {COURIER_OPTIONS.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -559,14 +559,14 @@ export function OrderTrackingModal({
 
             <div className="sm:col-span-2">
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                <label className="block text-[11px] font-bold text-neutral-700">
                   Nomor Resi / Kode Pengiriman
                 </label>
                 {resi && (
                   <button
                     type="button"
                     onClick={handleClearSavedResi}
-                    className="text-[10px] text-slate-400 hover:text-rose-600 font-medium transition-colors"
+                    className="text-[10px] text-neutral-400 hover:text-rose-600 font-medium transition-colors"
                   >
                     Ganti Resi
                   </button>
@@ -578,7 +578,7 @@ export function OrderTrackingModal({
                   value={resi}
                   onChange={(e) => setResi(e.target.value)}
                   placeholder="Contoh: SPXID0482910... atau JP98721..."
-                  className="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                  className="flex-1 text-xs bg-neutral-50 border border-neutral-200 rounded-md px-3 py-2.5 font-mono text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                 />
                 <Button
                   variant="primary"
@@ -600,7 +600,7 @@ export function OrderTrackingModal({
           </div>
 
           {/* Sandbox Simulation Bar untuk Pengujian Cepat */}
-          <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 flex flex-wrap items-center justify-between gap-2">
+          <div className="p-3 rounded-md bg-indigo-50/70 border border-indigo-100 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-900">
               <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
               <span>Simulasi Uji Coba Cepat (Sandbox):</span>
@@ -614,7 +614,7 @@ export function OrderTrackingModal({
                 }}
                 className="px-2.5 py-1 rounded-lg bg-white border border-indigo-200 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100/70 transition-colors"
               >
-                🚚 Uji Sedang Dikirim
+                Uji sedang dikirim
               </button>
               <button
                 type="button"
@@ -622,9 +622,9 @@ export function OrderTrackingModal({
                   if (!resi.trim()) setResi('DELIV' + Math.floor(100000 + Math.random() * 900000));
                   handleCheckTracking('DELIVERED');
                 }}
-                className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 transition-colors shadow-2xs"
+                className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 transition-colors"
               >
-                🎉 Uji Paket Tiba (Delivered)
+                Uji paket tiba
               </button>
             </div>
           </div>
@@ -636,12 +636,12 @@ export function OrderTrackingModal({
         {/* Hasil Timeline Tracking */}
         {tracking && (
           <div className="mt-5 space-y-3.5">
-            <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between gap-3">
+            <div className="p-3.5 rounded-md border border-neutral-200 bg-neutral-50/60 flex items-center justify-between gap-3">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-[10px] font-bold text-neutral-400">
                   Status Ekspedisi ({tracking.courierName})
                 </span>
-                <p className="text-sm font-bold text-slate-900 mt-0.5 flex items-center gap-1.5">
+                <p className="text-sm font-bold text-neutral-900 mt-0.5 flex items-center gap-1.5">
                   {tracking.isDelivered ? (
                     <span className="inline-flex items-center gap-1 text-emerald-700">
                       <CheckCircle2 className="h-4 w-4" />
@@ -658,34 +658,34 @@ export function OrderTrackingModal({
 
               {tracking.isMock ? (
                 <span className="rounded-md bg-indigo-100 text-indigo-700 px-2.5 py-1 text-[11px] font-bold border border-indigo-200 flex items-center gap-1">
-                  🧪 Mode Simulasi / Sandbox
+                  Mode simulasi
                 </span>
               ) : (
                 <span className="rounded-md bg-emerald-100 text-emerald-800 px-2.5 py-1 text-[11px] font-bold border border-emerald-200 flex items-center gap-1">
-                  🟢 Real Tracking Live (Binderbyte)
+                  Pelacakan langsung (Binderbyte)
                 </span>
               )}
             </div>
 
             {/* Informasi Pengirim & Penerima jika ada */}
             {(tracking.shipper || tracking.receiver || tracking.origin || tracking.destination) && (
-              <div className="grid grid-cols-2 gap-2 text-xs p-3 rounded-xl bg-white border border-slate-200">
+              <div className="grid grid-cols-2 gap-2 text-xs p-3 rounded-md bg-white border border-neutral-200">
                 <div>
-                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">
+                  <span className="text-neutral-400 text-[10px] font-bold block">
                     Pengirim (Shipper)
                   </span>
-                  <p className="font-semibold text-slate-800 mt-0.5">{tracking.shipper || '-'}</p>
+                  <p className="font-semibold text-neutral-800 mt-0.5">{tracking.shipper || '-'}</p>
                   {tracking.origin && (
-                    <p className="text-[11px] text-slate-500 mt-0.5">Asal: {tracking.origin}</p>
+                    <p className="text-[11px] text-neutral-500 mt-0.5">Asal: {tracking.origin}</p>
                   )}
                 </div>
                 <div>
-                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">
+                  <span className="text-neutral-400 text-[10px] font-bold block">
                     Penerima (Receiver)
                   </span>
-                  <p className="font-semibold text-slate-800 mt-0.5">{tracking.receiver || '-'}</p>
+                  <p className="font-semibold text-neutral-800 mt-0.5">{tracking.receiver || '-'}</p>
                   {tracking.destination && (
-                    <p className="text-[11px] text-slate-500 mt-0.5">Tujuan: {tracking.destination}</p>
+                    <p className="text-[11px] text-neutral-500 mt-0.5">Tujuan: {tracking.destination}</p>
                   )}
                 </div>
               </div>
@@ -693,19 +693,19 @@ export function OrderTrackingModal({
 
             {/* Riwayat Timeline */}
             <div className="space-y-2">
-              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-neutral-700">
                 Riwayat Perjalanan Paket
               </span>
-              <div className="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden bg-white max-h-48 overflow-y-auto">
+              <div className="divide-y divide-neutral-100 border border-neutral-200/80 rounded-md overflow-hidden bg-white max-h-48 overflow-y-auto">
                 {tracking.history.map((h, idx) => (
                   <div key={idx} className="p-2.5 text-xs space-y-0.5">
-                    <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <div className="flex items-center justify-between text-[11px] text-neutral-400">
                       <span>{h.date}</span>
                       {h.location && (
-                        <span className="font-medium text-slate-500">{h.location}</span>
+                        <span className="font-medium text-neutral-500">{h.location}</span>
                       )}
                     </div>
-                    <p className="font-medium text-slate-800">{h.desc}</p>
+                    <p className="font-medium text-neutral-800">{h.desc}</p>
                   </div>
                 ))}
               </div>
@@ -715,28 +715,28 @@ export function OrderTrackingModal({
 
         {/* Bagian Bukti Foto & Konfirmasi Penyelesaian Pesanan */}
         <div
-          className={`mt-5 p-4 rounded-xl border transition-all ${
+          className={`mt-5 p-4 rounded-md border transition-all ${
             isDelivered
               ? 'bg-emerald-50/60 border-emerald-200'
-              : 'bg-slate-50/70 border-slate-200'
+              : 'bg-neutral-50/70 border-neutral-200'
           }`}
         >
           <div className="flex items-center gap-2 mb-2">
-            <Camera className="h-4 w-4 text-slate-700" />
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <Camera className="h-4 w-4 text-neutral-700" />
+            <h3 className="text-xs font-bold text-neutral-900">
               Bukti Foto Unboxing / Penerimaan Komik
             </h3>
           </div>
 
-          <p className="text-xs text-slate-600 mb-3">
+          <p className="text-xs text-neutral-600 mb-3">
             {isDelivered
               ? 'Paket telah tiba! Unggah foto komik fisik yang telah Anda terima untuk menyelesaikan pesanan dan menandainya sebagai "Dimiliki" di Katalog.'
               : 'Foto dapat diunggah saat paket tiba di tangan Anda sebagai syarat penyelesaian pesanan.'}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-3">
-            <label className="w-full sm:w-auto cursor-pointer inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs">
-              <Upload className="h-4 w-4 text-slate-500" />
+            <label className="w-full sm:w-auto cursor-pointer inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-md text-xs font-bold bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 transition-colors">
+              <Upload className="h-4 w-4 text-neutral-500" />
               <span>{photoPreview ? 'Ganti Foto Bukti' : 'Pilih / Ambil Foto'}</span>
               <input
                 type="file"
@@ -755,7 +755,7 @@ export function OrderTrackingModal({
                   alt="Bukti Unboxing"
                   loading="lazy"
                   decoding="async"
-                  className="h-12 w-12 object-cover rounded-lg border border-slate-200 shadow-2xs"
+                  className="h-12 w-12 object-cover rounded-lg border border-neutral-200"
                 />
                 <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -766,13 +766,13 @@ export function OrderTrackingModal({
           </div>
 
           {/* Tombol Konfirmasi Selesai */}
-          <div className="mt-4 pt-3 border-t border-slate-200/60 flex justify-end">
+          <div className="mt-4 pt-3 border-t border-neutral-200/60 flex justify-end">
             <Button
               variant="primary"
               isLoading={completing}
               disabled={completing || !photoPreview}
               onClick={handleConfirmDeliveredAndComplete}
-              className="text-xs font-bold shadow-glass bg-emerald-600 hover:bg-emerald-700"
+              className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700"
             >
               {completing ? (
                 <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" />
