@@ -164,7 +164,7 @@ export default async function BudgetPage({
             icon={<TrendingUp className="h-4 w-4" />}
             iconTone="amber"
           >
-            <p className="text-[11px] text-slate-500">Transaksi non-refund pada {periode}</p>
+            <p className="text-[11px] text-neutral-500">Transaksi non-refund pada {periode}</p>
           </StatCard>
 
           <StatCard
@@ -188,7 +188,7 @@ export default async function BudgetPage({
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-bold text-slate-900">Transaksi {periode}</h2>
+            <h2 className="text-sm font-bold text-neutral-900">Transaksi {periode}</h2>
             {activePlans.length > 0 ? (
               <TransactionModal plans={activePlans} />
             ) : (
@@ -214,11 +214,11 @@ export default async function BudgetPage({
                 return (
                   <li
                     key={txn.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 backdrop-blur"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-3"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 truncate">{judul}</p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-sm font-semibold text-neutral-900 truncate">{judul}</p>
+                      <p className="text-[11px] text-neutral-500">
                         {formatTanggal(txn.tanggal)} · {jenisLabel}
                         {txn.catatan ? ` · ${txn.catatan}` : ''}
                       </p>
@@ -227,7 +227,7 @@ export default async function BudgetPage({
                     <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0">
                       <p
                         className={`text-sm font-bold tabular-nums ${
-                          txn.jenis === 'refund' ? 'text-emerald-600' : 'text-slate-900'
+                          txn.jenis === 'refund' ? 'text-emerald-600' : 'text-neutral-900'
                         }`}
                       >
                         {txn.jenis === 'refund' ? '+' : ''}
@@ -259,7 +259,7 @@ function PeriodeNav({ periode }: { periode: string }) {
         Bulan sebelumnya
       </Link>
 
-      <p className="text-sm font-semibold text-slate-700 tabular-nums">Periode {periode}</p>
+      <p className="text-sm font-semibold text-neutral-700 tabular-nums">Periode {periode}</p>
 
       <Link
         href={`/budget?periode=${shiftPeriode(periode, 1)}`}
