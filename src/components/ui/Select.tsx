@@ -15,13 +15,13 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
     const widthClass = compact ? 'w-auto' : 'w-full';
     const sizeClass = compact
-      ? 'px-2.5 py-1.5 text-xs rounded-lg min-h-[36px]'
-      : 'px-3.5 py-2.5 text-sm rounded-xl min-h-[44px]';
+      ? 'px-2.5 py-1.5 text-xs rounded-card min-h-[36px]'
+      : 'px-3 py-2.5 text-sm rounded-card min-h-[44px]';
 
     return (
       <div className={widthClass}>
         {label && (
-          <label htmlFor={selectId} className="block text-xs font-semibold text-slate-700 mb-1.5">
+          <label htmlFor={selectId} className="block text-xs font-medium text-neutral-600 mb-1.5">
             {label}
           </label>
         )}
@@ -29,8 +29,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={selectId}
           aria-invalid={Boolean(error)}
-          className={`${widthClass} bg-white/80 backdrop-blur border text-slate-900 transition-all duration-150 focus:outline-none focus:ring-2 focus:border-primary-400 focus:ring-primary-500/20 disabled:bg-slate-100 disabled:cursor-not-allowed ${sizeClass} ${
-            error ? 'border-rose-300 ring-2 ring-rose-500/10' : 'border-slate-200'
+          className={`${widthClass} bg-white border text-neutral-900 transition-colors duration-150 focus:outline-none focus:border-neutral-900 disabled:bg-neutral-50 disabled:cursor-not-allowed ${sizeClass} ${
+            error ? 'border-rose-400' : 'border-neutral-300'
           } ${className}`}
           {...props}
         >
@@ -42,7 +42,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               ))
             : children}
         </select>
-        {hint && !error && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+        {hint && !error && <p className="mt-1 text-xs text-neutral-500">{hint}</p>}
         {error && (
           <p role="alert" className="mt-1 text-xs text-rose-600 font-medium">
             {error}
