@@ -96,7 +96,7 @@ export function TransactionModal({
             {error && (
               <div
                 role="alert"
-                className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700"
+                className="rounded-md border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700"
               >
                 {error}
               </div>
@@ -117,7 +117,7 @@ export function TransactionModal({
             />
 
             {selected && (
-              <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+              <p className="rounded-md bg-neutral-50 p-3 text-xs text-neutral-600">
                 Estimasi harga: <strong>{formatRupiah(selected.estimasi_harga)}</strong>
               </p>
             )}
@@ -162,7 +162,7 @@ export function TransactionModal({
             </div>
 
             {selected && (
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-neutral-500">
                 {allowedTypes.length > 0
                   ? `Jenis yang sah untuk status ${STATUS_LABELS[selected.status]}: ${allowedTypes
                       .map((t) => TXN_TYPE_LABELS[t])
@@ -171,7 +171,7 @@ export function TransactionModal({
               </p>
             )}
 
-            <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-3">
+            <div className="flex items-center justify-end gap-2.5 border-t border-neutral-100 pt-3">
               <Button type="button" variant="secondary" onClick={() => setIsOpen(false)} disabled={loading}>
                 Batal
               </Button>
