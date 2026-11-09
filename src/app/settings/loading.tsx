@@ -18,9 +18,9 @@ export default function SettingsLoading() {
                 <Skeleton className="h-6 w-24 rounded-full" />
               </div>
               <Skeleton className="h-4 w-3/4 rounded-md" />
-              <Skeleton className="h-11 w-full rounded-xl" />
+              <Skeleton className="h-11 w-full rounded-md" />
               <div className="flex justify-end">
-                <Skeleton className="h-9 w-32 rounded-xl" />
+                <Skeleton className="h-9 w-32 rounded-md" />
               </div>
             </GlassCard>
           ))}
