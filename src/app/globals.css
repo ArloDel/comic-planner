@@ -9,6 +9,10 @@
   /* Font — Zen Kaku Gothic New didaftarkan via next/font di layout.tsx */
   --font-sans: var(--font-zen-kaku), ui-sans-serif, system-ui, -apple-system, sans-serif;
 
+  /* Bobot huruf: semibold diturunkan ke 500 agar label tidak berat;
+     hanya judul yang memakai bold (700). */
+  --font-weight-semibold: 500;
+
   /* Primary — ai-iro (藍色), nila dalam yang tenang */
   --color-primary-50:  #f2f5fa;
   --color-primary-100: #e3e9f4;
