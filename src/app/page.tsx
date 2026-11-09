@@ -167,7 +167,7 @@ export default async function DashboardPage() {
               icon={<BookOpen className="h-4 w-4" />}
               iconTone="primary"
             >
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-neutral-500">
                 Terbagi dalam {stats.seriesCount} seri koleksi
               </p>
             </StatCard>
@@ -178,7 +178,7 @@ export default async function DashboardPage() {
               icon={<CheckCircle2 className="h-4 w-4" />}
               iconTone="emerald"
             >
-              <p className="text-[11px] text-slate-500">Komik sudah diterima</p>
+              <p className="text-[11px] text-neutral-500">Komik sudah diterima</p>
             </StatCard>
 
             <StatCard
@@ -187,7 +187,7 @@ export default async function DashboardPage() {
               icon={<Truck className="h-4 w-4" />}
               iconTone="amber"
             >
-              <p className="text-[11px] text-slate-500">Dalam proses pengiriman</p>
+              <p className="text-[11px] text-neutral-500">Dalam proses pengiriman</p>
             </StatCard>
 
             <StatCard
@@ -196,7 +196,7 @@ export default async function DashboardPage() {
               icon={<Heart className="h-4 w-4" />}
               iconTone="sky"
             >
-              <p className="text-[11px] text-slate-500">Target koleksi berikutnya</p>
+              <p className="text-[11px] text-neutral-500">Target koleksi berikutnya</p>
             </StatCard>
           </div>
 
@@ -204,7 +204,7 @@ export default async function DashboardPage() {
           {seriesList.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <h2 className="text-base font-semibold text-neutral-900 flex items-center gap-2">
                   <Layers className="h-4 w-4 text-primary-500" aria-hidden="true" />
                   <span>Seri Koleksi ({seriesList.length})</span>
                 </h2>
@@ -222,10 +222,10 @@ export default async function DashboardPage() {
                   <Link
                     key={seri}
                     href={`/katalog/seri/${encodeURIComponent(seri)}`}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 hover:bg-primary-50 hover:border-primary-300 px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-primary-700 transition-colors"
+                    className="inline-flex items-center gap-2 rounded-full border border-neutral-200/80 bg-white hover:bg-primary-50 hover:border-primary-300 px-3.5 py-1.5 text-xs font-semibold text-neutral-700 hover:text-primary-700 transition-colors"
                   >
                     <span>{seri}</span>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 tabular-nums">
+                    <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600 tabular-nums">
                       {ownedVolumes}/{totalVolumes} vol
                     </span>
                   </Link>
@@ -237,7 +237,7 @@ export default async function DashboardPage() {
           {/* Koleksi Terbaru */}
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-slate-900">
+              <h2 className="text-base font-semibold text-neutral-900">
                 Koleksi &amp; Daftar Komik Terbaru
               </h2>
               <Link
@@ -260,7 +260,7 @@ export default async function DashboardPage() {
                 {recentItems.map((item, idx) => (
                   <GlassCard
                     key={item.id}
-                    className="flex flex-col p-2.5 sm:p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glass"
+                    className="flex flex-col p-2.5 sm:p-3 transition-colors duration-150 hover:border-neutral-400"
                   >
                     <div className="relative w-full">
                       <CoverImage
@@ -273,23 +273,23 @@ export default async function DashboardPage() {
                         <StatusPill
                           status={item.plan_status}
                           size="sm"
-                          className="backdrop-blur-md bg-white/90 shadow-2xs"
+                          className="bg-white"
                         />
                       </div>
                     </div>
 
                     <div className="mt-2.5">
                       <h3
-                        className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-2 leading-snug"
+                        className="text-xs sm:text-sm font-bold text-neutral-900 line-clamp-2 leading-snug"
                         title={item.judul}
                       >
                         {item.judul}
                       </h3>
-                      <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[11px] text-slate-500 font-medium">
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[11px] text-neutral-500 font-medium">
                         {item.seri ? (
                           <Link
                             href={`/katalog/seri/${encodeURIComponent(item.seri)}`}
-                            className="hover:text-primary-600 hover:underline truncate max-w-[120px] font-semibold text-slate-600"
+                            className="hover:text-primary-600 hover:underline truncate max-w-[120px] font-semibold text-neutral-600"
                           >
                             {item.seri}
                           </Link>
@@ -297,7 +297,7 @@ export default async function DashboardPage() {
                           <span>Non-seri</span>
                         )}
                         {item.volume !== null && (
-                          <span className="rounded bg-slate-100 px-1 py-0.2 text-[10px] font-bold text-slate-700">
+                          <span className="rounded bg-neutral-100 px-1 py-0.2 text-[10px] font-bold text-neutral-700">
                             Vol {item.volume}
                           </span>
                         )}
@@ -341,7 +341,7 @@ export default async function DashboardPage() {
             valueTone={budgetTerset ? 'default' : 'amber'}
           >
             {budgetTerset ? (
-              <p className="text-[11px] text-slate-500">Periode {periode}</p>
+              <p className="text-[11px] text-neutral-500">Periode {periode}</p>
             ) : (
               <Link
                 href="/budget"
@@ -359,7 +359,7 @@ export default async function DashboardPage() {
             icon={<TrendingUp className="h-4 w-4" />}
             iconTone="amber"
           >
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-neutral-500">
               Transaksi {formatPeriode(periode)}, non-refund
             </p>
           </StatCard>
@@ -400,7 +400,7 @@ export default async function DashboardPage() {
         {/* Aktivitas Terbaru — status_history terakhir (maks 5) */}
         {recentActivity.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-base font-semibold text-slate-900">Aktivitas Terbaru</h2>
+            <h2 className="text-base font-semibold text-neutral-900">Aktivitas Terbaru</h2>
             <ul className="space-y-2">
               {recentActivity.map((row) => {
                 const judul = asArray(row.plans)[0]?.items?.judul;
@@ -411,17 +411,17 @@ export default async function DashboardPage() {
                 return (
                   <li
                     key={row.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-3 rounded-2xl border border-white/60 bg-white/70 px-4 py-2.5 backdrop-blur"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-2.5"
                   >
-                    <p className="min-w-0 text-xs text-slate-600">
-                      <span className="font-semibold text-slate-900">
+                    <p className="min-w-0 text-xs text-neutral-600">
+                      <span className="font-semibold text-neutral-900">
                         {judul ?? 'Plan'}
                       </span>{' '}
                       → {statusBaru}
                     </p>
                     <time
                       dateTime={row.changed_at}
-                      className="text-[10px] text-slate-400 tabular-nums sm:shrink-0"
+                      className="text-[10px] text-neutral-400 tabular-nums sm:shrink-0"
                     >
                       {formatTanggalJam(row.changed_at)}
                     </time>
