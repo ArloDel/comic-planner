@@ -1,87 +1,96 @@
 @import "tailwindcss";
 
+/*
+ * ComicPlan — minimalism.
+ * Tinta di atas kertas: putih, garis rambut abu netral, satu aksen ai-iro
+ * (nila pewarna Jepang). Warna terkuat di layar adalah sampul komik itu sendiri.
+ */
 @theme {
-  /* Font */
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* Font — Zen Kaku Gothic New didaftarkan via next/font di layout.tsx */
+  --font-sans: var(--font-zen-kaku), ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-  /* Primary — indigo */
-  --color-primary-50:  #eef2ff;
-  --color-primary-100: #e0e7ff;
-  --color-primary-200: #c7d2fe;
-  --color-primary-300: #a5b4fc;
-  --color-primary-400: #818cf8;
-  --color-primary-500: #6366f1;
-  --color-primary-600: #4f46e5;
-  --color-primary-700: #4338ca;
-  --color-primary-800: #3730a3;
-  --color-primary-900: #312e81;
+  /* Primary — ai-iro (藍色), nila dalam yang tenang */
+  --color-primary-50:  #f2f5fa;
+  --color-primary-100: #e3e9f4;
+  --color-primary-200: #c5d1e7;
+  --color-primary-300: #9aaed4;
+  --color-primary-400: #6a85bb;
+  --color-primary-500: #3f5f9e;
+  --color-primary-600: #234a8a;
+  --color-primary-700: #1b3b70;
+  --color-primary-800: #162f59;
+  --color-primary-900: #112343;
 
-  /* Radius khusus */
-  --radius-glass: 1.25rem;   /* 20px — panel besar */
-  --radius-card: 0.75rem;    /* 12px — elemen kecil */
+  /* Radius — kecil dan seragam per hierarki */
+  --radius-glass: 0.625rem;  /* 10px — panel, modal */
+  --radius-card: 0.375rem;   /* 6px  — kontrol */
 
-  /* Shadow glass (lembut, rendah kontras) */
-  --shadow-glass:    0 8px 30px rgb(15 23 42 / 0.06);
-  --shadow-glass-lg: 0 16px 50px rgb(15 23 42 / 0.12);
-  --shadow-soft:     0 1px 3px rgb(15 23 42 / 0.06);
+  /* Bayangan nyaris tidak ada; hierarki dibentuk garis rambut */
+  --shadow-glass:    0 0 0 0 transparent;
+  --shadow-glass-lg: 0 12px 32px -12px rgb(23 23 23 / 0.18);
+  --shadow-soft:     0 0 0 0 transparent;
 }
 
-/* YouTube-style Loading Bar Animations */
-@keyframes yt-bar-slide {
-  0% {
-    transform: translateX(-100%) scaleX(0.2);
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
   }
-  50% {
-    transform: translateX(0%) scaleX(0.6);
+
+  body {
+    background: #ffffff;
+    color: var(--color-neutral-900);
+    font-feature-settings: "palt" 1;
   }
-  100% {
-    transform: translateX(100%) scaleX(0.2);
+
+  ::selection {
+    background: var(--color-primary-100);
+    color: var(--color-primary-900);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary-600);
+    outline-offset: 2px;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-@keyframes yt-bar-shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
+/* Indikator loading — garis tipis ai-iro, tanpa glow */
 .yt-loading-bar-glow {
-  box-shadow: 0 0 12px rgb(99 102 241 / 0.85), 0 0 4px rgb(129 140 248 / 0.95);
+  box-shadow: none;
 }
 
 .yt-indeterminate-bar {
-  background: linear-gradient(
-    90deg,
-    #4f46e5 0%,
-    #6366f1 35%,
-    #a855f7 50%,
-    #6366f1 65%,
-    #4f46e5 100%
-  );
-  background-size: 200% 100%;
-  animation: yt-bar-shimmer 1.4s linear infinite;
+  background-color: var(--color-primary-600);
 }
 
-/* Shimmer effect for Skeleton placeholders */
-@keyframes skeleton-shimmer {
-  0% {
-    background-position: -200% 0;
-  }
+/* Placeholder skeleton — denyut lembut, satu warna */
+@keyframes skeleton-pulse {
+  0%,
   100% {
-    background-position: 200% 0;
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
   }
 }
 
 .skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgb(226 232 240 / 0.65) 25%,
-    rgb(241 245 249 / 0.95) 50%,
-    rgb(226 232 240 / 0.65) 75%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  background-color: var(--color-neutral-100);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
