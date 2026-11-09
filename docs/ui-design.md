@@ -1,89 +1,59 @@
 # ComicPlan — UI Design Spec (Frontend)
 
-> **Sumber arah desain:** referensi visual dari owner — *clean & light* ala Notion/Linear, dominan putih dengan efek *glassmorphism*, layout *sidebar dashboard*. Gambar referensi asli tidak dapat diproses oleh AI, jadi spec ini disusun dari arah yang dikonfirmasi owner dan disesuaikan dengan alur aplikasi di `prd.md`.
+> **Sumber arah desain:** referensi visual dari owner — *clean & light* ala Notion/Linear, dominan putih; sejak November 2026 arahnya *minimalism* (lihat §1), layout *sidebar dashboard*. Gambar referensi asli tidak dapat diproses oleh AI, jadi spec ini disusun dari arah yang dikonfirmasi owner dan disesuaikan dengan alur aplikasi di `prd.md`.
 >
 > **Konsumen dokumen ini:** frontend dev / worker yang mengerjakan UI (TASK-002, 003, 004, 006, 007). Baca bagian 2–5 dulu sebelum menulis komponen apa pun.
 
 ---
 
-## 1. Arah Desain
+## 1. Arah Desain — Minimalism (revisi November 2026)
+
+> Arah lama (*glassmorphism* + blob gradien) sudah diganti. Di bagian lain dokumen ini, kata "glass" / `GlassCard` kini berarti **panel datar**: putih, garis rambut netral, tanpa blur dan bayangan.
 
 | Prinsip | Penjelasan |
 |---|---|
-| Clean & light | Dominan putih/`slate-50`, banyak whitespace, border tipis, tanpa ornamen berlebih. Konten dulu. |
-| Glassmorphism sebagai aksen | Panel utama (sidebar, header, kartu statistik, modal) memakai efek frosted glass `bg-white/70 + backdrop-blur`. BUKAN semua elemen — tombol kecil, pill, dan tabel tetap solid. |
-| Backdrop berwarna lembut | Glass butuh backdrop agar blur-nya terlihat: gradient halus + 2–3 "blob" warna besar yang blur di belakang konten (lihat `BackdropDecor`). |
-| Mobile-first, desktop sidebar | Use case utama owner adalah HP (saat scroll Shopee). Mobile: *bottom tab bar* glass. Desktop (≥`lg`): *sidebar* glass. |
-| Bahasa & format | UI Bahasa Indonesia, mata uang Rupiah, tanggal format Indonesia. |
+| Tinta di atas kertas | Latar putih polos, teks `neutral-900`, struktur dibentuk garis rambut `neutral-200`. Tanpa gradien, blur, maupun bayangan (kecuali modal/toast yang mengambang). |
+| Sampul yang berwarna | Warna paling kuat di layar adalah sampul komik. UI di sekitarnya monokrom supaya sampul yang bicara. |
+| Satu aksen: ai-iro | Nila pewarna Jepang (`primary-600` = `#234a8a`) hanya untuk ikon nav aktif, link, fokus, dan status "Sedang Dikirim". Tombol utama memakai tinta (`neutral-900`). |
+| Status = titik + teks | Status tidak lagi berupa pill berwarna penuh; cukup titik dan teks berwarna tinta semantik. |
+| Tanpa ornamen teks | Label kalimat biasa (bukan huruf kapital semua), tanpa emoji dekoratif. |
+| Mobile-first, desktop sidebar | Mobile: *bottom tab bar* datar. Desktop (≥`lg`): sidebar `w-60` dengan garis kanan. |
 
 ---
 
 ## 2. Design Tokens (Tailwind CSS v4)
 
-Scaffold sudah memakai Tailwind v4 (`@import "tailwindcss"` di `src/app/globals.css`). Salin blok berikut ke `globals.css` — token `@theme` otomatis menjadi utility (`bg-primary-600`, `shadow-glass`, `rounded-glass`, dst.):
+Sumber kebenaran: `src/app/globals.css` (`@theme`). Nama token lama dipertahankan agar kelas yang ada tetap jalan, tetapi nilainya berubah:
 
-```css
-@import "tailwindcss";
-
-@theme {
-  /* Font — daftarkan Inter via next/font, sesuaikan nama variabel.
-     (Cara register font di Next.js versi ini: baca node_modules/next/dist/docs/) */
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-
-  /* Primary — indigo (kontinu dengan halaman login yang sudah ada) */
-  --color-primary-50:  #eef2ff;
-  --color-primary-100: #e0e7ff;
-  --color-primary-200: #c7d2fe;
-  --color-primary-300: #a5b4fc;
-  --color-primary-400: #818cf8;
-  --color-primary-500: #6366f1;
-  --color-primary-600: #4f46e5;
-  --color-primary-700: #4338ca;
-  --color-primary-800: #3730a3;
-  --color-primary-900: #312e81;
-
-  /* Radius khusus */
-  --radius-glass: 1.25rem;   /* 20px — panel besar */
-  --radius-card: 0.75rem;    /* 12px — elemen kecil */
-
-  /* Shadow glass (lembut, rendah kontras) */
-  --shadow-glass:    0 8px 30px rgb(15 23 42 / 0.06);
-  --shadow-glass-lg: 0 16px 50px rgb(15 23 42 / 0.12);
-  --shadow-soft:     0 1px 3px rgb(15 23 42 / 0.06);
-}
-```
-
-### 2.1 Palet warna
-
-| Peran | Token / kelas | Catatan |
+| Token | Nilai | Pemakaian |
 |---|---|---|
-| Primary (aksi, link, aktif) | `primary-600` (indigo) | Tombol utama, item nav aktif, link. |
-| Netral teks | `slate-900` judul · `slate-600` body · `slate-500` sekunder | `slate-400` hanya untuk ≥14px non-esensial. |
-| Netral permukaan | `slate-50` background halaman · `white` kartu | |
-| Sukses / aman | `emerald-600` + `emerald-50` | Sisa aman ≥ 0, status diterima. |
-| Peringatan | `amber-600` + `amber-50` | PO / deadline. |
-| Bahaya / minus | `rose-600` + `rose-50` | Sisa aman < 0, batal, error. |
-| Info / lunas | `sky-600` + `sky-50` | Status lunas (sudah dibayar penuh). |
+| `--font-sans` | Zen Kaku Gothic New (via `next/font/google`, variabel `--font-zen-kaku`) | Satu keluarga untuk semua teks |
+| `--font-weight-semibold` | `500` | `font-semibold` jadi medium; hanya judul memakai `font-bold` (700) |
+| `--color-primary-50…900` | skala ai-iro (`#f2f5fa` … `#112343`) | aksen tunggal |
+| `--radius-glass` | `0.625rem` (10px) | panel besar, modal |
+| `--radius-card` | `0.375rem` (6px) | tombol, input, sampul |
+| `--shadow-glass`, `--shadow-soft` | `transparent` | sengaja kosong |
+| `--shadow-glass-lg` | `0 12px 32px -12px rgb(23 23 23 / .18)` | hanya modal dan toast |
 
-### 2.2 Tipografi
+### 2.1 Palet
 
-| Elemen | Kelas Tailwind |
+| Peran | Kelas |
 |---|---|
-| Judul halaman | `text-2xl font-bold tracking-tight text-slate-900` (desktop boleh `text-3xl`) |
-| Subjudul halaman | `text-sm text-slate-500` |
-| Judul section | `text-base font-semibold text-slate-900` |
-| Judul kartu / baris | `text-sm font-semibold text-slate-900` |
-| Body | `text-sm text-slate-600` |
-| Sekunder / meta | `text-xs text-slate-500` |
-| Angka statistik | `text-2xl font-bold text-slate-900 tabular-nums` (harga: `tabular-nums` wajib) |
+| Teks judul / tombol utama | `neutral-900` |
+| Teks body / sekunder / meta | `neutral-700` · `neutral-500` · `neutral-400` |
+| Garis rambut | `neutral-200` (panel), `neutral-300` (input, tombol sekunder) |
+| Aksen | `primary-600` (ai-iro) |
+| Semantik | `emerald` aman/selesai · `amber` peringatan · `rose` bahaya/batal |
 
-### 2.3 Resep glass (hafalkan — dipakai di semua panel utama)
+### 2.2 Resep panel
 
 ```
-Panel glass   →  bg-white/70 backdrop-blur-xl border border-white/60 shadow-glass rounded-2xl
-Glass lebih solid (modal, sidebar) → bg-white/80 backdrop-blur-xl border border-white/60 shadow-glass-lg rounded-glass
-Overlay modal → bg-slate-900/25 backdrop-blur-sm
-Input         →  bg-white/80 backdrop-blur border border-slate-200 (focus: border-primary-400 ring-2 ring-primary-500/20) rounded-xl
+Panel         →  bg-white border border-neutral-200 rounded-lg
+Modal         →  bg-white border border-neutral-200 rounded-glass shadow-glass-lg; overlay bg-neutral-900/25 (tanpa blur)
+Input         →  bg-white border border-neutral-300 rounded-card; focus: border-neutral-900
+Tombol utama  →  bg-neutral-900 text-white rounded-card
+Tombol kedua  →  bg-white border border-neutral-300; hover: border-neutral-900
+Filter aktif  →  bg-neutral-900 text-white rounded-full
 ```
 
 ---
