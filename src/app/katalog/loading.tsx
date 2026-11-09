@@ -11,8 +11,8 @@ export default function KatalogLoading() {
       <div className="space-y-6" role="status" aria-label="Memuat katalog komik">
         {/* Top search & button bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-          <Skeleton className="h-10 w-full max-w-md rounded-xl" />
-          <Skeleton className="h-10 w-full sm:w-36 rounded-xl" />
+          <Skeleton className="h-10 w-full max-w-md rounded-md" />
+          <Skeleton className="h-10 w-full sm:w-36 rounded-md" />
         </div>
 
         {/* Series chips bar */}
