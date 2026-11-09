@@ -173,7 +173,7 @@ export function SettingsClient({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-primary-600 shrink-0" aria-hidden="true" />
-                <h2 className="text-base font-semibold text-slate-900">Akun &amp; Single-User</h2>
+                <h2 className="text-base font-semibold text-neutral-900">Akun &amp; Single-User</h2>
               </div>
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
@@ -192,16 +192,16 @@ export function SettingsClient({
               </span>
             </div>
 
-            <div className="rounded-xl border border-slate-200/80 bg-white/70 px-3.5 py-2.5">
-              <p className="text-[11px] font-medium text-slate-500">Email Pemilik Aktif</p>
-              <p className="text-sm font-semibold text-slate-900 truncate mt-0.5">
+            <div className="rounded-md border border-neutral-200/80 bg-white px-3.5 py-2.5">
+              <p className="text-[11px] font-medium text-neutral-500">Email Pemilik Aktif</p>
+              <p className="text-sm font-semibold text-neutral-900 truncate mt-0.5">
                 {userEmail || 'Owner Akun'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-3 pt-1 border-t border-slate-100">
-            <p className="text-xs text-slate-500">
+          <div className="flex items-center justify-between gap-3 pt-1 border-t border-neutral-100">
+            <p className="text-xs text-neutral-500">
               Mode personal 1 pengguna dilindungi trigger DB &amp; sesi Supabase.
             </p>
             <form action={logout}>
@@ -219,7 +219,7 @@ export function SettingsClient({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <KeyRound className="h-4 w-4 text-primary-600 shrink-0" aria-hidden="true" />
-                <h2 className="text-base font-semibold text-slate-900">Import Token Userscript</h2>
+                <h2 className="text-base font-semibold text-neutral-900">Import Token Userscript</h2>
               </div>
               <Link
                 href="/import"
@@ -229,8 +229,8 @@ export function SettingsClient({
               </Link>
             </div>
 
-            <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/80 px-3.5 py-2.5">
-              <code className="text-xs font-mono text-slate-800 truncate">
+            <div className="flex items-center justify-between gap-2 rounded-md border border-neutral-200 bg-white px-3.5 py-2.5">
+              <code className="text-xs font-mono text-neutral-800 truncate">
                 {maskedToken ?? 'IMPORT_TOKEN belum diatur di .env.local'}
               </code>
               <Button
@@ -250,7 +250,7 @@ export function SettingsClient({
             </div>
           </div>
 
-          <p className="text-xs text-slate-500 border-t border-slate-100 pt-3">
+          <p className="text-xs text-neutral-500 border-t border-neutral-100 pt-3">
             Untuk merotasi token, ubah nilai <code>IMPORT_TOKEN</code> di <code>.env.local</code>{' '}
             lalu perbarui di pengaturan panel Tampermonkey.
           </p>
@@ -264,10 +264,10 @@ export function SettingsClient({
             <div className="flex items-center gap-2">
               <Wallet className="h-4 w-4 text-primary-600 shrink-0" aria-hidden="true" />
               <div>
-                <h2 className="text-base font-semibold text-slate-900">
+                <h2 className="text-base font-semibold text-neutral-900">
                   Budget Bulan Ini ({formatPeriode(periode)})
                 </h2>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-neutral-500">
                   Atur cepat alokasi budget periode berjalan
                 </p>
               </div>
@@ -282,7 +282,7 @@ export function SettingsClient({
 
           <form onSubmit={handleSaveBudget} className="space-y-3">
             <div>
-              <label htmlFor="settings-budget-input" className="block text-xs font-semibold text-slate-700 mb-1">
+              <label htmlFor="settings-budget-input" className="block text-xs font-semibold text-neutral-700 mb-1">
                 Nominal Budget (Rp)
               </label>
               <div className="flex items-center gap-2">
@@ -296,7 +296,7 @@ export function SettingsClient({
                   autoComplete="off"
                   value={budgetInput}
                   onChange={(e) => setBudgetInput(e.target.value)}
-                  className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm tabular-nums text-slate-900 focus-visible:border-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20"
+                  className="min-w-0 flex-1 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm tabular-nums text-neutral-900 focus-visible:border-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20"
                 />
                 <Button type="submit" variant="primary" size="sm" isLoading={savingBudget} disabled={savingBudget}>
                   <span>{savingBudget ? 'Menyimpan…' : 'Simpan'}</span>
@@ -321,8 +321,8 @@ export function SettingsClient({
           <div className="flex items-center gap-2">
             <DatabaseBackup className="h-4 w-4 text-primary-600 shrink-0" aria-hidden="true" />
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Backup &amp; Ekspor Data</h2>
-              <p className="text-xs text-slate-500">
+              <h2 className="text-base font-semibold text-neutral-900">Backup &amp; Ekspor Data</h2>
+              <p className="text-xs text-neutral-500">
                 Unduh salinan lokal CSV atau JSON seluruh koleksi &amp; transaksi
               </p>
             </div>
@@ -373,10 +373,10 @@ export function SettingsClient({
           <div className="flex items-center gap-2">
             <Store className="h-4 w-4 text-primary-600 shrink-0" aria-hidden="true" />
             <div>
-              <h2 className="text-base font-semibold text-slate-900">
+              <h2 className="text-base font-semibold text-neutral-900">
                 Toko Shopee Terlacak ({shops.length})
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-neutral-500">
                 Dikelompokkan otomatis dari riwayat listing yang pernah diimpor
               </p>
             </div>
@@ -384,22 +384,22 @@ export function SettingsClient({
         </div>
 
         {shops.length === 0 ? (
-          <p className="text-xs text-slate-500 py-2">
+          <p className="text-xs text-neutral-500 py-2">
             Belum ada toko yang terlacak. Toko akan muncul otomatis setelah Anda mengimpor produk
             dari Shopee.
           </p>
         ) : (
-          <div className="divide-y divide-slate-100 rounded-xl border border-slate-100 bg-white/60">
+          <div className="divide-y divide-neutral-100 rounded-md border border-neutral-100 bg-white">
             {shops.map((shop) => (
               <div
                 key={shop.shop_id}
                 className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-xs"
               >
                 <div className="min-w-0">
-                  <p className="font-semibold text-slate-900 truncate">
+                  <p className="font-semibold text-neutral-900 truncate">
                     {shop.nama_toko || `Toko #${shop.shop_id}`}
                   </p>
-                  <p className="text-[11px] text-slate-500 tabular-nums">
+                  <p className="text-[11px] text-neutral-500 tabular-nums">
                     ID: {shop.shop_id} · {shop.total_listings} produk ({shop.po_count} PO) · sinkron{' '}
                     {formatTanggalJam(shop.last_synced_at)}
                   </p>
@@ -410,7 +410,7 @@ export function SettingsClient({
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`Buka ${shop.nama_toko || shop.shop_id} di Shopee`}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:border-primary-300 hover:text-primary-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 shrink-0"
+                  className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-neutral-700 hover:border-primary-300 hover:text-primary-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 shrink-0"
                 >
                   <span>Buka Toko</span>
                   <ExternalLink className="h-3 w-3" aria-hidden="true" />
