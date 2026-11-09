@@ -39,16 +39,16 @@ export function CoverImage({
 
     return (
       <div
-        className={`${aspectClass} ${widthClass} rounded-xl bg-gradient-to-br from-slate-100 to-indigo-100/60 border border-slate-200/60 flex flex-col items-center justify-center p-2 text-center select-none overflow-hidden ${className}`}
+        className={`${aspectClass} ${widthClass} rounded-card bg-neutral-50 border border-neutral-200 flex flex-col items-center justify-center p-2 text-center select-none overflow-hidden ${className}`}
       >
-        <BookOpen className={`${isCompact ? 'h-4 w-4' : 'h-8 w-8 mb-1'} text-primary-400 opacity-70`} />
+        <BookOpen className={`${isCompact ? 'h-4 w-4' : 'h-8 w-8 mb-1'} text-neutral-300`} />
         {initials && !isCompact ? (
-          <span className="text-xs font-bold text-primary-700 tracking-wider line-clamp-1">
+          <span className="text-xs font-medium text-neutral-500 line-clamp-1">
             {initials}
           </span>
         ) : null}
         {title && !isCompact ? (
-          <span className="mt-1 text-[10px] text-slate-500 line-clamp-2 px-1 leading-tight">
+          <span className="mt-1 text-[10px] text-neutral-400 line-clamp-2 px-1 leading-tight">
             {title}
           </span>
         ) : null}
@@ -61,12 +61,12 @@ export function CoverImage({
 
   return (
     <div
-      className={`relative ${aspectClass} ${widthClass} overflow-hidden rounded-xl bg-slate-100 border border-slate-200/60 ${className}`}
+      className={`relative ${aspectClass} ${widthClass} overflow-hidden rounded-card bg-neutral-100 border border-neutral-200 ${className}`}
     >
       {!loaded && (
         <div
           aria-hidden="true"
-          className="absolute inset-0 skeleton-shimmer bg-slate-200/70 z-10"
+          className="absolute inset-0 skeleton-shimmer z-10"
         />
       )}
       <Image
@@ -82,8 +82,8 @@ export function CoverImage({
         unoptimized={isLocalOrData}
         onLoad={() => setLoaded(true)}
         onError={() => setError(true)}
-        className={`object-cover transition-all duration-300 ${
-          loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.02]'
+        className={`object-cover transition-opacity duration-300 ${
+          loaded ? 'opacity-100' : 'opacity-0'
         }`}
       />
     </div>
