@@ -52,14 +52,14 @@ interface StatusPillProps {
   size?: 'sm' | 'md';
 }
 
-/** Status sebagai titik + teks — tanpa latar, cukup warna tinta. */
+/** Status sebagai titik + teks berwarna tinta; latar putih agar terbaca di atas sampul. */
 export function StatusPill({ status, className = '', size = 'md' }: StatusPillProps) {
   const config = statusStyle(status);
-  const sizeClasses = size === 'sm' ? 'text-[11px]' : 'text-xs';
+  const sizeClasses = size === 'sm' ? 'px-1.5 py-0.5 text-[11px]' : 'px-2 py-0.5 text-xs';
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-medium select-none ${config.badgeClasses} ${sizeClasses} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full bg-white font-medium select-none ${config.badgeClasses} ${sizeClasses} ${className}`}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
       <span>{config.label}</span>
