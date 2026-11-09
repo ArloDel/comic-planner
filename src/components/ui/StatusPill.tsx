@@ -6,45 +6,39 @@ import type { ExtendedStatus } from '@/lib/catalog';
 export interface StatusStyle {
   label: string;
   badgeClasses: string;
-  /** Kotak solid untuk grid volume / kartu status — lebih tegas dari pill. */
+  /** Kotak untuk grid volume / kartu status — lebih tegas dari pill. */
   boxClasses: string;
 }
+
+const SHIPPING: StatusStyle = {
+  label: 'Sedang Dikirim',
+  badgeClasses: 'text-primary-700',
+  boxClasses: 'bg-primary-50 text-primary-800 border-primary-300',
+};
 
 export const STATUS_STYLES: Record<ExtendedStatus, StatusStyle> = {
   wishlist: {
     label: 'Wishlist',
-    badgeClasses: 'bg-slate-100 text-slate-700 border-slate-200',
-    boxClasses: 'bg-primary-50 text-primary-800 border-primary-200 ring-1 ring-primary-500/20',
+    badgeClasses: 'text-neutral-600',
+    boxClasses: 'bg-white text-neutral-900 border-neutral-900',
   },
-  po: {
-    label: 'Sedang Dikirim',
-    badgeClasses: 'bg-indigo-50 text-indigo-800 border-indigo-200',
-    boxClasses: 'bg-indigo-50 text-indigo-800 border-indigo-300 ring-1 ring-indigo-500/20',
-  },
-  dp: {
-    label: 'Sedang Dikirim',
-    badgeClasses: 'bg-indigo-50 text-indigo-800 border-indigo-200',
-    boxClasses: 'bg-indigo-50 text-indigo-800 border-indigo-300 ring-1 ring-indigo-500/20',
-  },
-  lunas: {
-    label: 'Sedang Dikirim',
-    badgeClasses: 'bg-indigo-50 text-indigo-800 border-indigo-200',
-    boxClasses: 'bg-indigo-50 text-indigo-800 border-indigo-300 ring-1 ring-indigo-500/20',
-  },
+  po: SHIPPING,
+  dp: SHIPPING,
+  lunas: SHIPPING,
   diterima: {
     label: 'Selesai',
-    badgeClasses: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    boxClasses: 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20',
+    badgeClasses: 'text-emerald-700',
+    boxClasses: 'bg-neutral-900 text-white border-neutral-900',
   },
   batal: {
     label: 'Batal',
-    badgeClasses: 'bg-rose-50 text-rose-700 border-rose-200',
-    boxClasses: 'bg-rose-50 text-rose-700 border-rose-300 ring-1 ring-rose-500/20',
+    badgeClasses: 'text-rose-600',
+    boxClasses: 'bg-white text-rose-600 border-rose-300 line-through',
   },
   'belum ada': {
     label: 'Belum Ada',
-    badgeClasses: 'bg-slate-50/90 text-slate-500 border-slate-300 border-dashed',
-    boxClasses: 'bg-slate-100 text-slate-700 border-slate-200',
+    badgeClasses: 'text-neutral-400',
+    boxClasses: 'bg-white text-neutral-400 border-neutral-200 border-dashed',
   },
 };
 
@@ -58,15 +52,16 @@ interface StatusPillProps {
   size?: 'sm' | 'md';
 }
 
+/** Status sebagai titik + teks — tanpa latar, cukup warna tinta. */
 export function StatusPill({ status, className = '', size = 'md' }: StatusPillProps) {
   const config = statusStyle(status);
-  const sizeClasses = size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-[11px]';
+  const sizeClasses = size === 'sm' ? 'text-[11px]' : 'text-xs';
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border font-semibold tracking-tight shadow-sm select-none ${config.badgeClasses} ${sizeClasses} ${className}`}
+      className={`inline-flex items-center gap-1.5 font-medium select-none ${config.badgeClasses} ${sizeClasses} ${className}`}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+      <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
       <span>{config.label}</span>
     </span>
   );
