@@ -143,9 +143,9 @@ const ACTION_ICONS: Record<PlanStatus, React.ComponentType<{ className?: string 
 function priorityTone(prioritas: number): string {
   if (prioritas <= 1) return 'bg-rose-50 text-rose-700 border-rose-200';
   if (prioritas === 2) return 'bg-amber-50 text-amber-800 border-amber-200';
-  if (prioritas === 3) return 'bg-slate-100 text-slate-700 border-slate-200';
-  if (prioritas === 4) return 'bg-slate-50 text-slate-500 border-slate-200';
-  return 'bg-slate-50 text-slate-400 border-slate-200';
+  if (prioritas === 3) return 'bg-neutral-100 text-neutral-700 border-neutral-200';
+  if (prioritas === 4) return 'bg-neutral-50 text-neutral-500 border-neutral-200';
+  return 'bg-neutral-50 text-neutral-400 border-neutral-200';
 }
 
 export function PlansClient({
@@ -369,7 +369,7 @@ export function PlansClient({
               if (isSelectionMode) setSelectedPlanIds(new Set());
             }}
             title="Pilih beberapa buku sekaligus untuk memesan & melacak dengan 1 nomor resi bersama"
-            className={`w-full sm:w-auto shadow-glass ${
+            className={`w-full sm:w-auto ${
               isSelectionMode ? 'bg-primary-600 text-white border-primary-600' : ''
             }`}
           >
@@ -380,7 +380,7 @@ export function PlansClient({
           <Button
             variant="primary"
             onClick={() => setIsCreateOpen(true)}
-            className="w-full sm:w-auto shadow-glass"
+            className="w-full sm:w-auto"
           >
             <Plus className="h-4 w-4 mr-1.5" />
             <span>Tambah Rencana</span>
@@ -404,13 +404,13 @@ export function PlansClient({
             count={counts.wishlist}
           />
           <FilterChip
-            label="🚚 Sedang Dikirim"
+            label="Sedang Dikirim"
             active={statusFilter === 'po'}
             onClick={() => updateFilters({ status: 'po' })}
             count={counts.po}
           />
           <FilterChip
-            label="🎉 Selesai"
+            label="Selesai"
             active={statusFilter === 'diterima'}
             onClick={() => updateFilters({ status: 'diterima' })}
             count={counts.diterima}
@@ -423,9 +423,9 @@ export function PlansClient({
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2 pt-1 text-xs text-slate-500">
-          <span className="flex items-center gap-1 font-semibold text-slate-700">
-            <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+        <div className="flex items-center justify-end gap-2 pt-1 text-xs text-neutral-500">
+          <span className="flex items-center gap-1 font-semibold text-neutral-700">
+            <ArrowUpDown className="h-3.5 w-3.5 text-neutral-400" aria-hidden="true" />
             Urutkan:
           </span>
           <Select
@@ -440,7 +440,7 @@ export function PlansClient({
 
       {/* Toolbar Mode Pemilihan Massal */}
       {isSelectionMode && (
-        <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200/90 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
+        <div className="p-3.5 rounded-lg bg-indigo-50/80 border border-indigo-200/90 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
             <span className="font-bold text-indigo-950 flex items-center gap-1.5">
               <CheckSquare className="h-4 w-4 text-indigo-600" />
@@ -523,9 +523,9 @@ export function PlansClient({
             return (
               <GlassCard
                 key={plan.id}
-                className={`overflow-hidden transition-all duration-200 hover:shadow-glass-lg ${
+                className={`overflow-hidden transition-all duration-200 hover:${
                   selectedPlanIds.has(plan.id)
-                    ? 'ring-2 ring-primary-500 bg-primary-50/20 border-primary-300 shadow-glass-md'
+                    ? 'ring-2 ring-primary-500 bg-primary-50/20 border-primary-300-md'
                     : ''
                 }`}
               >
@@ -539,7 +539,7 @@ export function PlansClient({
                         checked={selectedPlanIds.has(plan.id)}
                         onChange={() => toggleSelectPlan(plan.id)}
                         aria-label={`Pilih ${plan.item?.judul ?? 'rencana'}`}
-                        className="h-5 w-5 rounded-md border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                        className="h-5 w-5 rounded-md border-neutral-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                       />
                     </div>
                   )}
@@ -581,16 +581,16 @@ export function PlansClient({
                       </button>
                     </div>
 
-                    <h3 className="text-sm font-bold text-slate-900 leading-snug truncate">
+                    <h3 className="text-sm font-bold text-neutral-900 leading-snug truncate">
                       {plan.item?.judul ?? 'Item tidak ditemukan'}
                     </h3>
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500">
                       {plan.item?.seri && (
-                        <span className="font-semibold text-slate-600">{plan.item.seri}</span>
+                        <span className="font-semibold text-neutral-600">{plan.item.seri}</span>
                       )}
                       {plan.item?.volume !== null && plan.item?.volume !== undefined && (
-                        <span className="rounded bg-slate-100 px-1 py-0.5 font-bold text-slate-700">
+                        <span className="rounded bg-neutral-100 px-1 py-0.5 font-bold text-neutral-700">
                           Vol {plan.item.volume}
                         </span>
                       )}
@@ -608,14 +608,14 @@ export function PlansClient({
                           </span>
                         </a>
                       ) : (
-                        <span className="text-slate-400">Tanpa listing</span>
+                        <span className="text-neutral-400">Tanpa listing</span>
                       )}
                     </div>
                   </div>
 
                   {/* Harga & aksi */}
                   <div className="shrink-0 sm:text-right">
-                    <p className="text-sm font-bold text-slate-900 tabular-nums">
+                    <p className="text-sm font-bold text-neutral-900 tabular-nums">
                       {formatRupiah(plan.estimasi_harga)}
                     </p>
 
@@ -666,7 +666,7 @@ export function PlansClient({
                         onClick={() => setEditingPlan(plan)}
                         aria-label={`Edit prioritas dan estimasi ${plan.item?.judul ?? 'rencana'}`}
                         title="Edit prioritas & estimasi harga"
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white/70 px-2.5 py-1 min-h-[36px] text-[11px] font-semibold text-slate-600 hover:bg-white hover:text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                        className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-2.5 py-1 min-h-[36px] text-[11px] font-semibold text-neutral-600 hover:bg-white hover:text-neutral-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                       >
                         <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                         <span>Edit</span>
@@ -677,7 +677,7 @@ export function PlansClient({
                         onClick={() => setExpandedId(expanded ? null : plan.id)}
                         aria-expanded={expanded}
                         aria-label={expanded ? 'Sembunyikan riwayat' : 'Lihat riwayat status'}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white/70 px-2.5 py-1 min-h-[36px] text-[11px] font-semibold text-slate-600 hover:bg-white hover:text-slate-900"
+                        className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-2.5 py-1 min-h-[36px] text-[11px] font-semibold text-neutral-600 hover:bg-white hover:text-neutral-900"
                       >
                         <History className="h-3.5 w-3.5" />
                         <span>Riwayat</span>
@@ -693,8 +693,8 @@ export function PlansClient({
 
                 {/* Riwayat status (expanded) */}
                 {expanded && (
-                  <div className="border-t border-slate-100 bg-slate-50/50 px-3.5 py-3 sm:px-4">
-                    <h4 className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <div className="border-t border-neutral-100 bg-neutral-50/50 px-3.5 py-3 sm:px-4">
+                    <h4 className="mb-2.5 text-[11px] font-bold text-neutral-500">
                       Riwayat Perubahan Status
                     </h4>
                     <StatusTimeline entries={plan.history} />
@@ -760,16 +760,16 @@ export function PlansClient({
 
       {/* Floating Bottom Action Bar saat ada komik yang dipilih */}
       {selectedPlanIds.size > 0 && (
-        <div className="fixed bottom-5 left-4 right-4 z-40 max-w-2xl mx-auto rounded-2xl bg-slate-900/95 text-white backdrop-blur-xl border border-slate-700/80 p-3.5 sm:px-5 shadow-2xl flex flex-wrap items-center justify-between gap-3 animate-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed bottom-5 left-4 right-4 z-40 max-w-2xl mx-auto rounded-lg bg-neutral-900/95 text-white border border-neutral-700/80 p-3.5 sm:px-5 shadow-2xl flex flex-wrap items-center justify-between gap-3 animate-in slide-in-from-bottom-4 duration-200">
           <div className="flex items-center gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary-500/20 text-primary-400 font-bold text-sm">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary-500/20 text-primary-400 font-bold text-sm">
               {selectedPlanIds.size}
             </span>
             <div>
               <p className="text-xs font-bold text-white leading-tight">
                 {selectedPlanIds.size} Komik Terpilih
               </p>
-              <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
+              <p className="text-[11px] text-neutral-400 leading-tight mt-0.5">
                 Total Estimasi: <span className="text-emerald-400 font-semibold">{formatRupiah(selectedTotalPrice)}</span>
                 {commonStoreName && <span className="ml-1">· Toko: {commonStoreName}</span>}
               </p>
@@ -780,7 +780,7 @@ export function PlansClient({
             <button
               type="button"
               onClick={() => setSelectedPlanIds(new Set())}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-md text-xs font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
             >
               Kosongkan
             </button>
@@ -791,7 +791,7 @@ export function PlansClient({
                 const selectedPlans = initialPlans.filter((p) => selectedPlanIds.has(p.id));
                 setBulkModalPlans(selectedPlans);
               }}
-              className="shadow-glass text-xs font-bold bg-primary-600 hover:bg-primary-500"
+              className="text-xs font-bold bg-primary-600 hover:bg-primary-500"
             >
               <Truck className="h-3.5 w-3.5 mr-1.5" />
               <span>Pesan &amp; Lacak Bersama ({selectedPlanIds.size})</span>
