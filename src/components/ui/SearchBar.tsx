@@ -55,13 +55,13 @@ export function SearchBar({
 
   return (
     <div className={`relative w-full ${className}`}>
-      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
       <input
         type="text"
         value={internalValue}
         onChange={handleChange}
         placeholder={placeholder}
-        className="w-full bg-white/80 backdrop-blur border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 pl-10 pr-9 py-2.5 rounded-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:border-primary-400 focus:ring-primary-500/20 shadow-soft"
+        className="w-full bg-white border border-neutral-300 text-sm text-neutral-900 placeholder:text-neutral-400 pl-10 pr-9 py-2.5 rounded-card transition-colors duration-150 focus:outline-none focus:border-neutral-900"
         {...props}
       />
       {internalValue && (
@@ -69,7 +69,7 @@ export function SearchBar({
           type="button"
           onClick={handleClear}
           aria-label="Hapus pencarian"
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-slate-600 transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-neutral-400 hover:text-neutral-700 transition-colors"
         >
           <X className="h-3.5 w-3.5" />
         </button>
