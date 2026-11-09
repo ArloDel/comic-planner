@@ -66,20 +66,20 @@ export function AppShell({
 
       <div className="flex min-h-screen">
         {/* Desktop Sidebar (>= lg) */}
-        <aside className="hidden lg:flex lg:flex-col w-64 sticky top-0 h-screen bg-white/80 backdrop-blur-xl border-r border-white/60 shadow-glass z-40 select-none">
+        <aside className="hidden lg:flex lg:flex-col w-60 sticky top-0 h-screen bg-white border-r border-neutral-200 z-40 select-none">
           {/* Logo & Brand */}
-          <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100/60">
+          <div className="flex items-center gap-2.5 px-5 h-16">
             <BrandMark size="md" />
             <div>
-              <h1 className="text-sm font-bold text-slate-900 leading-none">
+              <h1 className="text-[15px] font-bold text-neutral-900 leading-none">
                 ComicPlan
               </h1>
-              <p className="text-[11px] text-slate-500 mt-1">Planning Komik</p>
+              <p className="text-xs text-neutral-400 mt-1">Planning Komik</p>
             </div>
           </div>
 
           {/* Nav Items */}
-          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
             {navItems.map((item) => {
               const active = isActive(item.href);
               const Icon = item.icon;
@@ -89,33 +89,31 @@ export function AppShell({
                   key={item.href}
                   href={item.href}
                   prefetch={true}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-card text-sm transition-colors duration-150 ${
                     active
-                      ? 'bg-primary-600/10 text-primary-700 font-semibold shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                      ? 'bg-neutral-100 text-neutral-900 font-medium'
+                      : 'text-neutral-500 hover:text-neutral-900'
                   }`}
                 >
                   <Icon
                     className={`h-4.5 w-4.5 ${
-                      active ? 'text-primary-600' : 'text-slate-400'
+                      active ? 'text-primary-600' : 'text-neutral-400'
                     }`}
                   />
                   <span>{item.label}</span>
-                  {active && (
-                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary-600" />
-                  )}
                 </Link>
               );
             })}
           </nav>
 
           {/* User mini info & Logout / Login */}
-          <div className="p-3 border-t border-slate-100/60 bg-white/40">
-            <div className="px-3 py-2 rounded-xl">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+          <div className="p-3 border-t border-neutral-200">
+            <div className="px-3 py-2">
+              <p className="text-xs text-neutral-400">
                 {isOwner ? 'Pengguna' : 'Mode Akses'}
               </p>
-              <p className="text-xs font-medium text-slate-700 truncate mt-0.5">
+              <p className="text-sm text-neutral-800 truncate mt-0.5">
                 {userEmail || 'Tamu · Hanya Baca'}
               </p>
             </div>
@@ -123,7 +121,7 @@ export function AppShell({
               <form action={logout} className="mt-1">
                 <button
                   type="submit"
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50/60 transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-card text-sm text-neutral-500 hover:text-rose-600 transition-colors"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Keluar</span>
@@ -132,7 +130,7 @@ export function AppShell({
             ) : (
               <Link
                 href="/login"
-                className="mt-1 w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-primary-700 bg-primary-50/80 hover:bg-primary-100 transition-colors"
+                className="mt-1 w-full flex items-center gap-2.5 px-3 py-2 rounded-card text-sm font-medium text-neutral-900 border border-neutral-300 hover:border-neutral-900 transition-colors"
               >
                 <LogIn className="h-4 w-4" />
                 <span>Masuk Pemilik</span>
@@ -144,14 +142,14 @@ export function AppShell({
         {/* Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl border-b border-white/60 px-4 sm:px-6 lg:px-8 py-3.5 shadow-2xs">
-            <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+          <header className="sticky top-0 z-30 bg-white border-b border-neutral-200 px-4 sm:px-6 lg:px-10 py-4 lg:py-5">
+            <div className="max-w-6xl mx-auto flex items-end justify-between gap-4">
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 leading-tight">
+                <h1 className="text-xl sm:text-[1.75rem] font-bold text-neutral-900 leading-tight">
                   {pageTitle || 'ComicPlan'}
                 </h1>
                 {pageSubtitle && (
-                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                  <p className="text-sm text-neutral-500 mt-1">
                     {pageSubtitle}
                   </p>
                 )}
@@ -164,14 +162,14 @@ export function AppShell({
           </header>
 
           {/* Main content slot */}
-          <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-12">
+          <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 pb-24 lg:pb-16">
             {children}
           </main>
         </div>
       </div>
 
       {/* Mobile Bottom Tab Bar (< lg) */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/85 backdrop-blur-xl border-t border-white/60 shadow-glass-lg pb-[env(safe-area-inset-bottom)]">
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-neutral-200 pb-[env(safe-area-inset-bottom)]">
         <div
           className={`grid ${
             isOwner ? 'grid-cols-5' : 'grid-cols-3'
@@ -198,12 +196,12 @@ export function AppShell({
                 key={tab.href}
                 href={tab.href}
                 prefetch={true}
-                className={`flex flex-col items-center justify-center gap-1 py-1 text-center transition-transform ${
-                  active ? 'text-primary-600 scale-105' : 'text-slate-500 hover:text-slate-800'
+                className={`flex flex-col items-center justify-center gap-1 py-1 text-center transition-colors ${
+                  active ? 'text-neutral-900' : 'text-neutral-400 hover:text-neutral-800'
                 }`}
               >
                 <Icon className="h-5 w-5" />
-                <span className="text-[10px] font-semibold">{tab.label}</span>
+                <span className="text-[10px] font-medium">{tab.label}</span>
               </Link>
             );
           })}
@@ -214,10 +212,10 @@ export function AppShell({
               type="button"
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Menu lainnya"
-              className="flex flex-col items-center justify-center gap-1 py-1 text-slate-500 hover:text-slate-800 transition-transform"
+              className="flex flex-col items-center justify-center gap-1 py-1 text-neutral-400 hover:text-neutral-800 transition-colors"
             >
               <MoreHorizontal className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">Lainnya</span>
+              <span className="text-[10px] font-medium">Lainnya</span>
             </button>
           )}
         </div>
@@ -227,17 +225,17 @@ export function AppShell({
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
           <div
-            className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs"
+            className="fixed inset-0 bg-neutral-900/25"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="relative bg-white/95 backdrop-blur-xl rounded-t-3xl border-t border-white/80 p-5 shadow-glass-lg z-10">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-sm font-bold text-slate-900">Menu Lainnya</span>
+          <div className="relative bg-white rounded-t-glass border-t border-neutral-200 p-5 z-10">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-200">
+              <span className="text-sm font-medium text-neutral-900">Menu lainnya</span>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="Tutup menu"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-card text-neutral-400 hover:text-neutral-900"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -247,32 +245,32 @@ export function AppShell({
               <Link
                 href="/import"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100"
+                className="flex items-center gap-3 px-3 py-3 rounded-card text-sm text-neutral-700 hover:bg-neutral-100"
               >
-                <Download className="h-4.5 w-4.5 text-slate-500" />
+                <Download className="h-4.5 w-4.5 text-neutral-400" />
                 <span>Impor Shopee</span>
               </Link>
               <Link
                 href="/settings"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100"
+                className="flex items-center gap-3 px-3 py-3 rounded-card text-sm text-neutral-700 hover:bg-neutral-100"
               >
-                <Settings className="h-4.5 w-4.5 text-slate-500" />
+                <Settings className="h-4.5 w-4.5 text-neutral-400" />
                 <span>Pengaturan</span>
               </Link>
             </div>
 
-            <div className="pt-3 border-t border-slate-100">
+            <div className="pt-3 border-t border-neutral-200">
               <div className="px-3 py-1 mb-2">
-                <p className="text-[10px] text-slate-400">Akun Terhubung</p>
-                <p className="text-xs font-semibold text-slate-700 truncate">
+                <p className="text-xs text-neutral-400">Akun terhubung</p>
+                <p className="text-sm text-neutral-800 truncate">
                   {userEmail || 'Single-User'}
                 </p>
               </div>
               <form action={logout}>
                 <button
                   type="submit"
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-card text-sm font-medium text-rose-600 border border-rose-200 hover:border-rose-600 transition-colors"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Keluar Akun</span>
