@@ -19,7 +19,7 @@ interface StatusTimelineProps {
 export function StatusTimeline({ entries }: StatusTimelineProps) {
   if (entries.length === 0) {
     return (
-      <p className="text-xs text-slate-400 italic">Belum ada riwayat perubahan status.</p>
+      <p className="text-xs text-neutral-400 italic">Belum ada riwayat perubahan status.</p>
     );
   }
 
@@ -31,7 +31,7 @@ export function StatusTimeline({ entries }: StatusTimelineProps) {
       {/* Garis waktu vertikal */}
       <span
         aria-hidden="true"
-        className="absolute left-[3px] top-1.5 bottom-1.5 w-px bg-slate-200"
+        className="absolute left-[3px] top-1.5 bottom-1.5 w-px bg-neutral-200"
       />
 
       {entries.map((entry, index) => (
@@ -39,21 +39,21 @@ export function StatusTimeline({ entries }: StatusTimelineProps) {
           <span
             aria-hidden="true"
             className={`absolute -left-4 top-1.5 h-[7px] w-[7px] rounded-full ring-2 ring-white ${
-              index === 0 ? 'bg-primary-600' : 'bg-slate-300'
+              index === 0 ? 'bg-primary-600' : 'bg-neutral-300'
             }`}
           />
 
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             {entry.status_lama ? (
               <span className="inline-flex items-center gap-1 text-xs">
-                <span className="text-slate-500">{label(entry.status_lama)}</span>
-                <CornerDownRight className="h-3 w-3 text-slate-300" aria-hidden="true" />
-                <span className="font-semibold text-slate-900">{label(entry.status_baru)}</span>
+                <span className="text-neutral-500">{label(entry.status_lama)}</span>
+                <CornerDownRight className="h-3 w-3 text-neutral-300" aria-hidden="true" />
+                <span className="font-semibold text-neutral-900">{label(entry.status_baru)}</span>
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 text-xs">
                 <History className="h-3 w-3 text-primary-500" aria-hidden="true" />
-                <span className="font-semibold text-slate-900">
+                <span className="font-semibold text-neutral-900">
                   Plan dibuat dengan status {label(entry.status_baru)}
                 </span>
               </span>
@@ -61,7 +61,7 @@ export function StatusTimeline({ entries }: StatusTimelineProps) {
 
             <time
               dateTime={entry.changed_at}
-              className="text-[10px] font-medium text-slate-400 tabular-nums"
+              className="text-[10px] font-medium text-neutral-400 tabular-nums"
             >
               {formatTanggalJam(entry.changed_at)}
             </time>
