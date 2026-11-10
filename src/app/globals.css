@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * ComicPlan — minimalism.
  * Tinta di atas kertas: putih, garis rambut abu netral, satu aksen ai-iro
@@ -35,13 +37,68 @@
   --shadow-soft:     0 0 0 0 transparent;
 }
 
+/*
+ * Dark Mode — Sumi Ink & Night Paper.
+ * Membalik skala kertas dan tinta secara proporsional tanpa mengubah komponen.
+ */
+html.dark {
+  color-scheme: dark;
+
+  --color-white: #121212;
+  --color-neutral-50:  #181818;
+  --color-neutral-100: #222222;
+  --color-neutral-200: #2c2c2c;
+  --color-neutral-300: #3d3d3d;
+  --color-neutral-400: #737373;
+  --color-neutral-500: #9ca3af;
+  --color-neutral-600: #c4c4c4;
+  --color-neutral-700: #dedede;
+  --color-neutral-800: #ebebeb;
+  --color-neutral-900: #f5f5f5;
+
+  /* Primary ai-iro diperterang agar kontras di atas permukaan gelap */
+  --color-primary-50:  #162238;
+  --color-primary-100: #1e3152;
+  --color-primary-200: #294472;
+  --color-primary-300: #3b609e;
+  --color-primary-400: #5a82c4;
+  --color-primary-500: #7ba1de;
+  --color-primary-600: #8cb0eb;
+  --color-primary-700: #abc7f5;
+  --color-primary-800: #cadcf9;
+  --color-primary-900: #e8f0fc;
+
+  /* Semantic soft tints untuk badge & alert di mode gelap */
+  --color-emerald-50:  #0d281e;
+  --color-emerald-200: #164e39;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #a7f3d0;
+
+  --color-amber-50:    #2b1f0c;
+  --color-amber-200:   #573d14;
+  --color-amber-700:   #fcd34d;
+  --color-amber-800:   #fde68a;
+
+  --color-rose-50:     #2d1219;
+  --color-rose-200:    #5c1f2e;
+  --color-rose-700:    #fda4af;
+  --color-rose-800:    #fecdd3;
+
+  --color-indigo-50:   #191c38;
+  --color-indigo-200:  #2c3366;
+  --color-indigo-700:  #a5b4fc;
+  --color-indigo-800:  #c7d2fe;
+
+  --shadow-glass-lg: 0 16px 40px -12px rgb(0 0 0 / 0.65);
+}
+
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    background: #ffffff;
+    background: var(--color-white);
     color: var(--color-neutral-900);
     font-feature-settings: "palt" 1;
   }
@@ -59,6 +116,20 @@
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+}
+
+/* Pertahankan teks putih murni di atas tombol/badge berwarna solid saat dark mode */
+html.dark .bg-rose-600.text-white,
+html.dark .hover\:bg-rose-600:hover,
+html.dark .bg-emerald-600.text-white,
+html.dark .bg-indigo-600.text-white {
+  color: #ffffff;
+}
+
+/* Backdrop overlay modal tetap gelap transparan saat dark mode */
+html.dark .bg-neutral-900\/25,
+html.dark .bg-neutral-900\/40 {
+  background-color: rgb(0 0 0 / 0.65);
 }
 
 /* Indikator loading — garis tipis ai-iro, tanpa glow */
