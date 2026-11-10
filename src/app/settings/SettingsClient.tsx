@@ -11,12 +11,14 @@ import {
   ExternalLink,
   KeyRound,
   LogOut,
+  Palette,
   ShieldCheck,
   Store,
   Wallet,
 } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
+import { ThemeSelector } from '@/components/ui/ThemeToggle';
 import { ToastHost, useToast } from '@/components/ui/Toast';
 import { formatPeriode } from '@/lib/budget';
 import { formatRupiah, formatTanggalJam } from '@/lib/format';
@@ -165,6 +167,22 @@ export function SettingsClient({
   return (
     <div className="space-y-5">
       <ToastHost toast={toast} onClose={dismissToast} />
+
+      {/* 0. Tampilan & Tema (Dark Mode) */}
+      <GlassCard className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-start gap-2.5">
+          <Palette className="h-4 w-4 text-primary-600 shrink-0 mt-0.5" aria-hidden="true" />
+          <div>
+            <h2 className="text-base font-semibold text-neutral-900">Tampilan &amp; Tema</h2>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Pilih kertas terang, gelap (Sumi Ink), atau ikuti preferensi sistem perangkat Anda.
+            </p>
+          </div>
+        </div>
+        <div className="w-full sm:w-72 shrink-0">
+          <ThemeSelector />
+        </div>
+      </GlassCard>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* 1. Akun & Keamanan Single-User (§6.10) */}
