@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { BackdropDecor } from '@/components/ui/BackdropDecor';
 import { BrandMark } from '@/components/ui/BrandMark';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { logout } from '@/app/auth/actions';
 
 interface AppShellProps {
@@ -68,14 +69,17 @@ export function AppShell({
         {/* Desktop Sidebar (>= lg) */}
         <aside className="hidden lg:flex lg:flex-col w-60 sticky top-0 h-screen bg-white border-r border-neutral-200 z-40 select-none">
           {/* Logo & Brand */}
-          <div className="flex items-center gap-2.5 px-5 h-16">
-            <BrandMark size="md" />
-            <div>
-              <h1 className="text-[15px] font-bold text-neutral-900 leading-none">
-                ComicPlan
-              </h1>
-              <p className="text-xs text-neutral-400 mt-1">Planning Komik</p>
+          <div className="flex items-center justify-between gap-2 px-5 h-16">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <BrandMark size="md" />
+              <div className="min-w-0">
+                <h1 className="text-[15px] font-bold text-neutral-900 leading-none truncate">
+                  ComicPlan
+                </h1>
+                <p className="text-xs text-neutral-400 mt-1 truncate">Planning Komik</p>
+              </div>
             </div>
+            <ThemeToggle />
           </div>
 
           {/* Nav Items */}
@@ -144,15 +148,18 @@ export function AppShell({
           {/* Header */}
           <header className="sticky top-0 z-30 bg-white border-b border-neutral-200 px-4 sm:px-6 lg:px-10 py-4 lg:py-5">
             <div className="max-w-6xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-              <div>
-                <h1 className="text-xl sm:text-[1.75rem] font-bold text-neutral-900 leading-tight">
-                  {pageTitle || 'ComicPlan'}
-                </h1>
-                {pageSubtitle && (
-                  <p className="text-sm text-neutral-500 mt-1">
-                    {pageSubtitle}
-                  </p>
-                )}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h1 className="text-xl sm:text-[1.75rem] font-bold text-neutral-900 leading-tight">
+                    {pageTitle || 'ComicPlan'}
+                  </h1>
+                  {pageSubtitle && (
+                    <p className="text-sm text-neutral-500 mt-1">
+                      {pageSubtitle}
+                    </p>
+                  )}
+                </div>
+                <ThemeToggle className="lg:hidden shrink-0" />
               </div>
 
               {headerAction && (
