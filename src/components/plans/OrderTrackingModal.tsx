@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { InlineLoadingBar } from '@/components/ui/TopLoadingBar';
 import { TrackingTimelineSkeleton } from '@/components/ui/Skeleton';
+import { CameraCapture } from '@/components/ui/CameraCapture';
 import { COURIER_OPTIONS, type TrackingResult } from '@/lib/binderbyte';
 
 export interface BulkPlanItem {
@@ -81,6 +82,7 @@ export function OrderTrackingModal({
   const [completing, setCompleting] = useState(false);
   const [tracking, setTracking] = useState<TrackingResult | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean>(true);
@@ -291,6 +293,7 @@ export function OrderTrackingModal({
 
   function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = ''; // agar file yang sama bisa dipilih lagi
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
@@ -730,40 +733,67 @@ export function OrderTrackingModal({
 
           <p className="text-xs text-neutral-600 mb-3">
             {isDelivered
-              ? 'Paket telah tiba! Unggah foto komik fisik yang telah Anda terima untuk menyelesaikan pesanan dan menandainya sebagai "Dimiliki" di Katalog.'
-              : 'Foto dapat diunggah saat paket tiba di tangan Anda sebagai syarat penyelesaian pesanan.'}
+              ? 'Paket telah tiba! Ambil atau pilih foto komik fisik yang telah Anda terima untuk menyelesaikan pesanan dan menandainya sebagai "Dimiliki" di Katalog.'
+              : 'Foto bisa diambil saat paket tiba di tangan Anda sebagai syarat penyelesaian pesanan.'}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <label className="w-full sm:w-auto cursor-pointer inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-md text-xs font-bold bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 transition-colors">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCameraOpen(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[40px] rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-neutral-700 transition-colors"
+            >
+              <Camera className="h-4 w-4" />
+              <span>{photoPreview ? 'Ambil ulang foto' : 'Ambil foto'}</span>
+            </button>
+
+            <label className="w-full sm:w-auto cursor-pointer inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[40px] rounded-md text-xs font-medium bg-white border border-neutral-300 text-neutral-700 hover:border-neutral-900 transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary-600">
               <Upload className="h-4 w-4 text-neutral-500" />
-              <span>{photoPreview ? 'Ganti Foto Bukti' : 'Pilih / Ambil Foto'}</span>
+              <span>Pilih dari galeri</span>
               <input
                 type="file"
                 accept="image/*"
-                capture="environment"
                 onChange={handlePhotoUpload}
-                className="hidden"
+                className="sr-only"
               />
             </label>
+          </div>
 
-            {photoPreview && (
-              <div className="flex items-center gap-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photoPreview}
-                  alt="Bukti Unboxing"
-                  loading="lazy"
-                  decoding="async"
-                  className="h-12 w-12 object-cover rounded-lg border border-neutral-200"
-                />
-                <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+          {photoPreview && (
+            <div className="mt-3 flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoPreview}
+                alt="Pratinjau bukti penerimaan"
+                loading="lazy"
+                decoding="async"
+                className="h-20 w-20 object-cover rounded-md border border-neutral-200"
+              />
+              <div className="min-w-0">
+                <span className="text-xs font-medium text-emerald-700 flex items-center gap-1">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   Foto siap diverifikasi
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setPhotoPreview(null)}
+                  className="mt-1 text-xs text-neutral-500 underline underline-offset-2 hover:text-rose-600"
+                >
+                  Hapus foto
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          <CameraCapture
+            isOpen={cameraOpen}
+            onClose={() => setCameraOpen(false)}
+            onCapture={(dataUrl) => {
+              setPhotoPreview(dataUrl);
+              setErrorMsg(null);
+            }}
+            title="Foto bukti penerimaan"
+          />
 
           {/* Tombol Konfirmasi Selesai */}
           <div className="mt-4 pt-3 border-t border-neutral-200/60 flex justify-end">
