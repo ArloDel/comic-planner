@@ -22,6 +22,18 @@ interface CameraCaptureProps {
 type Phase = 'starting' | 'live' | 'captured' | 'error';
 
 /**
+ * Jendela kamera selalu hitam-putih, apa pun temanya. Mode gelap memetakan ulang
+ * --color-white dan skala neutral, jadi nilainya dikunci di sini.
+ */
+const FIXED_PALETTE = {
+  '--color-white': '#ffffff',
+  '--color-neutral-200': '#e5e5e5',
+  '--color-neutral-300': '#d4d4d4',
+  '--color-neutral-900': '#171717',
+  colorScheme: 'dark',
+} as React.CSSProperties;
+
+/**
  * Kamera layar penuh berbasis getUserMedia. Berjalan di browser PC (webcam)
  * maupun HP (kamera belakang secara default, bisa ditukar ke depan).
  */
@@ -176,6 +188,7 @@ export function CameraCapture({
       role="dialog"
       aria-modal="true"
       aria-label={title}
+      style={FIXED_PALETTE}
       className="fixed inset-0 z-[70] flex flex-col bg-black text-white"
     >
       {/* Bar atas */}
@@ -266,7 +279,7 @@ export function CameraCapture({
               Pakai foto
             </button>
           </>
-        ) : (
+        ) : phase === 'error' ? null : (
           <button
             ref={shutterRef}
             type="button"
